@@ -8,9 +8,9 @@ const FS_ROOT = config.get("Application.FS_ROOT");
 const systray = new SysTray({
     menu: {
         // you should using .png icon in macOS/Linux, but .ico format in windows
-        icon: Logo,
-        title: "Evemore Datastore",
-        tooltip: "Evemore Datastore",
+        icon: Logo.toString('base64'),
+        title: "Evermore Datastore",
+        tooltip: "Evermore Datastore",
         items: [{
             title: "aa",
             tooltip: "bb",
@@ -36,7 +36,7 @@ const systray = new SysTray({
 systray.onClick(action => {
 if (action.seq_id === 0) {
     systray.sendAction({
-        type: 'update-item',
+        type: 'update-item', 
         item: {
         ...action.item,
         checked: !action.item.checked,
