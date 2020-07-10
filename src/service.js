@@ -1,13 +1,14 @@
 const chokidar = require('chokidar');
 const config = require('config');
 import SysTray from 'systray'
+import Logo from './logo';
 
 const FS_ROOT = config.get("Application.FS_ROOT");
 
 const systray = new SysTray({
     menu: {
         // you should using .png icon in macOS/Linux, but .ico format in windows
-        icon: "<base64 image string>",
+        icon: Logo,
         title: "Evemore Datastore",
         tooltip: "Evemore Datastore",
         items: [{
