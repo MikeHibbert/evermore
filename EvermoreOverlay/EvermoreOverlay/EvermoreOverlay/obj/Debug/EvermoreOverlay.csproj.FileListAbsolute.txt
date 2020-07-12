@@ -1,0 +1,16 @@
+C:\Users\hibbe\Documents\Nodejs\Evermore\EvermoreOverlay\EvermoreOverlay\EvermoreOverlay\bin\Debug\EvermoreOverlay.dll
+C:\Users\hibbe\Documents\Nodejs\Evermore\EvermoreOverlay\EvermoreOverlay\EvermoreOverlay\bin\Debug\EvermoreOverlay.pdb
+C:\Users\hibbe\Documents\Nodejs\Evermore\EvermoreOverlay\EvermoreOverlay\EvermoreOverlay\obj\Debug\EvermoreOverlay.csprojAssemblyReference.cache
+C:\Users\hibbe\Documents\Nodejs\Evermore\EvermoreOverlay\EvermoreOverlay\EvermoreOverlay\obj\Debug\EvermoreOverlay.csproj.CoreCompileInputs.cache
+C:\Users\hibbe\Documents\Nodejs\Evermore\EvermoreOverlay\EvermoreOverlay\EvermoreOverlay\obj\Debug\EvermoreOverlay.dll
+C:\Users\hibbe\Documents\Nodejs\Evermore\EvermoreOverlay\EvermoreOverlay\EvermoreOverlay\obj\Debug\EvermoreOverlay.pdb
+C:\Users\hibbe\Documents\Nodejs\Evermore\EvermoreOverlay\EvermoreOverlay\EvermoreOverlay\obj\Debug\EvermoreOverlay.Properties.Resource1.resources
+C:\Users\hibbe\Documents\Nodejs\Evermore\EvermoreOverlay\EvermoreOverlay\EvermoreOverlay\obj\Debug\EvermoreOverlay.csproj.GenerateResource.cache
+C:\Users\hibbe\Documents\Nodejs\Evermore\EvermoreOverlay\EvermoreOverlay\EvermoreOverlay\bin\Debug\EvermoreOverlay.dll.config
+C:\Users\hibbe\Documents\Nodejs\Evermore\EvermoreOverlay\EvermoreOverlay\EvermoreOverlay\bin\Debug\Apex.WinForms.dll
+C:\Users\hibbe\Documents\Nodejs\Evermore\EvermoreOverlay\EvermoreOverlay\EvermoreOverlay\bin\Debug\ServerManager.exe
+C:\Users\hibbe\Documents\Nodejs\Evermore\EvermoreOverlay\EvermoreOverlay\EvermoreOverlay\bin\Debug\ServerRegistrationManager.exe
+C:\Users\hibbe\Documents\Nodejs\Evermore\EvermoreOverlay\EvermoreOverlay\EvermoreOverlay\bin\Debug\SharpShell.dll
+C:\Users\hibbe\Documents\Nodejs\Evermore\EvermoreOverlay\EvermoreOverlay\EvermoreOverlay\bin\Debug\ServerManager.pdb
+C:\Users\hibbe\Documents\Nodejs\Evermore\EvermoreOverlay\EvermoreOverlay\EvermoreOverlay\bin\Debug\SharpShell.xml
+C:\Users\hibbe\Documents\Nodejs\Evermore\EvermoreOverlay\EvermoreOverlay\EvermoreOverlay\obj\Debug\EvermoreOverlay.csproj.CopyComplete
