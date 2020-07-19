@@ -1,0 +1,36 @@
+// EDOverlays.idl : IDL source for EDOverlays
+//
+
+// This file will be processed by the MIDL tool to
+// produce the type library (EDOverlays.tlb) and marshalling code.
+
+import "oaidl.idl";
+import "ocidl.idl";
+
+[
+	object,
+	uuid(33e9cd6c-07a1-48d3-8d91-7b753c30e67d),
+	dual,
+	nonextensible,
+	pointer_default(unique)
+]
+interface IEDOverlay : IDispatch
+{
+};
+[
+	uuid(4e4b1625-1f60-47d0-8286-e090cea07f2f),
+	version(1.0),
+]
+library EDOverlaysLib
+{
+	importlib("stdole2.tlb");
+	[
+		uuid(c28d7ba7-5c9d-4af1-be7c-848c231c298b)
+	]
+	coclass EDOverlay
+	{
+		[default] interface IEDOverlay;
+	};
+};
+
+import "shobjidl.idl";
