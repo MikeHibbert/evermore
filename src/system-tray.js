@@ -9,19 +9,14 @@ const initSystemTray = () => {
             title: "Evermore Datastore",
             tooltip: "Evermore Datastore",
             items: [{
-                title: "aa",
-                tooltip: "bb",
+                title: "Connect",
+                tooltip: "Connect your AR wallet to begin storing data.",
                 // checked is implement by plain text in linux
-                checked: true,
-                enabled: true
-            }, {
-                title: "aa2",
-                tooltip: "bb",
                 checked: false,
                 enabled: true
             }, {
                 title: "Exit",
-                tooltip: "Shutdown Evemore Datastore",
+                tooltip: "Shutdown Evermore Datastore",
                 checked: false,
                 enabled: true
             }]

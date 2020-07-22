@@ -7,10 +7,13 @@ import fileDeletedHandler from './fsHandling/DeleteFile';
 import dirAddedHandler from './fsHandling/AddDir';
 import dirDeletedHandler from './fsHandling/DeleteDir';
 import { OnFileWatcherReady } from './fsHandling/Init';
+import { InitDB } from './db/helpers';
 
 const FS_ROOT = config.get("Application.FS_ROOT");
 
 const systray = initSystemTray();
+
+InitDB();
 
 const log = console.log.bind(console);
 // One-liner for current directory
