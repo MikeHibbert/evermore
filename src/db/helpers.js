@@ -11,8 +11,19 @@ export function InitDB() {
     db = low(adapter);
 }
 
-export const AddPendingFile = (file) => {
+export const AddPendingFile = (tx_id, file) => {
+    db.get('pending')
+        .push({
+            tx_id: tx_id,
+            file: file
+        }).write();
+}
 
+export const RemovePendingFile = (tx_id) => {
+    db.get('pending')
+        .remove({
+            tx_id: tx_id
+        }).write();
 }
 
 export const GetPendingFiles = () => {
@@ -29,4 +40,12 @@ export const ConfirmPendingFile = (tx_id) => {
     db.get('synced_files')
         .push(pending)
         .write();
+}
+
+export const GetSyncedFiles = () => {
+    return db.get('synced_files');
+}
+
+export const GetSyncedFile = (tx_id) => {
+    return db.get('synced_files').find({tx_id: tx_id});
 }
