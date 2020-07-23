@@ -10,10 +10,11 @@ import { OnFileWatcherReady } from './fsHandling/Init';
 import { InitDB } from './db/helpers';
 
 const FS_ROOT = config.get("Application.FS_ROOT");
+InitDB();
 
 const systray = initSystemTray();
 
-InitDB();
+
 
 const log = console.log.bind(console);
 // One-liner for current directory

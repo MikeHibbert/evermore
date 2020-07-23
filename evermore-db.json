@@ -1,14 +1,2 @@
 {
-  "pending": [
-    {
-      "tx_id": "12345",
-      "file": "C:\\Users\\hibbe\\Documents\\Evermore\\New Text Document.txt"
-    },
-    {
-      "tx_id": "12345",
-      "file": "C:\\Users\\hibbe\\Documents\\Evermore\\Test\\New Text Document.txt"
-    }
-  ],
-  "synced_files": [],
-  "folders": []
 }

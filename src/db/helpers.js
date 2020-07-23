@@ -1,3 +1,4 @@
+import {getFileUpdatedDate} from '../fsHandling/helpers';
 const low = require('lowdb');
 const FileSync = require('lowdb/adapters/FileSync');
 
@@ -6,8 +7,6 @@ let db = null;
 export function InitDB() {
     const adapter = new FileSync('evermore-db.json');
     db = low(adapter);
-
-    debugger;
 
     const pending = db.has('pending').value();
     if(pending === false) {
@@ -23,17 +22,29 @@ export function InitDB() {
     if(folders === false) {
         db.set('folders', []).write();
     }
+
+    const wallet_file = db.has('wallet_file').value();
+    if(wallet_file === false) {
+        db.set('wallet_file', '').write();
+    }
+}
+
+export const walletFileSet = () => {
+    return db.get('wallet_file').value();
+}
+
+export const setWalletFilePath = (path) => {
+    db.set('wallet_file', path).write();
 }
 
 export const AddPendingFile = (tx_id, file) => {
-    console.log(file);
-
     if(GetPendingFile(tx_id)) return;
 
     db.get('pending')
         .push({
             tx_id: tx_id,
-            file: file
+            file: file,
+            modified: getFileUpdatedDate(file)
         }).write();
 }
 
@@ -49,11 +60,13 @@ export const GetPendingFiles = () => {
 }
 
 export const GetPendingFile = (tx_id) => {
-    return db.get('pending').find({tx_id: tx_id});
+    const file = db.get('pending').find({tx_id: tx_id}).value();
+
+    return file;
 }
 
 export const ConfirmSyncedFile = (tx_id) => {
-    const pending = db.get('pending').find({tx_id: tx_id});
+    const pending = db.get('pending').find({tx_id: tx_id}).value();
 
     db.get('synced_files')
         .push(pending)
@@ -67,18 +80,19 @@ export const GetSyncedFiles = () => {
 }
 
 export const GetSyncedFile = (tx_id) => {
-    return db.get('synced_files').find({tx_id: tx_id});
+    return db.get('synced_files').find({tx_id: tx_id}).value();
 }
 
-export const AddFolder = (tx_id, file) => {
-    console.log(file);
+export const AddFolder = (tx_id, path) => {
+    console.log(path);
 
     if(GetFolder(tx_id)) return;
 
     db.get('folders')
         .push({
             tx_id: tx_id,
-            file: file
+            path: path,
+            modified: getFileUpdatedDate(path)
         }).write();
 }
 
@@ -94,5 +108,5 @@ export const GetFolders = () => {
 }
 
 export const GetFolder = (tx_id) => {
-    return db.get('folders').find({tx_id: tx_id});
+    return db.get('folders').find({tx_id: tx_id}).value();
 }
