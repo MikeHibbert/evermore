@@ -1,2 +1,27 @@
 {
+  "pending": [
+    {
+      "tx_id": "0TuIpSHAh",
+      "file": "C:\\Users\\hibbe\\Documents\\Evermore\\New Text Document.txt",
+      "modified": "2020-07-15T12:14:31.102Z"
+    },
+    {
+      "tx_id": "Zc1xI-yYWn",
+      "file": "C:\\Users\\hibbe\\Documents\\Evermore\\Test\\New Text Document.txt",
+      "modified": "2020-07-09T06:23:38.661Z"
+    },
+    {
+      "tx_id": "IQ0K2fawd",
+      "file": "C:\\Users\\hibbe\\Documents\\Evermore\\New Text Document.txt",
+      "modified": "2020-07-15T12:14:31.102Z"
+    },
+    {
+      "tx_id": "KFPuNkLZmf",
+      "file": "C:\\Users\\hibbe\\Documents\\Evermore\\Test\\New Text Document.txt",
+      "modified": "2020-07-09T06:23:38.661Z"
+    }
+  ],
+  "synced_files": [],
+  "folders": [],
+  "wallet_file": "C:\\Users\\hibbe\\Documents\\Arweave Wallet\\arweave-keyfile-h-Bgr13OWUOkRGWrnMT0LuUKfJhRss5pfTdxHmNcXyw.json"
 }

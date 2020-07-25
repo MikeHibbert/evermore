@@ -37,6 +37,10 @@ export const setWalletFilePath = (path) => {
     db.set('wallet_file', path).write();
 }
 
+export const resetWalletFilePath = () => {
+    db.unset('wallet_file').write();
+}
+
 export const AddPendingFile = (tx_id, file) => {
     if(GetPendingFile(tx_id)) return;
 
