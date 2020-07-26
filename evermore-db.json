@@ -1,27 +1,107 @@
 {
   "pending": [
     {
-      "tx_id": "0TuIpSHAh",
+      "tx_id": "tQ6aUwnQk",
       "file": "C:\\Users\\hibbe\\Documents\\Evermore\\New Text Document.txt",
       "modified": "2020-07-15T12:14:31.102Z"
     },
     {
-      "tx_id": "Zc1xI-yYWn",
+      "tx_id": "6GQD1v4y1n",
       "file": "C:\\Users\\hibbe\\Documents\\Evermore\\Test\\New Text Document.txt",
       "modified": "2020-07-09T06:23:38.661Z"
     },
     {
-      "tx_id": "IQ0K2fawd",
+      "tx_id": "9YULztC6z",
       "file": "C:\\Users\\hibbe\\Documents\\Evermore\\New Text Document.txt",
       "modified": "2020-07-15T12:14:31.102Z"
     },
     {
-      "tx_id": "KFPuNkLZmf",
+      "tx_id": "GEzBKNX8rq",
+      "file": "C:\\Users\\hibbe\\Documents\\Evermore\\Test\\New Text Document.txt",
+      "modified": "2020-07-09T06:23:38.661Z"
+    },
+    {
+      "tx_id": "vWTRVZTq3",
+      "file": "C:\\Users\\hibbe\\Documents\\Evermore\\New Text Document.txt",
+      "modified": "2020-07-15T12:14:31.102Z"
+    },
+    {
+      "tx_id": "rH6FLy58FE",
+      "file": "C:\\Users\\hibbe\\Documents\\Evermore\\Test\\New Text Document.txt",
+      "modified": "2020-07-09T06:23:38.661Z"
+    },
+    {
+      "tx_id": "ozWqIWKBt",
+      "file": "C:\\Users\\hibbe\\Documents\\Evermore\\New Text Document.txt",
+      "modified": "2020-07-15T12:14:31.102Z"
+    },
+    {
+      "tx_id": "dAIpnAv7ia",
+      "file": "C:\\Users\\hibbe\\Documents\\Evermore\\Test\\New Text Document.txt",
+      "modified": "2020-07-09T06:23:38.661Z"
+    },
+    {
+      "tx_id": "yPgi1Fjgk",
+      "file": "C:\\Users\\hibbe\\Documents\\Evermore\\New Text Document.txt",
+      "modified": "2020-07-15T12:14:31.102Z"
+    },
+    {
+      "tx_id": "MHrpL9cH6p",
+      "file": "C:\\Users\\hibbe\\Documents\\Evermore\\Test\\New Text Document.txt",
+      "modified": "2020-07-09T06:23:38.661Z"
+    },
+    {
+      "tx_id": "3KHH8Zwj-",
+      "file": "C:\\Users\\hibbe\\Documents\\Evermore\\New Text Document.txt",
+      "modified": "2020-07-15T12:14:31.102Z"
+    },
+    {
+      "tx_id": "VhCdYwAvoe",
+      "file": "C:\\Users\\hibbe\\Documents\\Evermore\\Test\\New Text Document.txt",
+      "modified": "2020-07-09T06:23:38.661Z"
+    },
+    {
+      "tx_id": "tf6kdeT9n",
+      "file": "C:\\Users\\hibbe\\Documents\\Evermore\\New Text Document 2.txt",
+      "modified": "2020-07-26T18:45:50.341Z"
+    },
+    {
+      "tx_id": "HZAHRcLxe",
+      "file": "C:\\Users\\hibbe\\Documents\\Evermore\\New Text Document.txt",
+      "modified": "2020-07-26T18:45:50.341Z"
+    },
+    {
+      "tx_id": "nQxQ0C7c-",
+      "file": "C:\\Users\\hibbe\\Documents\\Evermore\\Test\\New Bitmap Image.bmp",
+      "modified": "2020-07-26T18:46:36.374Z"
+    },
+    {
+      "tx_id": "SRV8KgtVd",
+      "file": "C:\\Users\\hibbe\\Documents\\Evermore\\Test\\Hamster.bmp",
+      "modified": "2020-07-26T18:46:36.374Z"
+    },
+    {
+      "tx_id": "uLkdMn3kQ",
+      "file": "C:\\Users\\hibbe\\Documents\\Evermore\\New Text Document.txt",
+      "modified": "2020-07-26T18:45:50.341Z"
+    },
+    {
+      "tx_id": "9JhlYQQg_N",
+      "file": "C:\\Users\\hibbe\\Documents\\Evermore\\Test\\Hamster.bmp",
+      "modified": "2020-07-26T18:46:36.374Z"
+    },
+    {
+      "tx_id": "s5wzHKNezX",
       "file": "C:\\Users\\hibbe\\Documents\\Evermore\\Test\\New Text Document.txt",
       "modified": "2020-07-09T06:23:38.661Z"
     }
   ],
   "synced_files": [],
   "folders": [],
+  "sync_folders": [
+    {
+      "path": "C:\\Users\\hibbe\\Documents\\Evermore"
+    }
+  ],
   "wallet_file": "C:\\Users\\hibbe\\Documents\\Arweave Wallet\\arweave-keyfile-h-Bgr13OWUOkRGWrnMT0LuUKfJhRss5pfTdxHmNcXyw.json"
 }

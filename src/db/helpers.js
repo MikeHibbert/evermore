@@ -23,6 +23,11 @@ export function InitDB() {
         db.set('folders', []).write();
     }
 
+    const sync_folders = db.has('sync_folders').value();
+    if(sync_folders === false) {
+        db.set('sync_folders', []).write();
+    }
+
     const wallet_file = db.has('wallet_file').value();
     if(wallet_file === false) {
         db.set('wallet_file', '').write();
@@ -60,11 +65,11 @@ export const RemovePendingFile = (tx_id) => {
 }
 
 export const GetPendingFiles = () => {
-    return db.get('pending');
+    return db.get('pending').value();
 }
 
-export const GetPendingFile = (tx_id) => {
-    const file = db.get('pending').find({tx_id: tx_id}).value();
+export const GetPendingFile = (path) => {
+    const file = db.get('pending').find({path: path}).value();
 
     return file;
 }
@@ -113,4 +118,40 @@ export const GetFolders = () => {
 
 export const GetFolder = (tx_id) => {
     return db.get('folders').find({tx_id: tx_id}).value();
+}
+
+export const AddSyncedFolder = (path) => {
+    db.get('sync_folders')
+        .push({
+            path: path
+        }).write();
+}
+
+export const RemoveSyncedFolder = (path) => {
+    db.get('sync_folders')
+        .remove({
+            path: path
+        }).write();
+}
+
+export const GetSyncedFolders = () => {
+    return db.get('sync_folders').map('path').value();
+}
+
+export const GetSyncedFolder = (tx_id) => {
+    return db.get('sync_folders').find({path: path}).value();
+}
+
+export const SaveUploader = (uploader) => {
+    db.get('uploaders')
+        .push(JSON.stringify(uploader)).write();
+}
+
+export const GetUploaders = () => {
+    return db.get('uploaders').value();
+}
+
+export const RemoveUploader = (uploader) => {
+    db.get('uploaders')
+        .remove(uploader).write();
 }

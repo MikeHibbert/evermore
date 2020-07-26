@@ -12,7 +12,9 @@ export const setSystrayInstance = (st) => {
     systray = st;
 }
 
-const createLoggedOutSytray = () => {
+const createLoggedOutSystray = () => {
+    const menu_items = [];
+    
     menu_items.push({
         title: "Connect",
         tooltip: "Connect your AR wallet to begin storing data.",
@@ -50,17 +52,16 @@ const initSystemTray = () => {
     const wallet_path = walletFileSet();
 
     if(wallet_path.length == 0) {
-        createLoggedOutSytray();
+        createLoggedOutSystray();
     } else {
         fs.access(wallet_path, fs.F_OK, (err) => {
             if (err) {
               resetWalletFilePath();
-              createLoggedOutSytray();
+              createLoggedOutSystray();
               return
             }
           
             getWalletBalance(wallet_path).then((balance) => {
-                debugger;
                 menu_items.push({
                     title: "Balance: " + balance + " AR",
                     tooltip: "Wallet balance",
