@@ -106,7 +106,16 @@ const initSystemTray = () => {
 
 export const ConnectedActions = (action) => {
     if (action.seq_id === 0) {
-        console.log("Balance clicked")
+        getWalletBalance(wallet_path).then((balance) => {
+            systray.sendAction({
+                type: 'update-item',
+                item: {
+                    ...action.item,
+                    title: "Balance: " + balance + " AR",
+                },
+                seq_id: action.seq_id,
+            })
+        });
     } else if (action.seq_id === 1) {
         openSettingsDialog();
     } else if (action.seq_id === 2) {

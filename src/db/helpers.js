@@ -1,5 +1,6 @@
 import {getFileUpdatedDate} from '../fsHandling/helpers';
 const low = require('lowdb');
+const os = require('os');
 const FileSync = require('lowdb/adapters/FileSync');
 
 let db = null;
@@ -32,6 +33,11 @@ export function InitDB() {
     if(wallet_file === false) {
         db.set('wallet_file', '').write();
     }
+
+    const uploaders = db.has('uploaders').value();
+    if(uploaders === false) {
+        db.set('uploaders', []).write();
+    }
 }
 
 export const walletFileSet = () => {
@@ -47,14 +53,43 @@ export const resetWalletFilePath = () => {
 }
 
 export const AddPendingFile = (tx_id, file) => {
-    if(GetPendingFile(tx_id)) return;
+    const sync_folders = GetSyncedFolders();
+
+    let relative_path = file;
+
+    for(let i in sync_folders) {
+        const sync_folder = sync_folders[i];
+        if(file.indexOf(sync_folder) != -1) {
+            relative_path = file.replace(sync_folder, '');
+        }
+    }
+
+    if(GetPendingFile(relative_path)) return;
 
     db.get('pending')
         .push({
             tx_id: tx_id,
-            file: file,
-            modified: getFileUpdatedDate(file)
+            file: relative_path,
+            path: file,
+            modified: getFileUpdatedDate(file),
+            hostname: os.hostname()
         }).write();
+}
+
+export const UpdatePendingFileTransactionID = (file, tx_id) => {
+    db.get('pending')
+        .find({file: file})
+        .assign({tx_id: tx_id})
+        .write();
+}
+
+export const ResetPendingFile = (file, modified) => {
+    db.get('pending')
+        .find({file: file})
+        .assign({tx_id: null, modified: modified})
+        .write();
+
+    return db.get('pending').find({file: file}).value();
 }
 
 export const RemovePendingFile = (tx_id) => {
@@ -64,13 +99,27 @@ export const RemovePendingFile = (tx_id) => {
         }).write();
 }
 
+export const GetNewPendingFiles = () => {
+    return db.get('pending')
+        .value()
+        .filter((file_info) => file_info.tx_id == null);
+}
+
 export const GetPendingFiles = () => {
-    return db.get('pending').value();
+    return db.get('pending')
+        .value()
+        .filter((file_info) => file_info.tx_id != null);
 }
 
 export const GetPendingFile = (path) => {
     const file = db.get('pending').find({path: path}).value();
 
+    if(file) {
+        const modified = getFileUpdatedDate(file.path);
+        if(modified > file.modified) {
+            return ResetPendingFile(file.file, modified);
+        }
+    }
     return file;
 }
 
