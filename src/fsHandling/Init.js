@@ -51,6 +51,8 @@ const checkPendingFilesStatus = () => {
 }
 
 const processAllOutstandingUploads = () => {
+    return;
+
     const uploaders = GetUploaders();
 
     if(uploaders.length == 0) return;
@@ -61,7 +63,6 @@ const processAllOutstandingUploads = () => {
       });
 
     for(let i in uploaders) {
-        debugger;
         finishUpload(uploaders[i]);
     }
 
@@ -72,8 +73,8 @@ const processAllOutstandingUploads = () => {
 }
 
 const processAllPendingFiles = (pending_files) => {
+    return;
     for(let i in pending_files) {
-        debugger;
         uploadFile(pending_files[i]);
     }
 
