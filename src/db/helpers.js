@@ -141,6 +141,9 @@ export const GetSyncedFile = (tx_id) => {
     return db.get('synced_files').find({tx_id: tx_id}).value();
 }
 
+export const GetSyncedFileFromPath = (path) => {
+    return db.get('synced_files').find({path: path}).value();
+}
 export const AddFolder = (tx_id, path) => {
     console.log(path);
 
