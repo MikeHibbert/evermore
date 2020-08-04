@@ -1,6 +1,7 @@
-import { GetPendingFile, GetSyncedFileFromPath } from '../db/helpers';
+import { GetPendingFile, GetSyncedFileFromPath, GetSyncedFolders } from '../db/helpers';
 import { settings } from '../config';
 
+// HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\ShellIconOverlayIdentifiers. 
 const processPipeMessage = (data) => {
     var parts = data.split(':');
     const command = parts[0];
@@ -11,7 +12,6 @@ const processPipeMessage = (data) => {
 
     console.log(`Command: ${command}, ${args}`);
 
-    debugger;
     switch(command) {
         case "RETRIEVE_FILE_STATUS":
             return getFileStatus(args);
@@ -26,21 +26,34 @@ const getFileStatus = (path) => {
             console.log(path);
         }        
     }
-    let file_info = GetPendingFile(path);
 
-    if(file_info) {
-        if(file_info.tx_id == null) {
-            return "STATUS:NEW";
-        } else {
-            return "STATUS:SYNC";
+    let file_info = GetSyncedFileFromPath(path.replace(/\r?\n|\r/g, ""));
+
+    if(file_info) return `STATUS:OK:${path}`;
+
+    file_info = GetPendingFile(path.replace(/\r?\n|\r/g, ""));
+    
+    const synced_folders = GetSyncedFolders();
+
+    let parent_folder = null;
+    for(let i in synced_folders) {
+        const synced_folder = synced_folders[i];
+        if(path.indexOf(synced_folder) != -1) {
+            parent_folder = synced_folder;
         }
     }
 
-    file_info = GetSyncedFileFromPath(path);
+    if(file_info) {
+        if(file_info.tx_id == null) {
+            return `STATUS:NEW:${path}`;
+        } else {
+            return `STATUS:SYNC:${path}`;
+        }
+    }
 
-    if(file_info) return "STATUS:OK";
+    
 
-    return "STATUS:NOP";
+    return "STATUS:NOP\n";
 }
 
 
