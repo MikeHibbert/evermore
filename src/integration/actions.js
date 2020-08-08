@@ -1,7 +1,12 @@
-import { GetPendingFile, GetSyncedFileFromPath, GetSyncedFolders } from '../db/helpers';
+import { 
+    GetNewOrPendingFile, 
+    GetAllPendingFiles,
+    GetSyncedFileFromPath, 
+    GetSyncedFolders 
+} from '../db/helpers';
 import { settings } from '../config';
 
-// HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\ShellIconOverlayIdentifiers. 
+ 
 const processPipeMessage = (data) => {
     var parts = data.split(':');
     const command = parts[0];
@@ -12,11 +17,21 @@ const processPipeMessage = (data) => {
 
     console.log(`Command: ${command}, ${args}`);
 
+    let response = null;
     switch(command) {
         case "RETRIEVE_FILE_STATUS":
-            return getFileStatus(args);
+            if(args.indexOf('.') != -1) { // its a file and not a folder path
+                response = getFileStatus(args);
+            } else {
+                response = getFolderStatus(args);
+            }            
+            break;
+        default:
+            response = "STATUS:NOP\n";
             break;
     }
+
+    return response;
 }
 
 const getFileStatus = (path) => {
@@ -31,18 +46,8 @@ const getFileStatus = (path) => {
 
     if(file_info) return `STATUS:OK:${path}`;
 
-    file_info = GetPendingFile(path.replace(/\r?\n|\r/g, ""));
+    file_info = GetNewOrPendingFile(path.replace(/\r?\n|\r/g, ""));
     
-    const synced_folders = GetSyncedFolders();
-
-    let parent_folder = null;
-    for(let i in synced_folders) {
-        const synced_folder = synced_folders[i];
-        if(path.indexOf(synced_folder) != -1) {
-            parent_folder = synced_folder;
-        }
-    }
-
     if(file_info) {
         if(file_info.tx_id == null) {
             return `STATUS:NEW:${path}`;
@@ -51,11 +56,41 @@ const getFileStatus = (path) => {
         }
     }
 
-    
-
     return "STATUS:NOP\n";
 }
 
 
+const getFolderStatus = (path) => {
+    const synced_folders = GetSyncedFolders();
+
+    let is_root_folder = false;
+    for(let i in synced_folders) {
+        const synced_folder = synced_folders[i];
+        if(path.replace(/\r?\n|\r/g, "") == synced_folder) {
+            is_root_folder = true;
+        }
+    }
+
+    const pending_files = GetAllPendingFiles();
+    if(is_root_folder) {
+        if(pending_files.length > 0) {
+            return `STATUS:SYNC:${path}`;
+        } else {
+            return `STATUS:OK:${path}`;
+        }
+    } else {        
+        for(let i in pending_files) {
+            const pending_file_parent_folder = pending_files[i].path.replace(pending_files[i].file, '');
+
+            if(pending_file_parent_folder == path.replace(/\r?\n|\r/g, "")) {
+                return `STATUS:SYNC:${path}`;
+            }
+        }
+
+        return `STATUS:OK:${path}`;
+    }
+
+    return "STATUS:NOP\n";
+}
 
 export default processPipeMessage;

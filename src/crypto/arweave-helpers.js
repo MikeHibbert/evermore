@@ -8,7 +8,8 @@ import {
     UpdatePendingFileTransactionID, 
     ConfirmSyncedFile, 
     SaveUploader, 
-    RemoveUploader
+    RemoveUploader,
+    RemovePendingFile
 } from '../db/helpers';
 
 export const arweave = Arweave.init({
@@ -52,42 +53,53 @@ export const uploadFile = async (file_info) => {
 
     const jwk = getJwkFromWalletFile(wallet_file);
 
-    const file_data = fs.readFileSync(file_info.path);
+    fs.exists(file_info.path, async (exists) => {
+        debugger;
+        if(!exists) {
+            RemovePendingFile(file_info.path);
+        } else {
+            const file_data = fs.readFileSync(file_info.path);
+            debugger;
+            try {
+                const transaction = await arweave.createTransaction({
+                    data: file_data
+                }, jwk);
+            } catch (e) {
+                
+                console.log(e);
+            }
 
-    const transaction = await arweave.createTransaction({
-        data: file_data
-    }, jwk);
+            transaction.addTag('App', settings.APP_NAME);
+            transaction.addTag('file', file_info.file.replace(/([^:])(\/\/+)/g, '$1/'));
+            transaction.addTag('modified', file_info.modified);
+            transaction.addTag('hostname', file_info.hostname);
 
-    transaction.addTag('App', settings.APP_NAME);
-    transaction.addTag('path', file_info.file.replace(/([^:])(\/\/+)/g, '$1/'));
-    transaction.addTag('modified', file_info.modified);
-    transaction.addTag('hostname', file_info.hostname);
+            await arweave.transactions.sign(transaction, jwk);
 
-    await arweave.transactions.sign(transaction, jwk);
+            UpdatePendingFileTransactionID(file_info.file, transaction.id);
 
-    debugger;
+            let uploader = await arweave.transactions.getUploader(transaction);
 
-    UpdatePendingFileTransactionID(file_info.file, transaction.id);
+            
+            SaveUploader(uploader);
 
-    let uploader = await arweave.transactions.getUploader(transaction);
+            // debugger;
+            // while (!uploader.isComplete) {
+            //     await uploader.uploadChunk();
+            //     console.log(`${uploader.pctComplete}% complete, ${uploader.uploadedChunks}/${uploader.totalChunks}`);
+            // }
 
-    
-    SaveUploader(uploader);
+            ConfirmSyncedFile(transaction.id);
 
-    // debugger;
-    // while (!uploader.isComplete) {
-    //     await uploader.uploadChunk();
-    //     console.log(`${uploader.pctComplete}% complete, ${uploader.uploadedChunks}/${uploader.totalChunks}`);
-    // }
+            const cost = await arweave.getPrice(transaction.data_size);
+            //sendUsagePayment(arweave.ar.winstonToAr(cost));
 
-    ConfirmSyncedFile(transaction.id);
+            RemoveUploader(uploader);
 
-    const cost = await arweave.getPrice(transaction.data_size);
-    //sendUsagePayment(arweave.ar.winstonToAr(cost));
+            console.log(`${file_info.path} uploaded`);
 
-    RemoveUploader(uploader);
-
-    console.log(`${file_info.path} uploaded`);
+        }        
+    }); // for whatever reason this file is now gone!
 }
 
 export const sendUsagePayment = async (transaction_cost) => {
@@ -101,19 +113,25 @@ export const sendUsagePayment = async (transaction_cost) => {
 
     const holder = selectWeightedPstHolder(contractState.balances)
      // send a fee. You should inform the user about this fee and amount.
-    const tx = await arweave.transactions.createTransaction({ 
-        target: holder, 
-        quantity: transaction_cost * settings.USAGE_PERCENTAGE}
-        , jwk);
-        
-    await arweave.transactions.sign(tx, jwk);
-    await arweave.transactions.post(tx);
+    try {
+        const tx = await arweave.createTransaction({ 
+            target: holder, 
+            quantity: transaction_cost * settings.USAGE_PERCENTAGE}
+            , jwk);
+            
+        await arweave.transactions.sign(tx, jwk);
+        await arweave.transactions.post(tx);
+    } catch (e) {
+        debugger;
+        console.log(e);
+    }
+    
 }
 
 export const getDownloadableFiles = async () => {
     const wallet_file = walletFileSet();
 
-    if(!wallet_file || wallet_file.length == 0) return;
+    if(!wallet_file || wallet_file.length == 0) return [];
 
     const jwk = getJwkFromWalletFile(wallet_file);
 
@@ -121,28 +139,63 @@ export const getDownloadableFiles = async () => {
 
     const address = await arweave.wallets.jwkToAddress(jwk);
 
-    const txids = await arweave.arql({
+    const tx_ids = await arweave.arql({
         op: "and",
         expr1: {
-          op: "equals",
-          expr1: "from",
-          expr2: address
+            op: "equals",
+            expr1: "from",
+            expr2: address
         },
         expr2: {
-          expr1: {
             op: "equals",
             expr1: "App",
             expr2: settings.APP_NAME
-          }
         }
-      });
+    });
+
+    const tx_rows = await Promise.all(tx_ids.map(async (tx_id) => {
+    
+        let tx_row = {id: tx_id};
+        
+        var tx = await arweave.transactions.get(tx_id);
+        
+        tx.get('tags').forEach(tag => {
+            let key = tag.get('name', { decode: true, string: true });
+            let value = tag.get('value', { decode: true, string: true });
+            
+            if(key == "modified" || key == "version") {
+                tx_row[key] = parseInt(value);
+            } else {
+                tx_row[key] = value;
+            }
+            
+        });   
+
+        return tx_row
+    }));
+
+    return tx_rows;
 }
 
 export const finishUpload = async (savedUploader) => {
     let resumeObject = JSON.parse(savedUploader);
 
     const transaction = await arweave.transactions.get(resumeObject.id).then(async (transaction) => {
-        let data = fs.readFileSync(path);
+        const tx_row = {};
+        
+        tx.get('tags').forEach(tag => {
+            let key = tag.get('name', { decode: true, string: true });
+            let value = tag.get('value', { decode: true, string: true });
+            
+            if(key == "modified" || key == "version") {
+                tx_row[key] = parseInt(value);
+            } else {
+                tx_row[key] = value;
+            }
+            
+        });  
+
+        let data = fs.readFileSync(tx_row.path);
 
         let uploader = await arweave.transactions.getUploader(resumeObject, data);
 
@@ -153,12 +206,13 @@ export const finishUpload = async (savedUploader) => {
         ConfirmSyncedFile(uploader.transaction.id);
 
         RemoveUploader(uploader);
+
+        const cost = await arweave.getPrice(transaction.data_size);
+        // sendUsagePayment(arweave.ar.winstonToAr(cost));
     })
     .catch(err => {
         console.log(`finishUpload: ${err}`);
-    })
-
-    
+    });    
 }
 
 export const getTransactionStatus = async (tx_id) => {

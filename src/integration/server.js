@@ -10,6 +10,15 @@ import {GetSyncedFolders, GetNewPendingFiles, GetPendingFiles, GetSyncedFiles} f
 import { connected } from 'process';
 
 let server = null;
+let pipe_stream = null;
+
+export const sendMessage = (message, send_update_message) => {
+    pipe_stream.write(message);
+
+    if(send_update_message) {
+        pipe_stream.write("UPDATE_VIEW\n");
+    }    
+}
 
 const initNamePipe = () => { 
     let pipeAddress = null;
@@ -24,7 +33,9 @@ const initNamePipe = () => {
 
     }
 
-    const server = net.createServer(function(stream) {
+    server = net.createServer(function(stream) {
+        pipe_stream = stream;
+
         stream.on('data', function(data) {
             const response = processPipeMessage(data.toString());
 
@@ -76,29 +87,27 @@ const initNamePipe = () => {
 
     if(settings.PLATFORM == 'win32') {
         // need to kill explorer and start it again to ensure the Overlay provider talks to this process
-        (async () => {
-            const processes = await tasklist();
+        // (async () => {
+        //     const processes = await tasklist();
     
-            let proc = null;
-            for(let i in processes) {
-                if(processes[i].imageName.indexOf('explorer.exe') != -1) {
-                    proc = processes[i];
-                }
-            }
+        //     let proc = null;
+        //     for(let i in processes) {
+        //         if(processes[i].imageName.indexOf('explorer.exe') != -1) {
+        //             proc = processes[i];
+        //         }
+        //     }
     
-            if(proc) {
-                try {
-                    process.kill( proc.pid, 'SIGKILL');
-                    spawn("explorer.exe").unref();
-                } catch(e) {
-                    console.log(`Unable to kill ${proc.pid}:${proc.imageName}`);
-                }
+        //     if(proc) {
+        //         try {
+        //             process.kill( proc.pid, 'SIGKILL');
+        //             spawn("explorer.exe").unref();
+        //         } catch(e) {
+        //             console.log(`Unable to kill ${proc.pid}:${proc.imageName}`);
+        //         }
                 
     
-            }
-            
-            console.log(processes);
-        })();
+        //     }
+        // })();
     }    
 }
 

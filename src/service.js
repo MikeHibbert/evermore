@@ -6,11 +6,11 @@ import initNamePipe from './integration/server';
 
 InitDB();
 
-const systray = initSystemTray();
-
 const wallet_path = walletFileSet();
 
 initNamePipe();
+
+const systray = initSystemTray();
 
 if(wallet_path.length != 0) {
   const sync_folders = GetSyncedFolders();

@@ -5,8 +5,21 @@ import fileChangedHandler from './ChangeFile';
 import fileDeletedHandler from './DeleteFile';
 import dirAddedHandler from './AddDir';
 import dirDeletedHandler from './DeleteDir';
-import { GetNewPendingFiles, GetPendingFiles, GetUploaders, ResetPendingFile } from '../db/helpers';
-import { uploadFile, finishUpload, getTransactionStatus } from '../crypto/arweave-helpers';
+import { 
+    GetNewPendingFiles, 
+    GetPendingFiles, 
+    GetUploaders, 
+    RemoveUploader,
+    ResetPendingFile, 
+    ConfirmSyncedFileFromTransaction 
+} from '../db/helpers';
+import { 
+    uploadFile, 
+    finishUpload, 
+    getTransactionStatus, 
+    getDownloadableFiles 
+} from '../crypto/arweave-helpers';
+import { settings } from '../config';
 
 export const OnFileWatcherReady = () => {
     console.log('Initial scan complete. Ready for changes');
@@ -19,10 +32,12 @@ export const OnFileWatcherReady = () => {
         message: `${pending_files.length} have been added to the upload queue.`
       });
 
-    processAllOutstandingUploads();
-    processAllPendingFiles(pending_files);
+    getDownloadableFiles().then(existing_files => {
+        processAllOutstandingUploads(existing_files);
+        processAllPendingFiles(pending_files, existing_files);
+    });    
 
-    setTimeout(checkPendingFilesStatus, 30 * 1000);
+    setTimeout(checkPendingFilesStatus, settings.APP_CHECK_FREQUENCY * 1000);
 }
 
 const checkPendingFilesStatus = () => {
@@ -50,7 +65,7 @@ const checkPendingFilesStatus = () => {
     }
 }
 
-const processAllOutstandingUploads = () => {
+const processAllOutstandingUploads = (existing_files) => {
     return;
 
     const uploaders = GetUploaders();
@@ -63,7 +78,13 @@ const processAllOutstandingUploads = () => {
       });
 
     for(let i in uploaders) {
-        finishUpload(uploaders[i]);
+        const already_completed = transactionExistsOnTheBlockchain(uploaders[i].transaction.id, existing_files);
+
+        if(!already_completed) {
+            finishUpload(uploaders[i]);
+        } else {
+            RemoveUploader(uploaders[i]);
+        }        
     }
 
     notifier.notify({
@@ -72,16 +93,42 @@ const processAllOutstandingUploads = () => {
       });
 }
 
-const processAllPendingFiles = (pending_files) => {
-    return;
+const processAllPendingFiles = (pending_files, existing_files) => {
+    let uploaded_count = 0;
+
     for(let i in pending_files) {
-        uploadFile(pending_files[i]);
+        const txs = fileExistsOnTheBlockchain(pending_files[i], existing_files);
+        debugger;
+        if(txs.length == 0) {
+            uploadFile(pending_files[i]);
+            uploaded_count++;
+        } else {
+            ConfirmSyncedFileFromTransaction(pending_files[i].path, txs[0]); // only send one because duplicates is dev env, shouldnt be so in production!
+        }        
     }
 
     notifier.notify({
         title: 'Evermore Datastore',
         message: `${pending_files.length} have been uploaded and will be mined sortly.`
       });
+}
+
+const fileExistsOnTheBlockchain = (file_info, existing_files) => {
+    const existing = existing_files.filter(
+        tx => {
+            return (file_info.file == tx.file || file_info.file == tx.path) && file_info.modified == tx.modified 
+        }
+    );
+
+    return existing;
+}
+
+const transactionExistsOnTheBlockchain = (tx_id, existing_files) => {
+    const existing = existing_files.filter(
+        tx => { return tx.id == tx_id }
+    );
+
+    return existing.length > 0;
 }
 
 export const InitFileWatcher = (sync_folders) => {

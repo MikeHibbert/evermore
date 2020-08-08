@@ -52,7 +52,7 @@ export const resetWalletFilePath = () => {
     db.unset('wallet_file').write();
 }
 
-export const AddPendingFile = (tx_id, file) => {
+export const AddPendingFile = (tx_id, file, version) => {
     const sync_folders = GetSyncedFolders();
 
     let relative_path = file;
@@ -71,6 +71,7 @@ export const AddPendingFile = (tx_id, file) => {
             tx_id: tx_id,
             file: relative_path,
             path: file,
+            version: version,
             modified: getFileUpdatedDate(file),
             hostname: os.hostname()
         }).write();
@@ -92,10 +93,10 @@ export const ResetPendingFile = (file, modified) => {
     return db.get('pending').find({file: file}).value();
 }
 
-export const RemovePendingFile = (tx_id) => {
+export const RemovePendingFile = (path) => {
     db.get('pending')
         .remove({
-            tx_id: tx_id
+            path: path
         }).write();
 }
 
@@ -109,6 +110,16 @@ export const GetPendingFiles = () => {
     return db.get('pending')
         .value()
         .filter((file_info) => file_info.tx_id != null);
+}
+
+export const GetNewOrPendingFile = () => {
+    return db.get('pending')
+        .value();
+}
+
+export const GetAllPendingFiles = () => {
+    return db.get('pending')
+        .value();
 }
 
 export const GetPendingFile = (path) => {
@@ -131,6 +142,21 @@ export const ConfirmSyncedFile = (tx_id) => {
         .write();
 
     db.get('pending').remove({tx_id: tx_id}).write();
+}
+
+export const ConfirmSyncedFileFromTransaction = (path, transaction) => {
+    db.get('synced_files')
+        .push({
+            tx_id: transaction.id,
+            file: transaction.file,
+            path: path,
+            version: transaction.version,
+            modified: transaction.modified,
+            hostname: transaction.hostname
+        })
+        .write();
+
+    db.get('pending').remove({tx_id: transaction.id}).write();
 }
 
 export const GetSyncedFiles = () => {
