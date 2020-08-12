@@ -1,0 +1,161 @@
+.banner-search-area .search-banner .search-submit input:hover {
+    background: #42e8e0;
+}
+.home-version-two .banner-search-area .search-inner, .shape-version .banner-search-area .search-inner{
+    box-shadow: 15px 25px 100px 0px rgba(45, 19, 106, 0.1) !important;
+}
+.shape-version .location-section .location-map .map-area ul li, .vps-hosting-version .location-section .location-map .map-area ul li {
+    color: #333;
+}
+.shape-version .price_shepe .pricing-main-area .price-deck a:hover {
+    color: #2d136a !important;
+}
+.vps-hosting-version .location-section {
+    background: #f2f7ff;
+}
+.home-version-angel .pricing-section .pricing-main-area .price-deck .pricing-main .price-body {
+    margin-bottom: 30px;
+}
+.home-version-angel header .banner-body-content .angel-btn a {
+    padding: 18px 35px;
+}
+.home-version-four header .banner-body .banner-body-content a {
+    border: 1px solid #fff;
+}
+.cloud-hosting .cloud-content .cloud-btn ul li a {
+    border-radius: 3px;
+}
+.home-version-three .vh3-vh4 .owl-prev, .home-version-three .vh3-vh4 .owl-next, .home-version-four .vh3-vh4 .owl-prev, .home-version-four .vh3-vh4 .owl-next, .shape-version .vh3-vh4 .owl-prev, .shape-version .vh3-vh4 .owl-next, .vps-hosting-version .vh3-vh4 .owl-prev, .vps-hosting-version .vh3-vh4 .owl-next {
+    box-shadow: 4px 7px 95px 0px rgba(0, 0, 0, 0.05);
+}
+.contat-version .contact-form .submit-btn input {
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+    padding: 18px 25px;
+    border: none;
+    cursor: pointer;
+    background: #42e8e0;
+    margin-top: 25px;
+    display: inline-block;
+    transition: all 0.3s ease-in-out;
+}
+.contat-version .contact-form input[type=text]:focus {
+    box-shadow: 0px 0px 30px 0px rgba(45, 19, 106, 0.1) !important;
+}
+.contat-version .contact-form textarea {
+    outline: none;
+    float: left;
+}
+.contat-version .contact-form form .input-c {
+    border: 1px solid #ddd;
+}
+/* WHMCS Page Style*/
+.whmcs-content{
+	background: #fff;
+}
+.whmcs-content .navbar-nav {
+    display: flow-root;
+}
+.whmcs-content .form-control {
+    font-size: 14px;
+}
+.whmcs-content .btn {
+    padding: 8px 22px;
+    font-size: 14px;
+}
+.whmcs-content .caret {
+    display: none;
+}
+.whmcs-content .dropdown-menu li{
+ display: inline;
+}
+.whmcs-content .dropdown-menu>li>a{
+    font-size: 14px;
+}
+.whmcs-content textarea:focus, .whmcs-content input:focus{
+    outline:none; 
+}
+.whmcs-content .input-group-addon:not(:last-child) {
+    border-right: 0;
+    width: 60px;
+    font-size: 12px;
+}
+.whmcs-content .language-popover .popover-content li a {
+    color: #333;
+}
+.whmcs-content .panel-heading+.list-group .list-group-item:first-child {
+    color: #333;
+    font-size: 14px;
+}
+.whmcs-content .panel>.list-group .list-group-item, .panel>.panel-collapse>.list-group .list-group-item {
+    font-size: 14px;
+}
+.whmcs-content label {
+    color: #333;
+}
+.whmcs-content select.form-control:not([size]):not([multiple]) {
+    height: calc(3.25rem + 2px);
+}
+.whmcs-content .breadcrumb>.active{
+    font-size: 13px;
+}
+.whmcs-content .breadcrumb>li{
+    font-size: 13px;
+}
+.whmcs-content #top-nav a.quick-nav {
+    font-size: 13px;
+}
+.nav>li>a:focus, .nav>li>a:hover {
+    background-color: transparent;
+}
+.whmcs-content section#home-banner h2, .whmcs-content .domainchecker-homepage-captcha p, .whmcs-content .home-shortcuts p {
+    color: #fff;
+    margin: 35px 0px;
+}
+.whmcs-content .product-desc li {
+    color: #333;
+    line-height: 25px;
+}
+.whmcs-content div.domainresults table tr td {
+    color: #777;
+    font-size: 16px;
+}
+.whmcs-content a.list-group-item.active, a.list-group-item.active:hover, a.list-group-item.active:focus {
+    background-color: #007bff;
+    color: #fff !important;
+}
+.table>tbody>tr>td, .table>tbody>tr>th, .table>tfoot>tr>td, .table>tfoot>tr>th, .table>thead>tr>td, .table>thead>tr>th {
+    color: #333;
+}
+.whmcs-content .domain-checker-unavailable, .whmcs-content .domain-checker-available {
+    color: #007bff;
+    font-size: 20px;
+}
+.whmcs-content .label-success {
+    background-color: #007bff;
+}
+.whmcs-content .domain-bulk-options-box {
+    top: 14px;
+    right: 48px;
+}
+.whmcs-content .domain-checker-container {
+    background-color: #0dbbe6;
+    background: linear-gradient(50deg, #342fd2 43%, #0dbbe6 100%);
+}
+.whmcs-content section#main-menu, .whmcs-content .navbar-main {
+    background: linear-gradient(50deg, #0dbbe6 21%, #0dbbe6 100%) !important;
+}
+.whmcs-content #order-standard_cart {
+    color: #333;
+}
+.whmcs-content li#Secondary_Navbar-Account {
+    position: relative;
+}
+.whmcs-content .navbar-nav .dropdown-menu {
+    position: absolute;
+    float: none;
+}
+.home-version-one_u .whmcs-content .product footer {
+    background-image: none;
+}
