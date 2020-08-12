@@ -145,12 +145,16 @@ export const ConfirmSyncedFile = (tx_id) => {
 }
 
 export const ConfirmSyncedFileFromTransaction = (path, transaction) => {
+    if(GetSyncedFileFromPath(path)) {
+        return;
+    }
+    
     db.get('synced_files')
         .push({
             tx_id: transaction.id,
             file: transaction.file,
             path: path,
-            version: transaction.version,
+            version: transaction.version == undefined ? 1 : transaction.version,
             modified: transaction.modified,
             hostname: transaction.hostname
         })

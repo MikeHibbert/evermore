@@ -27,17 +27,20 @@ export const OnFileWatcherReady = () => {
 
     const pending_files = GetNewPendingFiles();
 
-    notifier.notify({
-        title: 'Evermore Datastore',
-        message: `${pending_files.length} have been added to the upload queue.`
-      });
+    if(pending_files.length > 0) {
+        notifier.notify({
+            title: 'Evermore Datastore',
+            message: `${pending_files.length} have been added to the upload queue.`
+          });
+    }
+    
 
     getDownloadableFiles().then(existing_files => {
         processAllOutstandingUploads(existing_files);
         processAllPendingFiles(pending_files, existing_files);
     });    
 
-    setTimeout(checkPendingFilesStatus, settings.APP_CHECK_FREQUENCY * 1000);
+    // setTimeout(checkPendingFilesStatus, settings.APP_CHECK_FREQUENCY * 1000);
 }
 
 const checkPendingFilesStatus = () => {
@@ -98,7 +101,7 @@ const processAllPendingFiles = (pending_files, existing_files) => {
 
     for(let i in pending_files) {
         const txs = fileExistsOnTheBlockchain(pending_files[i], existing_files);
-        debugger;
+
         if(txs.length == 0) {
             uploadFile(pending_files[i]);
             uploaded_count++;
@@ -107,10 +110,13 @@ const processAllPendingFiles = (pending_files, existing_files) => {
         }        
     }
 
-    notifier.notify({
-        title: 'Evermore Datastore',
-        message: `${pending_files.length} have been uploaded and will be mined sortly.`
-      });
+    if(uploaded_count > 0) {
+        notifier.notify({
+            title: 'Evermore Datastore',
+            message: `${pending_files.length} have been uploaded and will be mined sortly.`
+          });
+    }
+    
 }
 
 const fileExistsOnTheBlockchain = (file_info, existing_files) => {

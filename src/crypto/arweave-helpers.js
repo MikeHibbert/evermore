@@ -71,8 +71,10 @@ export const uploadFile = async (file_info) => {
 
             transaction.addTag('App', settings.APP_NAME);
             transaction.addTag('file', file_info.file.replace(/([^:])(\/\/+)/g, '$1/'));
+            transaction.addTag('path', file_info.path.replace(/([^:])(\/\/+)/g, '$1/'));
             transaction.addTag('modified', file_info.modified);
             transaction.addTag('hostname', file_info.hostname);
+            transaction.addTag('version', file_info.version);
 
             await arweave.transactions.sign(transaction, jwk);
 
@@ -169,7 +171,11 @@ export const getDownloadableFiles = async () => {
                 tx_row[key] = value;
             }
             
-        });   
+        });  
+        
+        if(!tx_row.hasOwnProperty('file')) {
+            tx_row['file'] = tx_row['path'];
+        }
 
         return tx_row
     }));
