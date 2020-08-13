@@ -99,6 +99,10 @@ export const getFiles = async (address) => {
         }      
     }
 
+    if(!folders.hasOwnProperty("")) {
+        folders[""] = {name: "", childeren: [], index: 0, type: "folder"};
+    }
+
     return folders;
 }
 
