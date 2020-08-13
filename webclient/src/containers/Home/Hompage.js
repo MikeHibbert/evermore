@@ -284,7 +284,7 @@ class HomePage extends Component {
                     <div className="col-12 col-md-6 col-lg-4">
                         <div className="footer-title">
                             <img src="images/evermore-logo-light.png" alt="" className="f_logo" />
-                            <p>We make registering, hosting, and managing domains for yourself or others easy. Because the internet needs people. Bring to the table win-win survival strategies.</p>
+                            <p>We make storing and retreiving your data simple and super cost effective because the world is full of data. We bring win-win data storage solutions to everyone.</p>
                         </div>
                     </div>
                     <div className="col-12 col-md-6 col-lg-3">
