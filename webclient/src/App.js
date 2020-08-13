@@ -5,14 +5,11 @@ import PageHeader from './components/PageHeader/PageHeader';
 import Menu from './components/MainMenu/Menu';
 import Login from './components/auth/Login';
 import Logout from './components/auth/Logout';
-import Inbox from './containers/Inbox/Inbox';
 import RecentActivity from './containers/Files/RecentActivity';
 import FoldersView from './containers/Files/Folders';
-import Message from './containers/message/Message';
-import NewMessage from './containers/message/NewMessage';
-import MessageReply from './containers/message/MessageReply';
 import SearchPage from './containers/Search/SearchPage';
 import HomePage from './containers/Home/Hompage';
+import Downloads from './containers/Home/Downloads';
 import {getFiles} from './containers/Files/helpers';
 import {getName} from './components/Message/helpers';
 import arweave from './arweave-config';
@@ -285,6 +282,7 @@ class App extends Component {
     if(this.state.isAuthenticated == false) {
       routes = [
         <Route key='home' path="/" exact component={() => <HomePage wallet_address={this.state.wallet_address} jwk={this.state.jwk} />} />,
+        <Route key='downloads' path="/downloads" exact component={() => <Downloads wallet_address={this.state.wallet_address} jwk={this.state.jwk} />} />,
         <Route key='login' path="/login" exact component={() => <Login expandContentArea={() => {this.expandContentArea()}} setWalletAddress={this.setWalletAddress.bind(this)} />} />,
       ];
 

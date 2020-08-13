@@ -252,7 +252,7 @@ class HomePage extends Component {
                     <div className="col-md-5">
                         <div className="cloud-content">
                             <h2>Desktop integration</h2>
-                            <p><Link to="/download" style={{display: "inline-block"}}>Download</Link> one of our desktop apps to begin saving your data to the blockchain.</p>
+                            <p><Link to="/downloads" style={{display: "inline-block"}}>Download</Link> one of our desktop apps to begin saving your data to the blockchain.</p>
                             <p>Your data is stored in the "PermaWeb" which means it can't ever be deleted or taken down.</p>
                             <p>In addition we keep a full version history so that you can always get you hands on older versions of your data at any point</p>
                         </div>
