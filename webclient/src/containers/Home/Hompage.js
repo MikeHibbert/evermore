@@ -101,7 +101,7 @@ class HomePage extends Component {
                             <div className="banner-body-content">
                                 <h2>Your data stored ... <br/>For Evermore!</h2>
                                 <p>Never pay to access your data again. Upload once. Access forever.</p>
-                                <Link to='/downloads' className="g-btn">Get Started</Link>
+                                <Link to='/login' className="g-btn">Get Started</Link>
                             </div>
                         </div>
                         <div className="col-md-6">
