@@ -1,6 +1,7 @@
 import React, {Component} from 'react';
 import Moment from 'react-moment';
 import { Link } from 'react-router-dom';
+import arweave from '../../arweave-config';
 
 class FileTableRow extends Component  {
     state = {
@@ -37,12 +38,33 @@ class FileTableRow extends Component  {
         }
     }
 
+    downloadTransaction() {
+        const that = this;
+
+        this.toggleOptions(); // close the options dialog
+
+        const transaction_url = `https://www.arweave.net/${this.props.file_info.id}`; 
+
+        fetch(transaction_url)
+			.then(response => { 
+                response.blob().then(blob => {
+					let url = window.URL.createObjectURL(blob);
+					let a = document.createElement('a');
+                    a.href = url;
+					a.download = that.props.file_info.name;
+					a.click();
+				});
+            });
+    }
+
     render() {
 
         const parts = this.props.file_info.path.split("\\");
         const filename = parts[parts.length - 1];
 
         const last_modified = <Moment format={"DD/MM/YYYY HH:mm"}>{this.props.file_info.modified}</Moment>;
+
+        
 
         return (
             <tr>
@@ -76,7 +98,7 @@ class FileTableRow extends Component  {
                             
                             <div className="scrollable-vertical max-h-50vh">
 
-                                <a className="dropdown-item text-truncate" href="#">
+                                <a className="dropdown-item text-truncate" onClick={() => { this.downloadTransaction() }}>
                                     <i className="fa fa-download"></i>
                                     Download
                                 </a>
