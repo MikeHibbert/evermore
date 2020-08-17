@@ -8,27 +8,47 @@ import { settings } from '../config';
 
  
 const processPipeMessage = (data) => {
-    var parts = data.split(':');
-    const command = parts[0];
+    var commands = data.split('\n');
+    
+    let response = "";
 
-    parts = parts.filter((item) => item != command);
+    for(let i in commands) {
+        const parts = commands[i].split(':');
+        const command = parts[0];
 
-    const args = parts.join(':');
+        parts = parts.filter((item) => item != command);
+    
+        var command_value = parts.join(':');
 
-    console.log(`Command: ${command}, ${args}`);
+        console.log(`Command: ${command}, ${command_value}`);
 
-    let response = null;
-    switch(command) {
-        case "RETRIEVE_FILE_STATUS":
-            if(args.indexOf('.') != -1) { // its a file and not a folder path
-                response = getFileStatus(args);
-            } else {
-                response = getFolderStatus(args);
-            }            
-            break;
-        default:
-            response = "STATUS:NOP\n";
-            break;
+        switch(command) {
+            case "RETRIEVE_FILE_STATUS":
+
+                if(command_value.indexOf('.') != -1) { // its a file and not a folder path
+                    response = response + getFileStatus(command_value);
+                } else {
+                    response = response + getFolderStatus(command_value);
+                }            
+                break;
+            case "GET_STRINGS":
+                if(command_value == "CONTEXT_MENU_TITLE") {
+                    response = response + "STRING:CONTEXT_MENU_TITLE:Evermore\n";
+                }
+                break;
+            case "GET_MENU_ITEMS":
+                response = response + getFileContextMenuItems(command_value);
+
+                break;
+            case "SHARE":
+                debugger;
+                response = "SHARED:OK\n";
+                break;
+            default:
+                response = response + `STATUS:NOP:${command_value}\n`;
+                break;
+        }
+
     }
 
     return response;
@@ -42,21 +62,35 @@ const getFileStatus = (path) => {
         }        
     }
 
-    let file_info = GetSyncedFileFromPath(path.replace(/\r?\n|\r/g, ""));
+    let file_info = GetSyncedFileFromPath(path);
 
-    if(file_info) return `STATUS:OK:${path}`;
+    if(file_info) return `STATUS:OK:${path}\n`;
 
-    file_info = GetNewOrPendingFile(path.replace(/\r?\n|\r/g, ""));
+    file_info = GetNewOrPendingFile(path);
     
     if(file_info) {
         if(file_info.tx_id == null) {
-            return `STATUS:NEW:${path}`;
+            return `STATUS:NEW:${path}\n`;
         } else {
-            return `STATUS:SYNC:${path}`;
+            return `STATUS:SYNC:${path}\n`;
         }
     }
 
-    return "STATUS:NOP\n";
+    return `STATUS:NOP:${path}\n`;
+}
+
+const getFileContextMenuItems = (path) => {
+    var responses = ""; // MENU_ITEM:
+
+    let file_info = GetSyncedFileFromPath(path);
+
+    if(file_info) {
+        responses = responses + `MENU_ITEM:SHARE::Share File\n`;
+    }
+
+    responses = responses + "GET_MENU_ITEMS:END\n";
+
+    return responses;
 }
 
 
@@ -66,7 +100,7 @@ const getFolderStatus = (path) => {
     let is_root_folder = false;
     for(let i in synced_folders) {
         const synced_folder = synced_folders[i];
-        if(path.replace(/\r?\n|\r/g, "") == synced_folder) {
+        if(path == synced_folder) {
             is_root_folder = true;
         }
     }
@@ -74,23 +108,23 @@ const getFolderStatus = (path) => {
     const pending_files = GetAllPendingFiles();
     if(is_root_folder) {
         if(pending_files.length > 0) {
-            return `STATUS:SYNC:${path}`;
+            return `STATUS:SYNC:${path}\n`;
         } else {
-            return `STATUS:OK:${path}`;
+            return `STATUS:OK:${path}\n`;
         }
     } else {        
         for(let i in pending_files) {
             const pending_file_parent_folder = pending_files[i].path.replace(pending_files[i].file, '');
 
-            if(pending_file_parent_folder == path.replace(/\r?\n|\r/g, "")) {
-                return `STATUS:SYNC:${path}`;
+            if(pending_file_parent_folder == path) {
+                return `STATUS:SYNC:${path}\n`;
             }
         }
 
-        return `STATUS:OK:${path}`;
+        return `STATUS:OK:${path}\n`;
     }
 
-    return "STATUS:NOP\n";
+    return `STATUS:NOP:${path}\n`;
 }
 
 export default processPipeMessage;

@@ -8,74 +8,85 @@
    xmlns:xlink="http://www.w3.org/1999/xlink"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="210mm"
-   height="297mm"
-   viewBox="0 0 210 297"
-   version="1.1"
+   sodipodi:docname="logo.svg"
+   inkscape:version="1.0 (4035a4fb49, 2020-05-01)"
    id="svg8"
-   inkscape:version="1.0 (9f2f71dc58, 2020-08-02)"
-   sodipodi:docname="logo.svg">
+   version="1.1"
+   viewBox="0 0 210 297"
+   height="297mm"
+   width="210mm">
   <defs
      id="defs2">
     <rect
-       x="-7.070524"
-       y="20.285999"
-       width="282.49871"
+       id="rect22"
        height="66.115612"
-       id="rect22" />
+       width="282.49871"
+       y="20.285999"
+       x="-7.070524" />
     <linearGradient
-       inkscape:collect="always"
-       id="linearGradient851">
+       id="linearGradient851"
+       inkscape:collect="always">
       <stop
-         style="stop-color:#55b3ef;stop-opacity:1"
+         id="stop847"
          offset="0"
-         id="stop847" />
+         style="stop-color:#55b3ef;stop-opacity:1" />
       <stop
-         style="stop-color:#116ea9;stop-opacity:0;"
+         id="stop849"
          offset="1"
-         id="stop849" />
+         style="stop-color:#116ea9;stop-opacity:0;" />
     </linearGradient>
     <linearGradient
-       inkscape:collect="always"
-       xlink:href="#linearGradient851"
-       id="linearGradient853"
-       x1="40.777596"
-       y1="32.403172"
-       x2="-57.462948"
+       gradientTransform="matrix(2.2071163,0,0,2.2071163,1274.2042,853.98603)"
+       gradientUnits="userSpaceOnUse"
        y2="127.01658"
-       gradientUnits="userSpaceOnUse" />
+       x2="-57.462948"
+       y1="32.403172"
+       x1="40.777596"
+       id="linearGradient853"
+       xlink:href="#linearGradient851"
+       inkscape:collect="always" />
+    <linearGradient
+       y2="127.01658"
+       x2="-57.462948"
+       y1="32.403172"
+       x1="40.777596"
+       gradientTransform="matrix(50.419107,0,0,48.721961,-477.16183,-1559.5255)"
+       gradientUnits="userSpaceOnUse"
+       id="linearGradient847"
+       xlink:href="#linearGradient851"
+       inkscape:collect="always" />
   </defs>
   <sodipodi:namedview
-     id="base"
-     pagecolor="#ffffff"
-     bordercolor="#666666"
-     borderopacity="1.0"
-     inkscape:pageopacity="0.0"
-     inkscape:pageshadow="2"
-     inkscape:zoom="0.7"
-     inkscape:cx="344.91896"
-     inkscape:cy="530.97816"
-     inkscape:document-units="mm"
-     inkscape:current-layer="layer1"
-     showgrid="false"
-     inkscape:window-width="1920"
-     inkscape:window-height="1016"
-     inkscape:window-x="0"
-     inkscape:window-y="1107"
-     inkscape:window-maximized="1"
-     showguides="true"
+     inkscape:document-rotation="0"
      inkscape:guide-bbox="true"
-     inkscape:document-rotation="0">
+     showguides="true"
+     inkscape:window-maximized="1"
+     inkscape:window-y="-8"
+     inkscape:window-x="1912"
+     inkscape:window-height="1017"
+     inkscape:window-width="1920"
+     showgrid="false"
+     inkscape:current-layer="layer1"
+     inkscape:document-units="mm"
+     inkscape:cy="2862.8234"
+     inkscape:cx="1911.9651"
+     inkscape:zoom="0.12374369"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     borderopacity="1.0"
+     bordercolor="#666666"
+     pagecolor="#ffffff"
+     id="base">
     <sodipodi:guide
-       position="108.51143,264.59683"
-       orientation="0,1"
+       inkscape:locked="false"
        id="guide865"
-       inkscape:locked="false" />
-    <sodipodi:guide
-       position="33.40869,236.80081"
        orientation="0,1"
+       position="108.51143,264.59683" />
+    <sodipodi:guide
+       inkscape:locked="false"
        id="guide867"
-       inkscape:locked="false" />
+       orientation="0,1"
+       position="33.40869,236.80081" />
   </sodipodi:namedview>
   <metadata
      id="metadata5">
@@ -90,51 +101,60 @@
     </rdf:RDF>
   </metadata>
   <g
-     inkscape:groupmode="layer"
-     id="layer2"
      inkscape:label="Layer 2"
-     sodipodi:insensitive="true">
+     id="layer2"
+     inkscape:groupmode="layer">
     <rect
-       style="opacity:0.98000004;fill:#000000;fill-opacity:1;stroke-width:0.26458332"
+       inkscape:export-ydpi="33.739517"
+       inkscape:export-xdpi="33.739517"
+       inkscape:export-filename="C:\Users\hibbe\Pictures\evermore-desktop.png"
+       y="-22.011906"
+       x="-101.298"
+       height="1080"
+       width="1920"
        id="rect874"
-       width="562.42859"
-       height="180.67261"
-       x="-101.29762"
-       y="-22.011906" />
+       style="opacity:0.98;fill:#002955;fill-opacity:1;stroke-width:1.19521" />
   </g>
   <g
-     inkscape:label="Layer 1"
+     id="layer1"
      inkscape:groupmode="layer"
-     id="layer1">
+     inkscape:label="Layer 1">
     <path
-       style="fill:url(#linearGradient853);fill-opacity:1;stroke-width:0.00784103"
-       d="m 27.794881,34.625591 c 0.20166,-0.179104 0.263202,-0.232342 0.366369,-0.316944 1.574376,-1.291149 3.460907,-1.841908 5.36082,-1.565053 1.286525,0.187472 2.506712,0.738533 3.614299,1.632293 0.363642,0.293434 0.794453,0.708316 1.067647,1.028155 0.845347,0.989677 1.394413,2.120828 1.639709,3.378017 0.09394,0.481479 0.132487,0.887141 0.132343,1.392886 -1.18e-4,0.409013 -0.01901,0.680481 -0.07364,1.058106 -0.200013,1.382639 -0.794364,2.693669 -1.72085,3.795877 -0.327342,0.389429 -0.713819,0.770017 -1.065763,1.049521 -0.690542,0.548412 -1.460125,0.957009 -2.381162,1.264237 -1.156217,0.385675 -2.521732,0.591414 -4.336584,0.65338 -0.503232,0.01718 -0.783314,0.0217 -1.877588,0.0303 -0.399693,0.0031 -0.749185,0.0063 -0.77665,0.007 l -0.04994,0.0013 -0.0031,0.02562 c -0.0017,0.01409 -0.0077,0.334016 -0.01345,0.710949 -0.02557,1.686309 -0.04605,2.252731 -0.109987,3.04193 -0.177389,2.189572 -0.662112,3.808562 -1.549625,5.175787 -0.507701,0.782121 -1.188142,1.510315 -1.944305,2.080757 -1.868081,1.409264 -4.132258,1.798988 -6.286415,1.082056 -0.900371,-0.299655 -1.746496,-0.778928 -2.531161,-1.433734 -0.220261,-0.183809 -0.356913,-0.309178 -0.581206,-0.533228 -0.28366,-0.283349 -0.482897,-0.51173 -0.703815,-0.806813 -1.388998,-1.855233 -1.813828,-4.240452 -1.153402,-6.475821 0.284639,-0.963434 0.773712,-1.879221 1.432194,-2.681787 0.311653,-0.379851 0.682671,-0.757031 1.017267,-1.034179 1.011948,-0.838213 2.2557,-1.395079 3.810602,-1.706124 0.836701,-0.167376 1.786197,-0.268838 2.900094,-0.309902 0.464443,-0.01712 0.860221,-0.02234 1.797698,-0.02372 l 1.026815,-0.0015 0.0019,-0.289427 c 0.01328,-2.020865 0.03791,-2.776801 0.120449,-3.697002 0.20851,-2.324586 0.817061,-4.068279 1.916369,-5.491013 0.09314,-0.120542 0.204851,-0.256608 0.334961,-0.407996 0.06952,-0.08088 0.54779,-0.570681 0.619061,-0.633984 z m 1.410156,2.835078 c -0.762587,0.937801 -1.20841,2.096028 -1.421244,3.692322 -0.122397,0.917983 -0.159565,1.946378 -0.134053,3.709057 l 0.0046,0.317474 0.14156,-0.005 c 0.224075,-0.0079 0.602956,-0.01399 1.284847,-0.0207 0.929805,-0.0091 1.312247,-0.01817 1.749368,-0.04127 1.334711,-0.07056 2.335523,-0.267959 3.185902,-0.628399 1.170786,-0.496244 2.06393,-1.355951 2.526173,-2.4316 0.30521,-0.710226 0.41548,-1.500463 0.317433,-2.274828 -0.131806,-1.040996 -0.620527,-1.989244 -1.387915,-2.692924 -0.226482,-0.20768 -0.397411,-0.343269 -0.622523,-0.493815 -0.880689,-0.588972 -1.876223,-0.835684 -2.876421,-0.712832 -0.05869,0.0072 -0.180599,0.02772 -0.270907,0.04557 -0.704046,0.139192 -1.349179,0.459867 -1.938916,0.963772 -0.106301,0.09083 -0.467111,0.461474 -0.5579,0.573168 z M 16.57766,50.088256 c -0.351994,0.438597 -0.59828,0.888572 -0.764869,1.397465 -0.348364,1.064181 -0.271997,2.240846 0.211533,3.25925 0.163607,0.344589 0.365763,0.656531 0.627899,0.968901 0.09049,0.107827 0.370402,0.387817 0.490618,0.49075 0.509144,0.43595 1.035272,0.737389 1.613235,0.924297 0.751652,0.243081 1.543777,0.265526 2.293623,0.06499 0.523328,-0.139956 1.048304,-0.405704 1.501872,-0.760262 0.20727,-0.162026 0.498642,-0.440074 0.661036,-0.630822 0.550474,-0.646562 0.934018,-1.387748 1.200596,-2.320128 0.28776,-1.00646 0.423642,-2.19239 0.433617,-3.78446 0.0023,-0.358357 -0.0038,-1.380825 -0.0095,-1.609508 l -0.0023,-0.09197 -0.102801,0.004 c -0.203228,0.0079 -0.603724,0.01469 -1.326414,0.02236 -1.029534,0.01092 -1.274023,0.01668 -1.740797,0.04102 -1.808697,0.09429 -3.069232,0.434751 -4.058196,1.096099 -0.178852,0.119598 -0.31994,0.227972 -0.523683,0.40224 -0.07856,0.0672 -0.435069,0.437963 -0.505509,0.525758 z"
-       id="path826"
+       inkscape:export-ydpi="33.739517"
+       inkscape:export-xdpi="33.739517"
+       inkscape:export-filename="C:\Users\hibbe\Pictures\evermore-desktop.png"
        inkscape:connector-curvature="0"
-       inkscape:export-filename="/home/mike/Documents/reactjs/weavemail_2/public/images/evermore-logo.png"
-       inkscape:export-xdpi="33.739517"
-       inkscape:export-ydpi="33.739517" />
+       id="path826"
+       d="m 1335.5507,930.40873 c 0.4451,-0.3953 0.5809,-0.5128 0.8086,-0.69953 3.4748,-2.84972 7.6386,-4.06531 11.832,-3.45425 2.8395,0.41377 5.5326,1.63002 7.9771,3.60266 0.8026,0.64764 1.7535,1.56333 2.3565,2.26925 1.8657,2.18434 3.0776,4.68092 3.619,7.45568 0.2073,1.06268 0.2924,1.95802 0.2921,3.07426 -3e-4,0.90274 -0.042,1.5019 -0.1625,2.33536 -0.4415,3.05165 -1.7533,5.94525 -3.7982,8.37795 -0.7224,0.85951 -1.5754,1.69951 -2.3522,2.31641 -1.5241,1.21041 -3.2227,2.11223 -5.2555,2.79032 -2.5519,0.85123 -5.5658,1.30532 -9.5714,1.44209 -1.1107,0.0379 -1.7288,0.0479 -4.144,0.0669 -0.8822,0.007 -1.6536,0.0139 -1.7142,0.0154 l -0.1102,0.003 -0.01,0.0566 c 0,0.0311 -0.017,0.73721 -0.03,1.56914 -0.056,3.72188 -0.1016,4.97204 -0.2428,6.7139 -0.3915,4.83264 -1.4613,8.40593 -3.4202,11.42356 -1.1205,1.72623 -2.6223,3.33344 -4.2913,4.59246 -4.123,3.1104 -9.1203,3.9706 -13.8748,2.3882 -1.9872,-0.6613 -3.8547,-1.7192 -5.5866,-3.16438 -0.4861,-0.40569 -0.7877,-0.68239 -1.2828,-1.1769 -0.626,-0.62538 -1.0658,-1.12945 -1.5534,-1.78073 -3.0656,-4.09471 -4.0033,-9.35917 -2.5457,-14.29289 0.6283,-2.12641 1.7077,-4.14766 3.1611,-5.91901 0.6878,-0.83838 1.5067,-1.67086 2.2452,-2.28256 2.2335,-1.85003 4.9786,-3.0791 8.4104,-3.76561 1.8467,-0.36942 3.9424,-0.59336 6.4009,-0.68399 1.0251,-0.0378 1.8986,-0.0493 3.9677,-0.0524 l 2.2663,-0.003 v -0.6388 c 0.029,-4.46028 0.084,-6.12872 0.2658,-8.15971 0.4603,-5.13064 1.8034,-8.97917 4.2297,-12.11931 0.2056,-0.26605 0.4521,-0.56636 0.7393,-0.90049 0.1534,-0.17851 1.209,-1.25956 1.3663,-1.39928 z m 3.1124,6.25735 c -1.6831,2.06983 -2.6671,4.62618 -3.1369,8.14938 -0.2701,2.0261 -0.3522,4.29589 -0.2959,8.18632 l 0.01,0.70071 0.3124,-0.011 c 0.4946,-0.0174 1.3308,-0.0309 2.8358,-0.0457 2.0522,-0.0201 2.8963,-0.0401 3.8611,-0.0911 2.9459,-0.15574 5.1548,-0.59142 7.0317,-1.38695 2.584,-1.09527 4.5553,-2.99275 5.5755,-5.36683 0.6737,-1.56755 0.917,-3.31169 0.7006,-5.02081 -0.2909,-2.2976 -1.3695,-4.39049 -3.0633,-5.94359 -0.4998,-0.45838 -0.8771,-0.75764 -1.3739,-1.08991 -1.9438,-1.29993 -4.1411,-1.84445 -6.3486,-1.5733 -0.1296,0.0159 -0.3986,0.0612 -0.598,0.10057 -1.5539,0.30722 -2.9778,1.01498 -4.2794,2.12716 -0.2346,0.20047 -1.0309,1.01853 -1.2313,1.26505 z m -27.8701,27.87055 c -0.7769,0.96804 -1.3205,1.96118 -1.6882,3.08437 -0.7689,2.34877 -0.6003,4.94581 0.4669,7.19354 0.3611,0.76055 0.8073,1.44904 1.3858,2.13848 0.1998,0.23799 0.8176,0.85596 1.0829,1.08314 1.1237,0.9622 2.285,1.62751 3.5606,2.04003 1.659,0.53651 3.4073,0.58605 5.0623,0.14344 1.155,-0.30889 2.3137,-0.89543 3.3148,-1.67798 0.4575,-0.35761 1.1006,-0.9713 1.459,-1.3923 1.2149,-1.42704 2.0615,-3.06292 2.6498,-5.12079 0.6352,-2.22138 0.9351,-4.83886 0.9571,-8.35275 0.01,-0.79093 -0.01,-3.04764 -0.021,-3.55237 l -0.01,-0.20299 -0.2269,0.009 c -0.4485,0.0174 -1.3325,0.0324 -2.9275,0.0494 -2.2723,0.0241 -2.812,0.0368 -3.8422,0.0905 -3.992,0.20811 -6.7741,0.95955 -8.9569,2.41922 -0.3947,0.26397 -0.7061,0.50316 -1.1558,0.88779 -0.1734,0.14832 -0.9603,0.96664 -1.1157,1.16041 z"
+       style="fill:url(#linearGradient853);fill-opacity:1;stroke-width:0.0173061" />
     <flowRoot
-       xml:space="preserve"
-       id="flowRoot855"
-       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:40.0003px;line-height:1.25;font-family:'URW Gothic L';-inkscape-font-specification:'URW Gothic L, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#f9f9f9;fill-opacity:1;stroke:none;"
-       transform="matrix(0.91663908,0,0,0.91663908,-104.26865,-89.971842)"
-       inkscape:export-filename="/home/mike/Documents/reactjs/weavemail_2/public/images/evermore-logo.png"
+       inkscape:export-ydpi="33.739517"
        inkscape:export-xdpi="33.739517"
-       inkscape:export-ydpi="33.739517"><flowRegion
-         id="flowRegion857"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:40.0003px;font-family:'URW Gothic L';-inkscape-font-specification:'URW Gothic L, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;writing-mode:lr-tb;text-anchor:start;fill:#f9f9f9;fill-opacity:1;"><rect
-           id="rect859"
-           width="388.7384"
-           height="112.68322"
-           x="161.6244"
+       inkscape:export-filename="C:\Users\hibbe\Pictures\evermore-desktop.png"
+       transform="matrix(2.023129,0,0,2.023129,1044.0711,655.40771)"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:40.0003px;line-height:1.25;font-family:'URW Gothic L';-inkscape-font-specification:'URW Gothic L, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#f9f9f9;fill-opacity:1;stroke:none"
+       id="flowRoot855"
+       xml:space="preserve"><flowRegion
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:40.0003px;font-family:'URW Gothic L';-inkscape-font-specification:'URW Gothic L, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;writing-mode:lr-tb;text-anchor:start;fill:#f9f9f9;fill-opacity:1"
+         id="flowRegion857"><rect
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:40.00032806px;font-family:'URW Gothic L';-inkscape-font-specification:'URW Gothic L, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;writing-mode:lr-tb;text-anchor:start;fill:#f9f9f9;fill-opacity:1;"
            y="126.50928"
-           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:40.00032806px;font-family:'URW Gothic L';-inkscape-font-specification:'URW Gothic L, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;writing-mode:lr-tb;text-anchor:start;fill:#f9f9f9;fill-opacity:1;" /></flowRegion><flowPara
-         id="flowPara863"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:40.0003px;font-family:'URW Gothic L';-inkscape-font-specification:'URW Gothic L, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;writing-mode:lr-tb;text-anchor:start;opacity:0.98;fill:#f9f9f9;fill-opacity:1;">Evermore</flowPara></flowRoot>
+           x="161.6244"
+           height="112.68322"
+           width="388.7384"
+           id="rect859" /></flowRegion><flowPara
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:40.0003px;font-family:'URW Gothic L';-inkscape-font-specification:'URW Gothic L, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;writing-mode:lr-tb;text-anchor:start;opacity:0.98;fill:#f9f9f9;fill-opacity:1"
+         id="flowPara863">Evermore</flowPara></flowRoot>
     <text
-       xml:space="preserve"
+       style="fill:black;fill-opacity:1;line-height:1.25;stroke:none;font-family:sans-serif;font-style:normal;font-weight:normal;font-size:10.58333333px;white-space:pre;shape-inside:url(#rect22);"
        id="text20"
-       style="fill:black;fill-opacity:1;line-height:1.25;stroke:none;font-family:sans-serif;font-style:normal;font-weight:normal;font-size:10.58333333px;white-space:pre;shape-inside:url(#rect22);" />
+       xml:space="preserve" />
+    <path
+       inkscape:export-ydpi="33.739517"
+       inkscape:export-xdpi="33.739517"
+       inkscape:export-filename="C:\Users\hibbe\Pictures\evermore-desktop.png"
+       d="m 1163.7337,32.403171 c -78.768,0.204081 -155.297,27.560362 -221.03186,79.655539 -5.20156,4.12209 -8.30377,6.71609 -18.47159,15.44232 l -0.17782,0.007 c -3.59337,3.0843 -27.70755,26.94867 -31.2118,30.88929 -6.56076,7.37587 -12.19153,14.00533 -16.88826,19.87839 -55.42611,69.31839 -86.10775,154.27413 -96.62279,267.53267 -4.15301,44.83401 -5.40936,81.66476 -6.07181,180.12516 v 14.10121 l -51.77166,0.0663 c -47.26629,0.0684 -67.21996,0.32219 -90.63725,1.15663 -56.16168,2.00065 -104.03606,6.94431 -146.22184,15.09924 -78.39566,15.15468 -141.10431,42.28614 -192.1261,83.12544 -16.87023,13.50323 -35.57655,31.88023 -51.28858,50.38742 -33.2013,39.10243 -57.85929,83.72175 -72.2121,130.66211 -13.86482,45.35027 -18.24039,91.96581 -13.57166,137.45651 h 158.23409 c -7.53338,-36.1177 -5.48142,-73.83545 6.44079,-109.02847 8.39969,-24.79435 20.81753,-46.71783 38.56496,-68.08726 l -0.11415,0.003 c 3.54994,-4.27747 21.52589,-22.34223 25.48704,-25.61639 10.27286,-8.49068 17.38627,-13.77059 26.40275,-19.59771 49.86362,-32.22213 113.41734,-48.81007 204.61016,-53.40409 23.53374,-1.1854 35.86305,-1.46604 87.77119,-1.99803 36.43599,-0.3753 56.63007,-0.70622 66.87555,-1.09028 l 5.18325,-0.19842 0.22828,4.48054 c 0.25129,11.14189 0.70823,60.9589 0.47977,78.41862 -0.50256,77.56894 -7.3534,135.34983 -21.86381,184.38669 -1.17817,3.9825 -2.40507,7.889 -3.67562,11.7315 H 899.4513 c 6.04817,-28.587 10.40843,-59.44726 13.22725,-93.07122 3.22554,-38.45148 4.26699,-66.04834 5.54624,-148.20864 0.29695,-18.36483 0.6855,-33.95203 0.6855,-34.63854 l 0.22828,-1.24952 2.51762,-0.0664 c 1.38434,-0.0331 19.00603,-0.1853 39.1589,-0.33975 55.17251,-0.41943 69.29181,-0.64051 94.66451,-1.47713 91.5035,-3.01921 160.3532,-13.04337 218.6483,-31.83423 46.437,-14.96877 85.2396,-34.8763 120.056,-61.59604 17.7451,-13.618 37.2308,-32.16097 53.7332,-51.13462 46.7136,-53.70171 76.6805,-117.57779 86.7659,-184.9428 2.7528,-18.39854 3.7121,-31.62473 3.7121,-51.55265 0.01,-24.64095 -1.9374,-44.40568 -6.673,-67.86431 -12.3677,-61.25265 -40.0517,-116.36412 -82.6715,-164.58329 -13.7749,-15.58315 -35.4975,-35.79748 -53.8321,-50.09411 -55.8418,-43.545893 -117.3628,-70.394201 -182.2281,-79.528139 -16.4645,-2.318441 -32.9086,-3.445888 -49.2567,-3.40353 z m -2.9091,154.628189 c 41.5583,0.13631 82.3019,12.46402 119.0739,36.22782 11.3488,7.33482 19.9676,13.9409 31.385,24.05962 38.6928,34.28459 63.3326,80.48554 69.9777,131.2049 4.9435,37.72873 -0.6143,76.22992 -16.0043,110.8335 -23.3052,52.40769 -68.3376,94.29465 -127.3661,118.47268 -42.8756,17.56128 -93.3358,27.17923 -160.6316,30.61719 -22.0398,1.12585 -41.3223,1.56695 -88.20257,2.01068 -34.38002,0.3267 -53.48202,0.62453 -64.78058,1.00866 l -7.1362,0.24286 -0.22828,-15.46818 c -1.28611,-85.88103 0.58917,-135.98639 6.75928,-180.71242 10.73208,-77.77445 33.21017,-134.20549 71.65867,-179.89688 h -0.005 c 4.57794,-5.44191 22.76898,-23.50032 28.12818,-27.92571 29.7336,-24.55128 62.261,-40.17548 97.7582,-46.95731 4.555,-0.8691 10.7,-1.86873 13.6605,-2.2197 8.6673,-1.02878 17.3276,-1.52601 25.9529,-1.49771 z"
+       style="opacity:0.195513;fill:url(#linearGradient847);fill-opacity:1;stroke-width:0.38863"
+       id="path845" />
   </g>
 </svg>

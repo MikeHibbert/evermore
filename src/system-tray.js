@@ -23,6 +23,13 @@ const createLoggedOutSystray = () => {
         enabled: true
     },
     {
+        title: "Open Evemore Online",
+        tooltip: "Open Evemore Online",
+        // checked is implement by plain text in linux
+        checked: false,
+        enabled: true
+    },
+    {
         title: "Shutdown Evermore Datastore",
         tooltip: "Shutdown Evermore Datastore",
         checked: false,
@@ -76,6 +83,13 @@ const initSystemTray = () => {
                     enabled: true
                 },
                 {
+                    title: "Open Evemore Online",
+                    tooltip: "Open Evemore Online",
+                    // checked is implement by plain text in linux
+                    checked: false,
+                    enabled: true
+                },
+                {
                     title: "Shutdown Evermore Datastore",
                     tooltip: "Shutdown Evermore Datastore",
                     checked: false,
@@ -104,6 +118,12 @@ const initSystemTray = () => {
     return systray;
 }
 
+export const openWebclient = () => {
+    var url = 'https://evermoredata.store/';
+    var start = (process.platform == 'darwin'? 'open': process.platform == 'win32'? 'start': 'xdg-open');
+    require('child_process').exec(start + ' ' + url);
+}
+
 export const ConnectedActions = (action) => {
     if (action.seq_id === 0) {
         getWalletBalance(wallet_path).then((balance) => {
@@ -119,6 +139,8 @@ export const ConnectedActions = (action) => {
     } else if (action.seq_id === 1) {
         openSettingsDialog();
     } else if (action.seq_id === 2) {
+        openWebclient();
+    } else if (action.seq_id === 3) {
         systray.kill();
     }
 }
@@ -127,6 +149,8 @@ export const DisconnectedActions = (action) => {
     if (action.seq_id === 0) {
         openConnectDialog(systray, action);
     } else if (action.seq_id === 1) {
+            openWebclient();
+    } else if (action.seq_id === 2) {
         systray.kill()
     }
 }

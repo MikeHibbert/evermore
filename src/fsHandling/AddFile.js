@@ -27,13 +27,13 @@ const fileAddedHandler = (path) => {
                     if(new_file_modified > downloadable_file.modified) {
                         if(!GetPendingFile(path)) {
                             AddPendingFile(null, path, downloadable_file.version + 1);
-                            sendMessage(`STATUS:SYNC:${path}\n`, true);
+                            sendMessage(`REGISTER_PATH:${path}\n`, true);
                             confirmed_in_blockchain = true;
                         }
                     } else {
                         if(!GetSyncedFile(downloadable_file.id)) {
                             ConfirmSyncedFileFromTransaction(path, downloadable_file);
-                            sendMessage(`STATUS:SYNC:${path}\n`, true);
+                            sendMessage(`REGISTER_PATH:${path}\n`, true);
                             confirmed_in_blockchain = true;
                         }
                     }          
@@ -42,10 +42,9 @@ const fileAddedHandler = (path) => {
             }
         } 
         if(!found_in_downloadables && !confirmed_in_blockchain) {
-            debugger;
             if(!GetPendingFile(path)) {
                 AddPendingFile(null, path, 1);
-                sendMessage(`STATUS:NEW:${path}\n`, true);
+                sendMessage(`REGISTER_PATH:${path}\n`, true);
             }
         }
     });    

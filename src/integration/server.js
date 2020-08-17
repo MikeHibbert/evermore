@@ -20,6 +20,32 @@ export const sendMessage = (message, send_update_message) => {
     }    
 }
 
+function blackholeEPIPE(stream) {
+    stream.on('error', onerror)
+    function onerror(err) {
+        debugger;
+      if (err.code === 'EPIPE') {
+        stream._write = noopWrite
+        stream._writev = noopWritev
+        // stream._read = noopRead
+        return stream.removeListener('error', onerror)
+      }
+      if (EE.listenerCount(stream, 'error') === 1) {
+        stream.removeListener('error', onerror)
+        stream.emit('error', err)
+      }
+    }
+  }
+  function noopWrite(chunk, enc, cb) {
+    cb()
+  }
+  function noopRead() {
+    this.push('')
+  }
+  function noopWritev(chunks, cb) {
+    cb()
+  }
+
 const initNamePipe = () => { 
     let pipeAddress = null;
 
@@ -37,11 +63,13 @@ const initNamePipe = () => {
         pipe_stream = stream;
 
         stream.on('data', function(data) {
-            const response = processPipeMessage(data.toString());
+            const message = data.toString();
 
-            console.log('Server: on data response:', response);
+            const response = processPipeMessage(message);
     
-            stream.write(response);
+            if(message.indexOf('SHARE') == -1) {
+                stream.write(response);
+            }
         });
     
         stream.on('close',function(){
@@ -52,63 +80,12 @@ const initNamePipe = () => {
             console.log('Server: on end')
             // server.close();
         });
-
-        const synced_folders = GetSyncedFolders();
-
-        for(let i in synced_folders) {
-            const synced_folder = synced_folders[i];
-
-            stream.write(`REGISTER_PATH:${synced_folder}\n`);
-        }
-
-        const new_pending_files = GetNewPendingFiles();
-        for(let i in new_pending_files) {
-            stream.write(`STATUS:NEW:${new_pending_files[i]}\n`);
-        }
-
-        const pending_files = GetPendingFiles();
-        for(let i in pending_files) {
-            stream.write(`STATUS:SYNC:${pending_files[i]}\n`);
-        }
-
-        const synced_files = GetSyncedFiles();
-        for(let i in synced_files) {
-            stream.write(`STATUS:OK:${synced_files[i]}\n`);
-        }
-
-        // stream.write("UPDATE_VIEW\n");
-    });
-
-    
+       
+    });    
 
     server.listen(pipeAddress,function(){
         console.log('Server: on listening');
     });
-
-    if(settings.PLATFORM == 'win32') {
-        // need to kill explorer and start it again to ensure the Overlay provider talks to this process
-        // (async () => {
-        //     const processes = await tasklist();
-    
-        //     let proc = null;
-        //     for(let i in processes) {
-        //         if(processes[i].imageName.indexOf('explorer.exe') != -1) {
-        //             proc = processes[i];
-        //         }
-        //     }
-    
-        //     if(proc) {
-        //         try {
-        //             process.kill( proc.pid, 'SIGKILL');
-        //             spawn("explorer.exe").unref();
-        //         } catch(e) {
-        //             console.log(`Unable to kill ${proc.pid}:${proc.imageName}`);
-        //         }
-                
-    
-        //     }
-        // })();
-    }    
 }
 
 export default initNamePipe;

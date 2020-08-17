@@ -54,51 +54,51 @@ export const uploadFile = async (file_info) => {
     const jwk = getJwkFromWalletFile(wallet_file);
 
     fs.exists(file_info.path, async (exists) => {
-        debugger;
         if(!exists) {
             RemovePendingFile(file_info.path);
         } else {
             const file_data = fs.readFileSync(file_info.path);
-            debugger;
             try {
                 const transaction = await arweave.createTransaction({
                     data: file_data
                 }, jwk);
+
+                transaction.addTag('App', settings.APP_NAME);
+                transaction.addTag('file', file_info.file.replace(/([^:])(\/\/+)/g, '$1/'));
+                transaction.addTag('path', file_info.path.replace(/([^:])(\/\/+)/g, '$1/'));
+                transaction.addTag('modified', file_info.modified);
+                transaction.addTag('hostname', file_info.hostname);
+                transaction.addTag('version', file_info.version);
+
+                await arweave.transactions.sign(transaction, jwk);
+
+                UpdatePendingFileTransactionID(file_info.file, transaction.id);
+
+                let uploader = await arweave.transactions.getUploader(transaction);
+
+                
+                SaveUploader(uploader);
+
+                // debugger;
+                // while (!uploader.isComplete) {
+                //     await uploader.uploadChunk();
+                //     console.log(`${uploader.pctComplete}% complete, ${uploader.uploadedChunks}/${uploader.totalChunks}`);
+                // }
+
+                ConfirmSyncedFile(transaction.id);
+
+                const cost = await arweave.getPrice(transaction.data_size);
+                //sendUsagePayment(arweave.ar.winstonToAr(cost));
+
+                RemoveUploader(uploader);
+
+                console.log(`${file_info.path} uploaded`);
             } catch (e) {
                 
                 console.log(e);
             }
 
-            transaction.addTag('App', settings.APP_NAME);
-            transaction.addTag('file', file_info.file.replace(/([^:])(\/\/+)/g, '$1/'));
-            transaction.addTag('path', file_info.path.replace(/([^:])(\/\/+)/g, '$1/'));
-            transaction.addTag('modified', file_info.modified);
-            transaction.addTag('hostname', file_info.hostname);
-            transaction.addTag('version', file_info.version);
-
-            await arweave.transactions.sign(transaction, jwk);
-
-            UpdatePendingFileTransactionID(file_info.file, transaction.id);
-
-            let uploader = await arweave.transactions.getUploader(transaction);
-
             
-            SaveUploader(uploader);
-
-            // debugger;
-            // while (!uploader.isComplete) {
-            //     await uploader.uploadChunk();
-            //     console.log(`${uploader.pctComplete}% complete, ${uploader.uploadedChunks}/${uploader.totalChunks}`);
-            // }
-
-            ConfirmSyncedFile(transaction.id);
-
-            const cost = await arweave.getPrice(transaction.data_size);
-            //sendUsagePayment(arweave.ar.winstonToAr(cost));
-
-            RemoveUploader(uploader);
-
-            console.log(`${file_info.path} uploaded`);
 
         }        
     }); // for whatever reason this file is now gone!
@@ -124,7 +124,6 @@ export const sendUsagePayment = async (transaction_cost) => {
         await arweave.transactions.sign(tx, jwk);
         await arweave.transactions.post(tx);
     } catch (e) {
-        debugger;
         console.log(e);
     }
     
