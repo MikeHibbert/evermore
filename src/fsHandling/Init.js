@@ -126,6 +126,8 @@ const fileExistsOnTheBlockchain = (file_info, existing_files) => {
         }
     );
 
+    debugger;
+
     return existing;
 }
 

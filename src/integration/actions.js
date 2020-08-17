@@ -80,12 +80,12 @@ const getFileStatus = (path) => {
 }
 
 const getFileContextMenuItems = (path) => {
-    var responses = ""; // MENU_ITEM:
+    var responses = ""; 
 
     let file_info = GetSyncedFileFromPath(path);
 
     if(file_info) {
-        responses = responses + `MENU_ITEM:SHARE::Share File\n`;
+        responses = responses + 'MENU_ITEM:SHARE::Copy Share Link\n';
     }
 
     responses = responses + "GET_MENU_ITEMS:END\n";

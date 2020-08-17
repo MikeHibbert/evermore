@@ -1,9 +1,6 @@
 const net = require('net');
-const ps = require('ps-node');
 const os = require('os');
-const tasklist = require('tasklist');
-const taskkill = require('taskkill');
-const {spawn} = require('child_process');
+
 import {settings} from '../config';
 import processPipeMessage from './actions';
 import {GetSyncedFolders, GetNewPendingFiles, GetPendingFiles, GetSyncedFiles} from '../db/helpers';
@@ -11,40 +8,18 @@ import { connected } from 'process';
 
 let server = null;
 let pipe_stream = null;
+let clients = [];
 
 export const sendMessage = (message, send_update_message) => {
-    pipe_stream.write(message);
-
-    if(send_update_message) {
-        pipe_stream.write("UPDATE_VIEW\n");
-    }    
-}
-
-function blackholeEPIPE(stream) {
-    stream.on('error', onerror)
-    function onerror(err) {
-        debugger;
-      if (err.code === 'EPIPE') {
-        stream._write = noopWrite
-        stream._writev = noopWritev
-        // stream._read = noopRead
-        return stream.removeListener('error', onerror)
-      }
-      if (EE.listenerCount(stream, 'error') === 1) {
-        stream.removeListener('error', onerror)
-        stream.emit('error', err)
-      }
+    for(let i in clients) {
+        clients[i].write(message);
     }
-  }
-  function noopWrite(chunk, enc, cb) {
-    cb()
-  }
-  function noopRead() {
-    this.push('')
-  }
-  function noopWritev(chunks, cb) {
-    cb()
-  }
+    // pipe_stream.write(message);
+
+    // if(send_update_message) {
+    //     pipe_stream.write("UPDATE_VIEW\n");
+    // }    
+}
 
 const initNamePipe = () => { 
     let pipeAddress = null;
@@ -60,7 +35,7 @@ const initNamePipe = () => {
     }
 
     server = net.createServer(function(stream) {
-        pipe_stream = stream;
+        clients.push(stream);
 
         stream.on('data', function(data) {
             const message = data.toString();
