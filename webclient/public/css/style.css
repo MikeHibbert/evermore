@@ -1,43 +1,3 @@
-/*
-Theme: Hostcox - Web hosting & WHMCS HTML5 Template
-Version: 1.0
-Last change: 24 Nov 2018
-Author: getnjmul
-Author URI: http://www.getnajmul.com/theme/hostcox
-Primary use: Hosting Company 
-==========================================================
-
-01. Default  CSS
----------- {Home Version One} ----------
-01. Header Style Nav & Intro
-02. Why Choose us
-03. Pricing
-04. Features
-06. Feedback
-07. Guranatee
-08. Blog
-09. Footer
- 
----------- { Home Version two } ----------
-01. Header Style Nav & Slider
-02. Hosting Features
-03. Pricing
-04. Awesome Services
-05. Feedback
-06. Guranatee
-07. Blog
-08. Footer
----------- { Other Pages Style } ----------
-09. Home 3 style
-10. Home 4 style
-15. Domain Page Style
-16. Service Page Style
-17. About Page Style
-18. Team Page Style
-19. Contact Page Style
-20. Blog Page Style
-21. Post Page Style
-*/
 html,
 body {
   height: 100%; }
@@ -6867,5 +6827,12 @@ footer {
       transition: all 0.3s ease-in-out; }
       .privecy_policy .trams_condition ul li a:hover {
         color: #3ee8e0; }
+
+.dropdown-item {
+  position: relative !important;
+  background-color: #FFFFFF !important;
+  color: #2f2f2f !important;
+  cursor: pointer;
+}
 
 /*# sourceMappingURL=style.css.map */

@@ -26,7 +26,8 @@ class CostCalculator extends Component {
         current_price: 0,
         scale: "GB",
         cost: 0,
-        ar_cost: 0
+        ar_cost: 0,
+        dropdownCSS: "dropdown-menu"
     }
 
     componentWillMount() {
@@ -39,6 +40,14 @@ class CostCalculator extends Component {
         axios.get(proxy + bilaxy_url).then(res => {
             that.setState({current_price: parseFloat(res.data.data.last)});
         })
+    }
+
+    onToggleDropdown() {
+        if(this.state.dropdownCSS == "dropdown-menu") {
+            this.setState({dropdownCSS: "dropdown-menu show"});
+        } else {
+            this.setState({dropdownCSS: "dropdown-menu"});
+        }
     }
 
     onGetPrice(e) {
@@ -56,10 +65,12 @@ class CostCalculator extends Component {
 
     }
 
-    onSetDataScale(e) {
-        const scale = e.target.value;
+    onSetDataScale(e, scale) {
+        e.preventDefault();
 
-        this.setState({scale: scale})
+        this.setState({scale: scale});
+        
+        this.onToggleDropdown();
     }
 
     render() {
@@ -81,17 +92,28 @@ class CostCalculator extends Component {
                                         </div> 
                                         <div className="pricing-value">	    
                                         <small className="small-one title-inner">
-                                        <select className="form-control mt-5" onChange={(e) => {this.onSetDataScale(e)}}>
-                                            <option value="GB">GB</option>
-                                            <option value="MB">MB</option>
-                                            <option value="KB">KB</option>
-                                        </select>  
+                                        <div className="input-group mt-4">
+                                            <input className="form-control col-10" 
+                                                    name="size" 
+                                                    onChange={(e) => {this.onGetPrice(e)}} 
+                                                    placeholder="Enter data size" />
+                                            <div className="input-group-append">
+                                           
+                                                <button 
+                                                    className="btn btn-outline-secondary dropdown-toggle" 
+                                                    type="button" 
+                                                    onClick={() => {this.onToggleDropdown()}}>{this.state.scale}</button>
+                                                <div className={this.state.dropdownCSS}>
+                                                    <a className="dropdown-item" onClick={(e) => {this.onSetDataScale(e, "GB")}}>GB</a>
+                                                    <a className="dropdown-item" onClick={(e) => {this.onSetDataScale(e, "MB")}}>MB</a>
+                                                    <a className="dropdown-item" onClick={(e) => {this.onSetDataScale(e, "KB")}}>KB</a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                          
                                         </small>
                                         </div>           
                                     </div>	            
-                                    <ul>
-                                      <li><input className="form-control col-10 m-4" name="size" onChange={(e) => {this.onGetPrice(e)}} placeholder="Enter data size" /></li>
-                                    </ul>
                                     <div className="pricing-price pb-30">
                                         <small>$</small><h3>{format('.2f')(this.state.cost)} </h3>
                                     </div>    
