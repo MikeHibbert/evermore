@@ -17,7 +17,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "service": "node dist/service.js",
-    "dev": "npm-run-all build service",
+    "dev": "babel ./src --out-dir dist && qode dist/service.js",
     "build": "npm-run-all clean transpile",
     "transpile": "babel ./src --out-dir dist",
     "clean": "rimraf dist",
@@ -29,6 +29,7 @@
     "@babel/cli": "^7.10.4",
     "@babel/core": "^7.10.4",
     "@babel/preset-env": "^7.10.4",
+    "@nodegui/nodegui": "^0.24.0",
     "arweave": "^1.8.0",
     "axios": "^0.19.2",
     "chokidar": "^3.4.0",
@@ -47,6 +48,11 @@
     "systray": "^1.0.5",
     "taskkill": "^3.1.0",
     "tasklist": "^4.0.1"
+  },
+  "devDependencies": {
+    "@nodegui/packer": "^1.4.1",
+    "webpack": "^4.43.0",
+    "webpack-cli": "^3.3.11"
   },
   "babel": {
     "presets": [
