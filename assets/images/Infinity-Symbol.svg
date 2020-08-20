@@ -16,10 +16,10 @@
    sodipodi:docname="Infinity-Symbol.svg"
    width="2703.2141"
    height="2703.2141"
-   inkscape:version="1.0 (4035a4fb49, 2020-05-01)"><metadata
+   inkscape:version="1.0 (b51213c273, 2020-08-10)"><metadata
    id="metadata13"><rdf:RDF><cc:Work
        rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type
-         rdf:resource="http://purl.org/dc/dcmitype/StillImage" /><dc:title /></cc:Work></rdf:RDF></metadata><defs
+         rdf:resource="http://purl.org/dc/dcmitype/StillImage" /><dc:title></dc:title></cc:Work></rdf:RDF></metadata><defs
    id="defs11" /><sodipodi:namedview
    inkscape:document-rotation="0"
    pagecolor="#ffffff"
@@ -31,23 +31,31 @@
    inkscape:pageopacity="0"
    inkscape:pageshadow="2"
    inkscape:window-width="1920"
-   inkscape:window-height="1017"
+   inkscape:window-height="1016"
    id="namedview9"
    showgrid="false"
-   inkscape:zoom="0.12216938"
-   inkscape:cx="-3034.7911"
-   inkscape:cy="437.02335"
-   inkscape:window-x="-8"
-   inkscape:window-y="-8"
+   inkscape:zoom="0.17277359"
+   inkscape:cx="1534.2824"
+   inkscape:cy="1402.725"
+   inkscape:window-x="0"
+   inkscape:window-y="1107"
    inkscape:window-maximized="1"
-   inkscape:current-layer="Layer_1" />
+   inkscape:current-layer="Layer_1"
+   showguides="true"
+   inkscape:guide-bbox="true"><sodipodi:guide
+     position="1360.1615,1863.9654"
+     orientation="1,0"
+     id="guide9" /><sodipodi:guide
+     position="1985.257,1325.6887"
+     orientation="0,-1"
+     id="guide11" /></sodipodi:namedview>
 <g
    id="g6"
-   transform="matrix(0.82035717,-0.76292072,0.73656781,0.84970789,-216.89804,1869.5869)"
+   transform="matrix(0.66023085,-0.61400548,0.59279642,0.68385258,108.93135,1755.8504)"
    style="fill:#ffffff"
    inkscape:export-filename="/home/mike/Documents/nodejs/evermore/assets/images/tray-logo.png"
-   inkscape:export-xdpi="1.2691447"
-   inkscape:export-ydpi="1.2691447">
+   inkscape:export-xdpi="1.136425"
+   inkscape:export-ydpi="1.136425">
 	<g
    id="g4"
    style="fill:#ffffff">
@@ -57,4 +65,12 @@
    style="fill:#ffffff" />
 	</g>
 </g>
-</svg>
+<rect
+   style="fill:none;fill-opacity:0.980392;stroke-width:0.998441"
+   id="rect13"
+   width="2703.2141"
+   height="2703.2141"
+   x="0"
+   y="0"
+   inkscape:export-xdpi="1.136425"
+   inkscape:export-ydpi="1.136425" /></svg>

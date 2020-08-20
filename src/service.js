@@ -1,6 +1,6 @@
 import { InitFileWatcher } from './fsHandling/Init';
 import { InitDB } from './db/helpers';
-import initSystemTray from './system-tray'; // setup system tray menu etc
+import initSystemTray from './qt-system-tray'; // setup system tray menu etc
 import { walletFileSet, GetSyncedFolders } from './db/helpers';
 import initNamePipe from './integration/server';
 
