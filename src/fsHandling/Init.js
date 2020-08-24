@@ -112,7 +112,7 @@ const processAllPendingFiles = (pending_files, existing_files) => {
 
     if(uploaded_count > 0) {
         notifier.notify({
-            title: 'Evermore Datastore',
+            title: 'Evermore',
             message: `${pending_files.length} have been uploaded and will be mined sortly.`
           });
     }

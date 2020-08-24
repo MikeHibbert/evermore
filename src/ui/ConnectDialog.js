@@ -1,10 +1,9 @@
 const dialog = require('dialog-node');
 import SysTray from 'systray';
-import Logo from '../logo';
 import { InitFileWatcher } from '../fsHandling/Init';
 import {getWalletBalance} from '../crypto/arweave-helpers';
 import {setWalletFilePath, AddSyncedFolder} from '../db/helpers';
-import {setSystrayInstance, ConnectedActions} from '../system-tray';
+//import {setSystrayInstance, ConnectedActions} from '../system-tray';
 
 
 let systray = null;
@@ -61,10 +60,10 @@ var selectFileCallback = (code, retVal, stderr) => {
         })
 
         new_systray.onClick(action => {
-            ConnectedActions(action);
+            // ConnectedActions(action);
         })
 
-        setSystrayInstance(new_systray);
+        // setSystrayInstance(new_systray);
 
         dialog.folderselect(
             "Please select the folder you would like to backup",

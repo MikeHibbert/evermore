@@ -1,6 +1,7 @@
 import {
     QMainWindow,
     QPushButton,
+    QPushButtonSignals,
     QAbstractButtonSignals,
     QFileDialog,
     QTextEdit,
@@ -10,7 +11,8 @@ import {
     QBoxLayout,
     QLabel,
     BaseWidgetEvents,
-    NativeElement
+    NativeElement,
+    FileMode
   } from "@nodegui/nodegui";
 
   import {walletFileSet} from '../db/helpers';
@@ -53,8 +55,12 @@ const openSettingsDialog = (win) => {
         const rootViewLayout = new FlexLayout()
         rootView.setLayout(rootViewLayout);
 
+        const editable_settings = {
+          changed: false,
+          wallet_path:wallet_path
+        }
         // wallet file path
-        createWalletPathRow(wallet_path, rootView);
+        createWalletPathRow(editable_settings, rootView);
        
 
         rootView.setStyleSheet(rootStyleSheet);
@@ -68,7 +74,7 @@ const openSettingsDialog = (win) => {
     
 }
 
-const createWalletPathRow = (wallet_path, rootView) => {
+const createWalletPathRow = (editable_settings, rootView) => {
 
     // Fieldset
     const walletFieldset = new QWidget();
@@ -91,15 +97,25 @@ const createWalletPathRow = (wallet_path, rootView) => {
 
     const walletPathText = new QLabel();
     walletPathText.setObjectName("walletPathText");
-    walletPathText.setText(wallet_path);
+    walletPathText.setText(editable_settings.wallet_path);
     walletPathControlsLayout.addWidget(walletPathText);
     
     const btnSelectWallet = new QPushButton();
     btnSelectWallet.setText("Select Wallet");
     btnSelectWallet.setObjectName(`btnSelectWallet`);
 
-    btnSelectWallet.addEventListener("triggered", () => {
-        console.log("Clicked")
+    btnSelectWallet.addEventListener("clicked", () => {
+        const fileDialog = new QFileDialog()
+        fileDialog.setFileMode(FileMode.AnyFile);
+        fileDialog.setNameFilter('AR Wallet (*.json)');
+        fileDialog.exec();
+
+        const selected_file = fileDialog.selectedFiles();
+
+        if(selected_file.length > 0) {
+          editable_settings.wallet_file = selected_file[0];
+          editable_settings.changed = true;
+        }        
     });
     walletPathControlsLayout.addWidget(btnSelectWallet);
 

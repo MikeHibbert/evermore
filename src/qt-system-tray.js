@@ -9,28 +9,33 @@ import {
     QAction
 } from "@nodegui/nodegui";
 import path from "path";
-import { Dock } from "@nodegui/os-utils";
 import openSettingsDialog from "./ui/SettingsDialog";
 import openConnectDialog from './ui/ConnectDialog';
 import {walletFileSet, resetWalletFilePath} from './db/helpers';
 import {getWalletBalance} from './crypto/arweave-helpers';
 
 export const win = new QMainWindow();
-const trayIcon = new QIcon(path.join(__dirname, `../assets/images/${process.platform === 'win32' ? 'tray-logo16x16.ico' : 'tray-logo32x32.png'}`));
+console.log(path.join(
+    process.cwd(), 
+    `assets/images/${process.platform === 'win32' ? 'tray-logo16x16.ico' : 'tray-logo32x32.png'}`
+));
+const trayIcon = new QIcon(
+    path.join(
+        process.cwd(), 
+        `assets/images/${process.platform === 'win32' ? 'tray-logo16x16.ico' : 'tray-logo32x32.png'}`
+    )
+);
 const tray = new QSystemTrayIcon();
 tray.setIcon(trayIcon);
 tray.show();
 tray.setToolTip("Evermore");
 
 
-const createLoggedOutSystray = () => {
+const createLoggedOutSystray = (menu) => {
     const connectAction = new QAction();
     connectAction.setText("Connect");
-
-    const showSettings = new QAction();
-    showSettings.setText("Settings");
-    showSettings.addEventListener("triggered", () => {
-        openSettingsDialog(win);
+    connectAction.addEventListener("triggered", () => {
+        openConnectDialog(win);
     });
 
     const openWebclientSite = new QAction();
@@ -44,7 +49,6 @@ const createLoggedOutSystray = () => {
     // ----------------------
     
     menu.addAction(connectAction);
-    menu.addAction(showSettings);
     menu.addAction(openWebclientSite);
 
     // -------------------
@@ -65,6 +69,15 @@ const createLoggedInSystray = (menu, balance) => {
     
     const balanceAction = new QAction();
     balanceAction.setText("Balance: " + balance + " AR");
+    balanceAction.addEventListener("triggered", () => {
+        const wallet_path = walletFileSet();
+
+        balanceAction.setText("Updating ..."); 
+
+        getWalletBalance(wallet_path).then((balance) => {
+            balanceAction.setText("Balance: " + balance + " AR");
+        });
+    });
 
     const showSettings = new QAction();
     showSettings.setText("Settings");
@@ -108,12 +121,12 @@ const initSystemTray = () => {
     
 
     if(wallet_path.length == 0) {
-        createLoggedOutSystray();
+        createLoggedOutSystray(menu);
     } else {
         fs.access(wallet_path, fs.F_OK, (err) => {
             if (err) {
               resetWalletFilePath();
-              createLoggedOutSystray();
+              createLoggedOutSystray(menu);
               return
             }
           

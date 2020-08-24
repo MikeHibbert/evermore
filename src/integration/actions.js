@@ -13,7 +13,7 @@ const processPipeMessage = (data) => {
     let response = "";
 
     for(let i in commands) {
-        const parts = commands[i].split(':');
+        let parts = commands[i].split(':');
         const command = parts[0];
 
         parts = parts.filter((item) => item != command);
