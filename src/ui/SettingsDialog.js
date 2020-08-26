@@ -28,6 +28,11 @@ import {
     
   }
 
+  #actions {
+    flex-direction: row;
+    
+  }
+
   #walletFieldset {
     margin: 20px;
   }
@@ -131,16 +136,6 @@ const createActionsRow = (editable_settings, rootView, win) => {
   actions.setObjectName('actions');
   actions.setLayout(actionsLayout);
 
-  const btnCancel = new QPushButton();
-  btnCancel.setText("Cancel");
-  btnCancel.setObjectName(`btnCancel`);
-
-  btnCancel.addEventListener("clicked", () => {
-      win.hide();      
-  });
-
-  actionsLayout.addWidget(btnCancel);
-
   const btnSave = new QPushButton();
   btnSave.setText("Save");
   btnSave.setObjectName(`btnSave`);
@@ -149,6 +144,18 @@ const createActionsRow = (editable_settings, rootView, win) => {
       if(editable_settings.changed) {
         setWalletFilePath(editable_settings.wallet_file);
       }  
+
+      win.hide();  
+  });
+
+  actionsLayout.addWidget(btnSave);
+
+  const btnCancel = new QPushButton();
+  btnCancel.setText("Cancel");
+  btnCancel.setObjectName(`btnCancel`);
+
+  btnCancel.addEventListener("clicked", () => {
+      win.hide();      
   });
 
   actionsLayout.addWidget(btnCancel);
