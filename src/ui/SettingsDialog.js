@@ -15,7 +15,7 @@ import {
     FileMode
   } from "@nodegui/nodegui";
 
-  import {walletFileSet} from '../db/helpers';
+  import {walletFileSet, setWalletFilePath} from '../db/helpers';
   import openConnectDialog from './ConnectDialog';
 
   const rootStyleSheet = `
@@ -62,12 +62,13 @@ const openSettingsDialog = (win) => {
         // wallet file path
         createWalletPathRow(editable_settings, rootView);
        
+        createActionsRow(editable_settings, rootView, win);
 
         rootView.setStyleSheet(rootStyleSheet);
 
         win.setCentralWidget(rootView);
         win.setWindowTitle("Evermore Settings");
-        win.resize(800, 640);
+        // win.resize(800, 640);
         win.show();
     }
 
@@ -76,52 +77,83 @@ const openSettingsDialog = (win) => {
 
 const createWalletPathRow = (editable_settings, rootView) => {
 
-    // Fieldset
-    const walletFieldset = new QWidget();
-    const walletFieldsetLayout = new FlexLayout();
-    walletFieldset.setObjectName('walletFieldset');
-    walletFieldset.setLayout(walletFieldsetLayout);
+  // Fieldset
+  const walletFieldset = new QWidget();
+  const walletFieldsetLayout = new FlexLayout();
+  walletFieldset.setObjectName('walletFieldset');
+  walletFieldset.setLayout(walletFieldsetLayout);
 
-    // label
-    const walletPathLabel = new QLabel();
-    walletPathLabel.setObjectName("walletPathLabel");
-    walletPathLabel.setText("Wallet Location:");
-    walletFieldsetLayout.addWidget(walletPathLabel);
-    
+  // label
+  const walletPathLabel = new QLabel();
+  walletPathLabel.setObjectName("walletPathLabel");
+  walletPathLabel.setText("Wallet Location:");
+  walletFieldsetLayout.addWidget(walletPathLabel);
+  
 
-    // path and select button
-    const walletPathControls = new QWidget();
-    const walletPathControlsLayout = new FlexLayout();
-    walletPathControls.setObjectName('walletPathControls');
-    walletPathControls.setLayout(walletPathControlsLayout);
+  // path and select button
+  const walletPathControls = new QWidget();
+  const walletPathControlsLayout = new FlexLayout();
+  walletPathControls.setObjectName('walletPathControls');
+  walletPathControls.setLayout(walletPathControlsLayout);
 
-    const walletPathText = new QLabel();
-    walletPathText.setObjectName("walletPathText");
-    walletPathText.setText(editable_settings.wallet_path);
-    walletPathControlsLayout.addWidget(walletPathText);
-    
-    const btnSelectWallet = new QPushButton();
-    btnSelectWallet.setText("Select Wallet");
-    btnSelectWallet.setObjectName(`btnSelectWallet`);
+  const walletPathText = new QLabel();
+  walletPathText.setObjectName("walletPathText");
+  walletPathText.setText(editable_settings.wallet_path);
+  walletPathControlsLayout.addWidget(walletPathText);
+  
+  const btnSelectWallet = new QPushButton();
+  btnSelectWallet.setText("Select Wallet");
+  btnSelectWallet.setObjectName(`btnSelectWallet`);
 
-    btnSelectWallet.addEventListener("clicked", () => {
-        const fileDialog = new QFileDialog()
-        fileDialog.setFileMode(FileMode.AnyFile);
-        fileDialog.setNameFilter('AR Wallet (*.json)');
-        fileDialog.exec();
+  btnSelectWallet.addEventListener("clicked", () => {
+      const fileDialog = new QFileDialog()
+      fileDialog.setFileMode(FileMode.AnyFile);
+      fileDialog.setNameFilter('AR Wallet (*.json)');
+      fileDialog.exec();
 
-        const selected_file = fileDialog.selectedFiles();
+      const selected_file = fileDialog.selectedFiles();
 
-        if(selected_file.length > 0) {
-          editable_settings.wallet_file = selected_file[0];
-          editable_settings.changed = true;
-        }        
-    });
-    walletPathControlsLayout.addWidget(btnSelectWallet);
+      if(selected_file.length > 0) {
+        editable_settings.wallet_file = selected_file[0];
+        editable_settings.changed = true;
+      }        
+  });
+  walletPathControlsLayout.addWidget(btnSelectWallet);
 
-    walletFieldsetLayout.addWidget(walletPathControls);    
+  walletFieldsetLayout.addWidget(walletPathControls);    
 
-    rootView.layout.addWidget(walletFieldset);
+  rootView.layout.addWidget(walletFieldset);
+}
+
+const createActionsRow = (editable_settings, rootView, win) => {
+  const actions = new QWidget();
+  const actionsLayout = new FlexLayout();
+  actions.setObjectName('actions');
+  actions.setLayout(actionsLayout);
+
+  const btnCancel = new QPushButton();
+  btnCancel.setText("Cancel");
+  btnCancel.setObjectName(`btnCancel`);
+
+  btnCancel.addEventListener("clicked", () => {
+      win.hide();      
+  });
+
+  actionsLayout.addWidget(btnCancel);
+
+  const btnSave = new QPushButton();
+  btnSave.setText("Save");
+  btnSave.setObjectName(`btnSave`);
+
+  btnSave.addEventListener("clicked", () => {
+      if(editable_settings.changed) {
+        setWalletFilePath(editable_settings.wallet_file);
+      }  
+  });
+
+  actionsLayout.addWidget(btnCancel);
+
+  rootView.layout.addWidget(actions);
 }
 
 export default openSettingsDialog;
