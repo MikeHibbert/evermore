@@ -44,6 +44,14 @@ export const getWalletBalance = (path) => {
     });
 }
 
+export const getWalletAddress = async (path) => {
+    const jwk = getJwkFromWalletFile(path);
+
+    return arweave.wallets.jwkToAddress(jwk).then((address) => {
+        return address;
+    });
+}
+
 export const uploadFile = async (file_info) => {
     console.log(`uploading ${file_info.file}`);
 

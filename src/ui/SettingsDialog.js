@@ -10,36 +10,34 @@ import {
     FlexLayout,
     QBoxLayout,
     QLabel,
+    QTreeWidgetItem, 
+    QTreeWidget,
     BaseWidgetEvents,
     NativeElement,
     FileMode
   } from "@nodegui/nodegui";
 
-  import {walletFileSet, setWalletFilePath} from '../db/helpers';
-  import openConnectDialog from './ConnectDialog';
-import { settings } from "../../dist/config";
+import {walletFileSet, setWalletFilePath} from '../db/helpers';
+import {getWalletAddress} from '../crypto/arweave-helpers';
+import openConnectDialog from './ConnectDialog';
+import { settings } from "../config";
+import { getFiles } from "../fsHandling/helpers";
 
-  const rootStyleSheet = `
+const rootStyleSheet = `
   #rootView {
     padding: 10px;
   }
 
   #walletPathControls {
-    flex-direction: row;
-    
-  }
-
-  #actions {
-    flex-direction: row;
-    subcontrol-position: right bottom;
-    margin-top: 20px;
-  }
+    flex-direction: row;    
+  }  
 
   #walletFieldset {
   }
 
   #walletPathLabel {
       font-weight: bold;
+      margin-bottom: 5px;
   }
 
   #walletPathText {
@@ -47,6 +45,25 @@ import { settings } from "../../dist/config";
   }
 
   #btnSelectWallet {
+  }
+
+  #syncActions {
+    flex-direction: row;
+    margin-top: 10px;
+  }
+
+  #syncActionsLabel {
+    font-weight: bold;
+    margin-top: 5px;
+  }
+
+  #syncActionsSpacer {
+    flex:2;
+  }
+
+  #actions {
+    flex-direction: row;
+    margin-top: 30px;
   }
 
   #btnSave {
@@ -74,6 +91,8 @@ const openSettingsDialog = (win) => {
         }
         // wallet file path
         createWalletPathRow(editable_settings, rootView);
+
+        createSyncRow(editable_settings, rootView, win);
        
         createActionsRow(editable_settings, rootView, win);
 
@@ -140,6 +159,137 @@ const createWalletPathRow = (editable_settings, rootView) => {
   walletFieldsetLayout.addWidget(walletPathControls);    
 
   rootView.layout.addWidget(walletFieldset);
+}
+
+const createSyncRow = async (editable_settings, rootView, win) => { 
+  // label
+  const syncActionsLabel = new QLabel();
+  syncActionsLabel.setObjectName("syncActionsLabel");
+  syncActionsLabel.setText("File Sync Options:");
+
+  rootView.layout.addWidget(syncActionsLabel);
+
+  const syncActions = new QWidget();
+  const syncActionsLayout = new FlexLayout();
+  syncActions.setObjectName('syncActions');
+  syncActions.setLayout(syncActionsLayout);
+
+  const syncActionsSpacer = new QWidget();
+  const syncActionsSpacerLayout = new FlexLayout();
+  syncActionsSpacer.setObjectName('syncActionsSpacer');
+  syncActionsSpacer.setLayout(syncActionsSpacerLayout);
+
+  syncActionsLayout.addWidget(syncActionsSpacer);
+
+  const btnSelectiveSync = new QPushButton();
+  btnSelectiveSync.setText("Selective File Sync Settings");
+  btnSelectiveSync.setObjectName(`btnSelectiveSync`);
+
+  btnSelectiveSync.addEventListener("clicked", async () => {
+      console.log("btnSelectiveSync clicked"); 
+
+      const wallet_file = walletFileSet();
+
+      if(wallet_file) {
+        const wallet_address = await getWalletAddress(wallet_file);
+
+        const folders = await getFiles(wallet_address);
+
+        const syncRootView = new QWidget();
+        syncRootView.setObjectName("rootView");
+        const syncRootViewLayout = new FlexLayout()
+        syncRootView.setLayout(syncRootViewLayout);
+
+        
+        const tree = new QTreeWidget();
+        createFolderItems(folders[''], tree, win, true, null);
+
+        syncRootViewLayout.addWidget(tree);
+
+        createSyncActionsRow(folders, syncRootView, rootView, win);
+
+        win.setCentralWidget(syncRootView);         
+        
+      }
+      
+  });
+
+  syncActionsLayout.addWidget(btnSelectiveSync);
+
+  rootView.layout.addWidget(syncActions);
+}
+
+const createSyncActionsRow = (folders, syncRootView, rootView, win) => {
+  const actions = new QWidget();
+  const actionsLayout = new FlexLayout();
+  actions.setObjectName('actions');
+  actions.setLayout(actionsLayout);
+
+  const buttonSpacer = new QWidget();
+  const buttonSpacerLayout = new FlexLayout();
+  buttonSpacer.setObjectName('buttonSpacer');
+  buttonSpacer.setLayout(buttonSpacerLayout);
+
+  actionsLayout.addWidget(buttonSpacer);
+
+  const btnSave = new QPushButton();
+  btnSave.setText("Save");
+  btnSave.setObjectName(`btnSave`);
+
+  btnSave.addEventListener("clicked", () => {
+    console.log("btnSave clicked");
+
+    win.setCentralWidget(rootView);   
+  });
+
+  actionsLayout.addWidget(btnSave);
+
+  const btnCancel = new QPushButton();
+  btnCancel.setText("Cancel");
+  btnCancel.setObjectName(`btnCancel`);
+
+  btnCancel.addEventListener("clicked", () => {
+    win.setCentralWidget(rootView);        
+  });
+
+  actionsLayout.addWidget(btnCancel, btnCancel.getFlexNode(), );
+
+  syncRootView.layout.addWidget(actions);
+}
+
+const createFolderItems = (path_info, tree, window, root, parent) => {
+
+  if(!parent && !root) {
+    parent = new QTreeWidgetItem();
+    parent.setText(0, path_info.name);
+  }
+
+  for(let i in path_info.childeren) {
+    const path = path_info.childeren[i];
+    if(path.type == "folder") {
+      let folder_item = null;
+      if(root) {
+        folder_item = createFolderItems(path, tree, window, false, null);
+        tree.addTopLevelItem(folder_item);
+      } else {
+        folder_item = createFolderItems(path, tree, window, false, parent);
+      }
+      folder_item.setText(0, path.name);
+
+    } else {
+      let file_item = null;
+      if(root) {
+        file_item = new QTreeWidgetItem();
+        tree.addTopLevelItem(file_item);
+      } else {
+        file_item = new QTreeWidgetItem(parent);
+      }
+
+      file_item.setText(0, path.name);
+    }
+  }
+
+  return parent;
 }
 
 const createActionsRow = (editable_settings, rootView, win) => {
