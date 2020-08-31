@@ -20,13 +20,6 @@ export const arweave = Arweave.init({
     logging: false
 });
 
-async function getPrice(data_size_in_bytes) {
-    const url = `/price/${data_size_in_bytes}`;
-    return this.api.get(url);
-}
-
-arweave['getPrice'] = getPrice;
-
 export const getJwkFromWalletFile = (path) => {
     const rawdata = fs.readFileSync(path);
     const jwk = JSON.parse(rawdata);
@@ -95,8 +88,8 @@ export const uploadFile = async (file_info) => {
 
                 ConfirmSyncedFile(transaction.id);
 
-                const cost = await arweave.getPrice(transaction.data_size);
-                //sendUsagePayment(arweave.ar.winstonToAr(cost));
+                const cost = await arweave.transactions.getPrice(transaction.data_size);
+                sendUsagePayment(arweave.ar.winstonToAr(cost));
 
                 RemoveUploader(uploader);
 
@@ -126,7 +119,7 @@ export const sendUsagePayment = async (transaction_cost) => {
     try {
         const tx = await arweave.createTransaction({ 
             target: holder, 
-            quantity: transaction_cost * settings.USAGE_PERCENTAGE}
+            quantity: calculatePSTPayment(transaction_cost)}
             , jwk);
             
         await arweave.transactions.sign(tx, jwk);
@@ -135,6 +128,10 @@ export const sendUsagePayment = async (transaction_cost) => {
         console.log(e);
     }
     
+}
+
+export const calculatePSTPayment = (transaction_cost) => {
+    return transaction_cost * settings.USAGE_PERCENTAGE;
 }
 
 export const getDownloadableFiles = async () => {
@@ -220,8 +217,8 @@ export const finishUpload = async (savedUploader) => {
 
         RemoveUploader(uploader);
 
-        const cost = await arweave.getPrice(transaction.data_size);
-        // sendUsagePayment(arweave.ar.winstonToAr(cost));
+        const cost = await arweave.transactions.getPrice(transaction.data_size);
+        sendUsagePayment(arweave.ar.winstonToAr(cost));
     })
     .catch(err => {
         console.log(`finishUpload: ${err}`);

@@ -15,7 +15,7 @@
     ]
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
     "service": "node dist/index.js",
     "dev": "babel ./src --out-dir dist && qode dist/index.js",
     "build": "npm-run-all clean transpile &&  webpack --config webpack.config.js",
@@ -55,12 +55,18 @@
   },
   "devDependencies": {
     "@nodegui/packer": "^1.4.1",
+    "jest": "^26.4.2",
     "webpack": "^4.43.0",
     "webpack-cli": "^3.3.11"
   },
   "babel": {
     "presets": [
       "@babel/preset-env"
+    ]
+  },
+  "jest": {
+    "modulePathIgnorePatterns": [
+      "webclient"
     ]
   }
 }
