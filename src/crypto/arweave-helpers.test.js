@@ -5,7 +5,7 @@ test("Should get correct price for data storage", async () => {
 
     console.log(price);
 
-    expect(price).not.toBe(0);
+    expect(parseInt(price)).toBeGreaterThan(0);
 });
 
 test("Should output a the correct percentage of a transaction cost", () => {
