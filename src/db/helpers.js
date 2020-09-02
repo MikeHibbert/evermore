@@ -2,12 +2,19 @@ import {getFileUpdatedDate} from '../fsHandling/helpers';
 const low = require('lowdb');
 const os = require('os');
 const FileSync = require('lowdb/adapters/FileSync');
+import {settings} from '../config';
 
 let db = null;
 
-export function InitDB() {
-    const adapter = new FileSync('evermore-db.json');
+function getDB() {
+    const adapter = new FileSync(settings.DB_PATH);
     db = low(adapter);
+
+    return db;
+}
+
+export function InitDB() {
+    db = getDB();
 
     const pending = db.has('pending').value();
     if(pending === false) {
@@ -41,14 +48,26 @@ export function InitDB() {
 }
 
 export const walletFileSet = () => {
+    if(!db) {
+        InitDB();
+    }
+
     return db.get('wallet_file').value();
 }
 
 export const setWalletFilePath = (path) => {
+    if(!db) {
+        InitDB();
+    }
+
     db.set('wallet_file', path).write();
 }
 
 export const resetWalletFilePath = () => {
+    if(!db) {
+        InitDB();
+    }
+
     db.unset('wallet_file').write();
 }
 
@@ -66,6 +85,10 @@ export const AddPendingFile = (tx_id, file, version) => {
 
     if(GetPendingFile(relative_path)) return;
 
+    if(!db) {
+        InitDB();
+    }
+
     db.get('pending')
         .push({
             tx_id: tx_id,
@@ -78,6 +101,10 @@ export const AddPendingFile = (tx_id, file, version) => {
 }
 
 export const UpdatePendingFileTransactionID = (file, tx_id) => {
+    if(!db) {
+        InitDB();
+    }
+
     db.get('pending')
         .find({file: file})
         .assign({tx_id: tx_id})
@@ -85,6 +112,10 @@ export const UpdatePendingFileTransactionID = (file, tx_id) => {
 }
 
 export const ResetPendingFile = (file, modified) => {
+    if(!db) {
+        InitDB();
+    }
+
     db.get('pending')
         .find({file: file})
         .assign({tx_id: null, modified: modified})
@@ -94,6 +125,10 @@ export const ResetPendingFile = (file, modified) => {
 }
 
 export const RemovePendingFile = (path) => {
+    if(!db) {
+        InitDB();
+    }
+
     db.get('pending')
         .remove({
             path: path
@@ -101,28 +136,48 @@ export const RemovePendingFile = (path) => {
 }
 
 export const GetNewPendingFiles = () => {
+    if(!db) {
+        InitDB();
+    }
+
     return db.get('pending')
         .value()
         .filter((file_info) => file_info.tx_id == null);
 }
 
 export const GetPendingFiles = () => {
+    if(!db) {
+        InitDB();
+    }
+
     return db.get('pending')
         .value()
         .filter((file_info) => file_info.tx_id != null);
 }
 
 export const GetNewOrPendingFile = () => {
+    if(!db) {
+        InitDB();
+    }
+
     return db.get('pending')
         .value();
 }
 
 export const GetAllPendingFiles = () => {
+    if(!db) {
+        InitDB();
+    }
+
     return db.get('pending')
         .value();
 }
 
 export const GetPendingFile = (path) => {
+    if(!db) {
+        InitDB();
+    }
+
     const file = db.get('pending').find({path: path}).value();
 
     if(file) {
@@ -135,6 +190,10 @@ export const GetPendingFile = (path) => {
 }
 
 export const ConfirmSyncedFile = (tx_id) => {
+    if(!db) {
+        InitDB();
+    }
+
     const pending = db.get('pending').find({tx_id: tx_id}).value();
 
     db.get('synced_files')
@@ -145,6 +204,10 @@ export const ConfirmSyncedFile = (tx_id) => {
 }
 
 export const ConfirmSyncedFileFromTransaction = (path, transaction) => {
+    if(!db) {
+        InitDB();
+    }
+
     if(GetSyncedFileFromPath(path)) {
         return;
     }
@@ -164,17 +227,33 @@ export const ConfirmSyncedFileFromTransaction = (path, transaction) => {
 }
 
 export const GetSyncedFiles = () => {
+    if(!db) {
+        InitDB();
+    }
+
     return db.get('synced_files');
 }
 
 export const GetSyncedFile = (tx_id) => {
+    if(!db) {
+        InitDB();
+    }
+
     return db.get('synced_files').find({tx_id: tx_id}).value();
 }
 
 export const GetSyncedFileFromPath = (path) => {
+    if(!db) {
+        InitDB();
+    }
+
     return db.get('synced_files').find({path: path}).value();
 }
 export const AddFolder = (tx_id, path) => {
+    if(!db) {
+        InitDB();
+    }
+
     console.log(path);
 
     if(GetFolder(tx_id)) return;
@@ -188,6 +267,10 @@ export const AddFolder = (tx_id, path) => {
 }
 
 export const RemoveFolder = (tx_id) => {
+    if(!db) {
+        InitDB();
+    }
+
     db.get('folders')
         .remove({
             tx_id: tx_id
@@ -195,14 +278,26 @@ export const RemoveFolder = (tx_id) => {
 }
 
 export const GetFolders = () => {
+    if(!db) {
+        InitDB();
+    }
+
     return db.get('folders');
 }
 
 export const GetFolder = (tx_id) => {
+    if(!db) {
+        InitDB();
+    }
+
     return db.get('folders').find({tx_id: tx_id}).value();
 }
 
 export const AddSyncedFolder = (path) => {
+    if(!db) {
+        InitDB();
+    }
+
     db.get('sync_folders')
         .push({
             path: path
@@ -210,6 +305,10 @@ export const AddSyncedFolder = (path) => {
 }
 
 export const RemoveSyncedFolder = (path) => {
+    if(!db) {
+        InitDB();
+    }
+
     db.get('sync_folders')
         .remove({
             path: path
@@ -217,23 +316,43 @@ export const RemoveSyncedFolder = (path) => {
 }
 
 export const GetSyncedFolders = () => {
+    if(!db) {
+        InitDB();
+    }
+
     return db.get('sync_folders').map('path').value();
 }
 
 export const GetSyncedFolder = (tx_id) => {
+    if(!db) {
+        InitDB();
+    }
+
     return db.get('sync_folders').find({path: path}).value();
 }
 
 export const SaveUploader = (uploader) => {
+    if(!db) {
+        InitDB();
+    }
+
     db.get('uploaders')
         .push(JSON.stringify(uploader)).write();
 }
 
 export const GetUploaders = () => {
+    if(!db) {
+        InitDB();
+    }
+
     return db.get('uploaders').value();
 }
 
 export const RemoveUploader = (uploader) => {
+    if(!db) {
+        InitDB();
+    }
+
     db.get('uploaders')
         .remove(uploader).write();
 }

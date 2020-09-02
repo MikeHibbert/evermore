@@ -12,13 +12,7 @@ import {
     RemovePendingFile
 } from '../db/helpers';
 
-export const arweave = Arweave.init({
-    host: "arweave.net",
-    port: 443,
-    protocol: 'https',
-    timeout: 20000,
-    logging: false
-});
+export const arweave = Arweave.init(settings.ARWEAVE_CONFIG);
 
 export const getJwkFromWalletFile = (path) => {
     const rawdata = fs.readFileSync(path);
@@ -77,14 +71,12 @@ export const uploadFile = async (file_info) => {
 
                 let uploader = await arweave.transactions.getUploader(transaction);
 
-                
                 SaveUploader(uploader);
 
-                // debugger;
-                // while (!uploader.isComplete) {
-                //     await uploader.uploadChunk();
-                //     console.log(`${uploader.pctComplete}% complete, ${uploader.uploadedChunks}/${uploader.totalChunks}`);
-                // }
+                while (!uploader.isComplete) {
+                    await uploader.uploadChunk();
+                    console.log(`${uploader.pctComplete}% complete, ${uploader.uploadedChunks}/${uploader.totalChunks}`);
+                }
 
                 ConfirmSyncedFile(transaction.id);
 
@@ -119,7 +111,7 @@ export const sendUsagePayment = async (transaction_cost) => {
     try {
         const tx = await arweave.createTransaction({ 
             target: holder, 
-            quantity: calculatePSTPayment(transaction_cost)}
+            quantity: calculatePSTPayment(transaction_cost, settings.USAGE_PERCENTAGE)}
             , jwk);
             
         await arweave.transactions.sign(tx, jwk);
@@ -130,8 +122,8 @@ export const sendUsagePayment = async (transaction_cost) => {
     
 }
 
-export const calculatePSTPayment = (transaction_cost) => {
-    return transaction_cost * settings.USAGE_PERCENTAGE;
+export const calculatePSTPayment = (transaction_cost, percentage) => {
+    return transaction_cost * percentage;
 }
 
 export const getDownloadableFiles = async () => {

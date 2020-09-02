@@ -15,10 +15,10 @@
     ]
   },
   "scripts": {
-    "test": "jest",
+    "test": "npm-run-all clean transpile && webpack --config webpack.config.js && jest",
     "service": "node dist/index.js",
     "dev": "babel ./src --out-dir dist && qode dist/index.js",
-    "build": "npm-run-all clean transpile &&  webpack --config webpack.config.js",
+    "build": "npm-run-all clean transpile && webpack --config webpack.config.js",
     "transpile": "babel ./src --out-dir dist",
     "clean": "rimraf dist",
     "watch": "webpack --watch"

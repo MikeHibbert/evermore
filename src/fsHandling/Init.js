@@ -23,7 +23,6 @@ import { settings } from '../config';
 
 export const OnFileWatcherReady = () => {
     console.log('Initial scan complete. Ready for changes');
-    // InitDB();
 
     const pending_files = GetNewPendingFiles();
 
