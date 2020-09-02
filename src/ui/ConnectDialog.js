@@ -1,6 +1,6 @@
 const dialog = require('dialog-node');
-import SysTray from 'systray';
-import { InitFileWatcher } from '../fsHandling/Init';
+import {createLoggedInSystray} from '../qt-system-tray';
+import {InitFileWatcher} from '../fsHandling/Init';
 import {getWalletBalance} from '../crypto/arweave-helpers';
 import {setWalletFilePath, AddSyncedFolder} from '../db/helpers';
 //import {setSystrayInstance, ConnectedActions} from '../system-tray';
@@ -13,6 +13,8 @@ const selectFolderCallback = (code, retVal, stderr) => {
 
     AddSyncedFolder(retVal.replace('\r\n', ''));
     InitFileWatcher(retVal.replace('\r\n', ''));
+
+    createLoggedInSystray()
 }
 
 var selectFileCallback = (code, retVal, stderr) => {
@@ -22,56 +24,12 @@ var selectFileCallback = (code, retVal, stderr) => {
 
     setWalletFilePath(path);
 
-    getWalletBalance(path).then((balance) => {
-        const menu_items = [
-            {
-                title: "Balance: " + balance + " AR",
-                tooltip: "Wallet balance",
-                // checked is implement by plain text in linux
-                checked: false,
-                enabled: true
-            },{
-                title: "Settings",
-                tooltip: "Open Settings",
-                // checked is implement by plain text in linux
-                checked: false,
-                enabled: true
-            },
-            {
-                title: "Shutdown Evermore Datastore",
-                tooltip: "Shutdown Evermore Datastore",
-                checked: false,
-                enabled: true
-            }
-        ];
-
-        systray.kill(false); // kill the tray but not the app
-
-        const new_systray = new SysTray({
-            menu: {
-                // you should using .png icon in macOS/Linux, but .ico format in windows
-                icon: Logo.toString('base64'),
-                title: "Evermore Datastore",
-                tooltip: "Evermore Datastore",
-                items: menu_items
-            },
-            debug: false,
-            copyDir: true, // copy go tray binary to outside directory, useful for packing tool like pkg.
-        })
-
-        new_systray.onClick(action => {
-            // ConnectedActions(action);
-        })
-
-        // setSystrayInstance(new_systray);
-
-        dialog.folderselect(
-            "Please select the folder you would like to backup",
-            "Please select the folder you would like to backup", 
-            0, 
-            selectFolderCallback
-        );
-    });
+    dialog.folderselect(
+        "Please select the folder you would like to backup",
+        "Please select the folder you would like to backup", 
+        0, 
+        selectFolderCallback
+    );
 
     // console.log("return value = <" + path + ">");
 }

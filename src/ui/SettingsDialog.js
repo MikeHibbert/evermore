@@ -12,16 +12,29 @@ import {
     QLabel,
     QTreeWidgetItem, 
     QTreeWidget,
+    QIcon,
+    QPixmap,
     BaseWidgetEvents,
     NativeElement,
     FileMode
   } from "@nodegui/nodegui";
 
+import path from "path";
 import {walletFileSet, setWalletFilePath} from '../db/helpers';
 import {getWalletAddress} from '../crypto/arweave-helpers';
 import openConnectDialog from './ConnectDialog';
 import { settings } from "../config";
 import { getFiles } from "../fsHandling/helpers";
+
+const folder_icon_path = path.join(
+  process.cwd(), 
+  `assets/images/${process.platform === 'win32' ? 'folder.png' : 'folder.png'}`
+);
+
+const file_icon_file = path.join(
+  process.cwd(), 
+  `assets/images/${process.platform === 'win32' ? 'folder.png' : 'folder.png'}`
+);
 
 const rootStyleSheet = `
   #rootView {
@@ -275,7 +288,7 @@ const createFolderItems = (path_info, tree, window, root, parent) => {
         folder_item = createFolderItems(path, tree, window, false, parent);
       }
       folder_item.setText(0, path.name);
-
+      folder_item.setIcon(0, new QIcon(folder_icon_path));
     } else {
       let file_item = null;
       if(root) {

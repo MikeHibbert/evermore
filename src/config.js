@@ -14,7 +14,8 @@ let settings = {
     DB_PATH: 'evermore-db.json'
 }
 
-if(jest) {
+if(typeof jest != "undefined") {
+    debugger;
     settings.DB_PATH = "test_db.json";
 }
 

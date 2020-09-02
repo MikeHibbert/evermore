@@ -23,13 +23,13 @@
     "clean": "rimraf dist",
     "watch": "webpack --watch"
   },
-  "author": "",
+  "author": "Mike Hibbert",
   "license": "ISC",
   "dependencies": {
     "@babel/cli": "^7.10.4",
     "@babel/core": "^7.10.4",
     "@babel/preset-env": "^7.10.4",
-    "@nodegui/nodegui": "^0.24.0",
+    "@nodegui/nodegui": "https://github.com/nodegui/nodegui/releases/download/v0.0.0-latest-master/nodegui-master.tgz",
     "arweave": "^1.8.0",
     "axios": "^0.19.2",
     "chokidar": "^3.4.0",

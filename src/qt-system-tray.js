@@ -30,6 +30,8 @@ tray.setIcon(trayIcon);
 tray.show();
 tray.setToolTip("Evermore");
 
+exports.systemTray = tray;
+
 
 const createLoggedOutSystray = (menu) => {
     const connectAction = new QAction();
@@ -65,10 +67,20 @@ const createLoggedOutSystray = (menu) => {
     menu.addAction(shutdownAction);
 }
 
-const createLoggedInSystray = (menu, balance) => {
+export const createLoggedInSystray = (menu) => {
+
+    if(typeof menu == "undefined") {
+        menu = new QMenu();
+        tray.setContextMenu(menu);
+    }
     
     const balanceAction = new QAction();
-    balanceAction.setText("Balance: " + balance + " AR");
+
+    const wallet_path = walletFileSet();
+    getWalletBalance(wallet_path).then((balance) => {
+        balanceAction.setText("Balance: " + balance + " AR");
+    });
+    
     balanceAction.addEventListener("triggered", () => {
         const wallet_path = walletFileSet();
 
@@ -130,9 +142,7 @@ const initSystemTray = () => {
               return
             }
           
-            getWalletBalance(wallet_path).then((balance) => {
-                createLoggedInSystray(menu, balance);
-            });
+            createLoggedInSystray(menu);
         });
     }
     
