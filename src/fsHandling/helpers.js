@@ -38,7 +38,7 @@ export function createRootFolder(path_parts, index, file_info) {
   if(index == path_parts.length - 1) {
       return {...file_info, name: path_parts[index], index: index, type: "file"};
   } else {
-      return {name: path_parts[index], index: index, type: "folder", childeren: [createRootFolder(path_parts, index + 1, file_info)]};
+      return {...file_info, name: path_parts[index], index: index, type: "folder", childeren: [createRootFolder(path_parts, index + 1, file_info)]};
   }
 }
 
@@ -54,7 +54,7 @@ export function addToFolderChilderen(path_parts, index, file_info, path_obj) {
           const matched_folders = path_obj.childeren.filter((folder) => folder.name == current_folder);
 
           if(matched_folders.length == 0) {
-              const folder = {name: current_folder, index: index, type: "folder", childeren: []};
+              const folder = {...file_info, name: current_folder, index: index, type: "folder", childeren: []};
               path_obj.childeren.push(folder);
 
               addToFolderChilderen(path_parts, index + 1, file_info, folder);
@@ -86,7 +86,7 @@ export const getFiles = async (address) => {
 
   const tx_rows = await Promise.all(tx_ids.map(async (tx_id) => {
   
-      let tx_row = {id: tx_id};
+      let tx_row = {id: tx_id, checked: true};
       
       var tx = await arweave.transactions.get(tx_id);
       

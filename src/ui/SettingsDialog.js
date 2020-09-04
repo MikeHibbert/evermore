@@ -13,10 +13,12 @@ import {
     QTreeWidgetItem, 
     QTreeWidget,
     QIcon,
+    ItemDataRole,
     QPixmap,
     BaseWidgetEvents,
     NativeElement,
-    FileMode
+    FileMode,
+    CheckState,
   } from "@nodegui/nodegui";
 
 import path from "path";
@@ -28,13 +30,15 @@ import { getFiles } from "../fsHandling/helpers";
 
 const folder_icon_path = path.join(
   process.cwd(), 
-  `assets/images/${process.platform === 'win32' ? 'folder.png' : 'folder.png'}`
+  `assets/images/${process.platform === 'win32' ? 'folder_icon.png' : 'folder_icon.png'}`
 );
 
 const file_icon_file = path.join(
   process.cwd(), 
   `assets/images/${process.platform === 'win32' ? 'folder.png' : 'folder.png'}`
 );
+
+const USER_DATA_ROLE = 20;
 
 const rootStyleSheet = `
   #rootView {
@@ -215,7 +219,14 @@ const createSyncRow = async (editable_settings, rootView, win) => {
 
         
         const tree = new QTreeWidget();
+
         createFolderItems(folders[''], tree, win, true, null);
+
+        tree.addEventListener("itemChanged", (item, column) => {
+          const path_info = JSON.parse(item.data(0, USER_DATA_ROLE).toString());
+
+          debugger;
+        });
 
         syncRootViewLayout.addWidget(tree);
 
@@ -289,6 +300,16 @@ const createFolderItems = (path_info, tree, window, root, parent) => {
       }
       folder_item.setText(0, path.name);
       folder_item.setIcon(0, new QIcon(folder_icon_path));
+
+      let checked = CheckState.Unchecked;
+
+      if(path_info.checked) {
+        checked = CheckState.Checked;
+      }
+
+      folder_item.setData(0, USER_DATA_ROLE, JSON.stringify(path_info));
+      folder_item.setCheckState(0, checked);
+
     } else {
       let file_item = null;
       if(root) {
@@ -299,6 +320,14 @@ const createFolderItems = (path_info, tree, window, root, parent) => {
       }
 
       file_item.setText(0, path.name);
+
+      let checked = CheckState.Unchecked;
+      if(path_info.checked) {
+        checked = CheckState.Checked;
+      }
+      
+      file_item.setData(0, USER_DATA_ROLE, JSON.stringify(path_info));
+      file_item.setCheckState(0, checked);
     }
   }
 
