@@ -45,6 +45,11 @@ export function InitDB() {
     if(uploaders === false) {
         db.set('uploaders', []).write();
     }
+
+    const downloads = db.has('downloads').value();
+    if(downloads === false) {
+        db.set('downloads', []).write();
+    }
 }
 
 export const walletFileSet = () => {
@@ -231,7 +236,7 @@ export const GetSyncedFiles = () => {
         InitDB();
     }
 
-    return db.get('synced_files');
+    return db.get('synced_files').value();
 }
 
 export const GetSyncedFile = (tx_id) => {
@@ -249,6 +254,36 @@ export const GetSyncedFileFromPath = (path) => {
 
     return db.get('synced_files').find({path: path}).value();
 }
+
+export const AddFileToDownloads = (file_info) => {
+    if(!db) {
+        InitDB();
+    }
+
+    db.get('downloads')
+        .push(file_info).write();
+}
+
+export const RemoveFileFromDownloads  = (name, path) => {
+    if(!db) {
+        InitDB();
+    }
+
+    db.get('downloads')
+        .remove({
+            name: name,
+            path: path
+        }).write();
+}
+
+export const GetDownloads = () => {
+    if(!db) {
+        InitDB();
+    }
+
+    return db.get('downloads').value();
+}
+
 export const AddFolder = (tx_id, path) => {
     if(!db) {
         InitDB();

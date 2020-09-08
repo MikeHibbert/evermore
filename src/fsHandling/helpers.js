@@ -34,14 +34,6 @@ export const getRalativePath = (path) => {
   return relative_path;
 }
 
-export function createRootFolder(path_parts, index, file_info) {
-  if(index == path_parts.length - 1) {
-      return {...file_info, name: path_parts[index], index: index, type: "file"};
-  } else {
-      return {...file_info, name: path_parts[index], index: index, type: "folder", childeren: [createRootFolder(path_parts, index + 1, file_info)]};
-  }
-}
-
 export function addToFolderChilderen(path_parts, index, file_info, path_obj) {
   if(index == path_parts.length - 1) {
       return path_obj.childeren.push({...file_info, name: path_parts[index], index: index, type: "file"});
@@ -106,7 +98,7 @@ export const getFiles = async (address) => {
   }));
 
   const final_rows = [];
-  const folders = {};    
+  const folders = {'':{ index: -1, id: "root", type: "folder", name: '', childeren: []}};    
 
   for(let i in tx_rows) {
       const file_info = tx_rows[i];
@@ -124,15 +116,8 @@ export const getFiles = async (address) => {
       if(path_parts.length > 1) {
           if(folders.hasOwnProperty(path_parts[0])) {
               addToFolderChilderen(path_parts, 0, file_info, folders[path_parts[0]], 0);                
-          } else {
-              folders[path_parts[0]] = createRootFolder(path_parts, 0, file_info);
-          }
-          
+          }           
       }      
-  }
-
-  if(!folders.hasOwnProperty("")) {
-      folders[""] = {name: "", childeren: [], index: 0, type: "folder"};
   }
 
   return folders;

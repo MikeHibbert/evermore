@@ -91,34 +91,35 @@ const rootStyleSheet = `
   }
 `;
 
-const openSettingsDialog = (win) => {
+const openSettingsDialog = () => {
     const wallet_path = walletFileSet();
 
     if(!wallet_path) {
-        openConnectDialog();
+      openConnectDialog();
     } else {
-        const rootView = new QWidget();
-        rootView.setObjectName("rootView");
-        const rootViewLayout = new FlexLayout()
-        rootView.setLayout(rootViewLayout);
-        
-        const editable_settings = {
-          changed: false,
-          wallet_path: wallet_path
-        }
-        // wallet file path
-        createWalletPathRow(editable_settings, rootView);
+      
+      const rootView = new QWidget();
+      rootView.setObjectName("rootView");
+      const rootViewLayout = new FlexLayout()
+      rootView.setLayout(rootViewLayout);
+      
+      const editable_settings = {
+        changed: false,
+        wallet_path: wallet_path
+      }
+      // wallet file path
+      createWalletPathRow(editable_settings, rootView);
 
-        createSyncRow(editable_settings, rootView, win);
-       
-        createActionsRow(editable_settings, rootView, win);
+      createSyncRow(editable_settings, rootView, win);
+      
+      createActionsRow(editable_settings, rootView, win);
 
-        rootView.setStyleSheet(rootStyleSheet);
+      rootView.setStyleSheet(rootStyleSheet);
 
-        win.setCentralWidget(rootView);
-        win.setWindowTitle("Evermore Settings");
-        // win.resize(800, 640);
-        win.show();
+      win.setCentralWidget(rootView);
+      win.setWindowTitle("Evermore Settings");
+      // win.resize(800, 640);
+      win.show();
     }
 
     
@@ -203,44 +204,79 @@ const createSyncRow = async (editable_settings, rootView, win) => {
   btnSelectiveSync.setObjectName(`btnSelectiveSync`);
 
   btnSelectiveSync.addEventListener("clicked", async () => {
-      console.log("btnSelectiveSync clicked"); 
+    console.log("btnSelectiveSync clicked"); 
 
-      const wallet_file = walletFileSet();
+    const wallet_file = walletFileSet();
 
-      if(wallet_file) {
-        const wallet_address = await getWalletAddress(wallet_file);
+    if(wallet_file) {
+      const wallet_address = await getWalletAddress(wallet_file);
 
-        const folders = await getFiles(wallet_address);
+      const folders = await getFiles(wallet_address);
 
-        const syncRootView = new QWidget();
-        syncRootView.setObjectName("rootView");
-        const syncRootViewLayout = new FlexLayout()
-        syncRootView.setLayout(syncRootViewLayout);
+      const syncWin = new QMainWindow();
+      const syncRootView = new QWidget();
+      syncRootView.setObjectName("rootView");
+      const syncRootViewLayout = new FlexLayout()
+      syncRootView.setLayout(syncRootViewLayout);
 
-        
-        const tree = new QTreeWidget();
-
-        createFolderItems(folders[''], tree, win, true, null);
-
-        tree.addEventListener("itemChanged", (item, column) => {
-          const path_info = JSON.parse(item.data(0, USER_DATA_ROLE).toString());
-
-          debugger;
-        });
-
-        syncRootViewLayout.addWidget(tree);
-
-        createSyncActionsRow(folders, syncRootView, rootView, win);
-
-        win.setCentralWidget(syncRootView);         
-        
-      }
       
+      const tree = new QTreeWidget();
+
+      createFolderItems(folders[''], tree, win, true, null);
+
+      tree.addEventListener("itemChanged", (item, column) => {
+        const serialised_path_info = JSON.parse(item.data(0, USER_DATA_ROLE).toString());
+
+        const path_info = getOriginalPathInfoInstance(serialised_path_info, folders['']);
+
+        const checked = item.data(0, ItemDataRole.CheckStateRole).toInt();
+
+        path_info.checked = checked == CheckState.Checked ? true : false;
+
+        if(path_info.type == "folder") {
+          toggleAllChilderen(path_info);
+        }
+      });
+
+      syncRootViewLayout.addWidget(tree);
+
+      createSyncActionsRow(folders, syncRootView, rootView, syncWin);
+
+      syncWin.setCentralWidget(syncRootView);         
+      syncWin.show();
+    } 
   });
 
   syncActionsLayout.addWidget(btnSelectiveSync);
 
   rootView.layout.addWidget(syncActions);
+}
+
+const getOriginalPathInfoInstance = (path_info, path_infos) => {
+  if(path_info.path == path_infos.path && path_info.name == path_infos.name) {
+    return path_infos;
+  }
+
+  for(let i in path_infos.childeren) {
+    const pi = path_infos.childeren[i];
+
+    if(pi.path == path_info.path && pi.name == path_info.name) {
+      return pi;
+    }
+
+    if(pi.type == "folder") {
+      return getOriginalPathInfoInstance(path_info, pi);
+    }
+  }
+}
+
+const toggleAllChilderen = (path_info) => {
+  for(let i in path_info.childeren) {
+    const pi = path_info.childeren[i];
+
+    const checked = path_info.checked == true ? CheckState.Checked : CheckState.Unchecked;
+    pi.control.setCheckState(0, checked);
+  }
 }
 
 const createSyncActionsRow = (folders, syncRootView, rootView, win) => {
@@ -263,7 +299,9 @@ const createSyncActionsRow = (folders, syncRootView, rootView, win) => {
   btnSave.addEventListener("clicked", () => {
     console.log("btnSave clicked");
 
-    win.setCentralWidget(rootView);   
+    // update original_folder_state with state from folders
+
+    win.hide();   
   });
 
   actionsLayout.addWidget(btnSave);
@@ -273,7 +311,7 @@ const createSyncActionsRow = (folders, syncRootView, rootView, win) => {
   btnCancel.setObjectName(`btnCancel`);
 
   btnCancel.addEventListener("clicked", () => {
-    win.setCentralWidget(rootView);        
+    win.hide();     
   });
 
   actionsLayout.addWidget(btnCancel, btnCancel.getFlexNode(), );
@@ -282,7 +320,6 @@ const createSyncActionsRow = (folders, syncRootView, rootView, win) => {
 }
 
 const createFolderItems = (path_info, tree, window, root, parent) => {
-
   if(!parent && !root) {
     parent = new QTreeWidgetItem();
     parent.setText(0, path_info.name);
@@ -303,12 +340,13 @@ const createFolderItems = (path_info, tree, window, root, parent) => {
 
       let checked = CheckState.Unchecked;
 
-      if(path_info.checked) {
+      if(path.checked) {
         checked = CheckState.Checked;
       }
 
-      folder_item.setData(0, USER_DATA_ROLE, JSON.stringify(path_info));
+      folder_item.setData(0, USER_DATA_ROLE, JSON.stringify(path));
       folder_item.setCheckState(0, checked);
+      path['control'] = folder_item;
 
     } else {
       let file_item = null;
@@ -322,12 +360,13 @@ const createFolderItems = (path_info, tree, window, root, parent) => {
       file_item.setText(0, path.name);
 
       let checked = CheckState.Unchecked;
-      if(path_info.checked) {
+      if(path.checked) {
         checked = CheckState.Checked;
       }
       
-      file_item.setData(0, USER_DATA_ROLE, JSON.stringify(path_info));
+      file_item.setData(0, USER_DATA_ROLE, JSON.stringify(path));
       file_item.setCheckState(0, checked);
+      path['control'] = file_item;
     }
   }
 

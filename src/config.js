@@ -15,7 +15,6 @@ let settings = {
 }
 
 if(typeof jest != "undefined") {
-    debugger;
     settings.DB_PATH = "test_db.json";
 }
 
