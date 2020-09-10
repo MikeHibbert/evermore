@@ -184,9 +184,11 @@ const createSyncRow = async (editable_settings, rootView, win) => {
     if(wallet_file) {
       const wallet_address = await getWalletAddress(wallet_file);
 
-      const folders = await getFiles(wallet_address);
+      const path_infos = await getFiles(wallet_address);
 
-      openSyncSettingsDialog(folders);
+      openSyncSettingsDialog(path_infos, (path_infos) => {
+        console.log("saveCallback called from createSyncRow");
+      });
     } 
   });
 

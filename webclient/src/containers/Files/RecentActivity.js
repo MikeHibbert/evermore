@@ -4,9 +4,9 @@ import FileTableRow from '../../components/Files/FileTableRow';
 
 class RecentActivity extends Component {
 	getRecentFiles(folders, recent_files) {
-		for(let i in folders.childeren) {
+		for(let i in folders.children) {
 			
-			const path = folders.childeren[i];
+			const path = folders.children[i];
 			if(path.type == "folder") {
 				this.getRecentFiles(path, recent_files);
 			} else {

@@ -9,23 +9,23 @@ const {
 } = require('./helpers'); 
 const { settings } = require('../config');
 
-beforeEach(() => {
-    fs.exists(settings.DB_PATH, (exists) => {
-        if(!exists) {
-            InitDB();
-        }
-    })
+// beforeEach(() => {
+//     fs.exists(settings.DB_PATH, (exists) => {
+//         if(!exists) {
+//             InitDB();
+//         }
+//     })
     
-});
+// });
 
-afterAll(() => {
-    fs.exists(settings.DB_PATH, (exists) => {
-        if(exists) {
-            fs.unlinkSync(settings.DB_PATH);
-        }
-    })
+// afterAll(() => {
+//     fs.exists(settings.DB_PATH, (exists) => {
+//         if(exists) {
+//             fs.unlinkSync(settings.DB_PATH);
+//         }
+//     })
     
-});
+// });
 
 test("Should set wallet file", () => {
 

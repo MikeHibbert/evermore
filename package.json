@@ -15,7 +15,7 @@
     ]
   },
   "scripts": {
-    "test": "npm-run-all clean transpile && webpack --config webpack.config.js && jest",
+    "test": "npm-run-all clean transpile && webpack --config webpack.config.js && jest --runInBand --detectOpenHandles",
     "service": "node dist/index.js",
     "dev": "babel ./src --out-dir dist && qode dist/index.js",
     "build": "npm-run-all clean transpile && webpack --config webpack.config.js",
@@ -38,6 +38,7 @@
     "copy-webpack-plugin": "^6.0.3",
     "dialog-node": "git+https://github.com/MikeHibbert/dialog-node.git",
     "file-loader": "^6.0.0",
+    "glob": "^7.1.6",
     "lowdb": "^1.0.0",
     "named-pipes": "0.0.1",
     "native-addon-loader": "^2.0.1",

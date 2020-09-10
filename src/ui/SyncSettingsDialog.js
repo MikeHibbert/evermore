@@ -23,7 +23,7 @@ const folder_icon_path = path.join(
     `assets/images/${process.platform === 'win32' ? 'folder_icon.png' : 'folder_icon.png'}`
   );
 
-const openSyncSettingsDialog = (folders) => {
+const openSyncSettingsDialog = (path_infos, saveCallback) => {
     const syncWin = new QMainWindow();
     const syncRootView = new QWidget();
     syncRootView.setObjectName("rootView");
@@ -32,19 +32,19 @@ const openSyncSettingsDialog = (folders) => {
 
     const tree = new QTreeWidget();
 
-    createFolderItems(folders[''], tree, syncWin, true, null);
+    createFolderItems(path_infos[''], tree, syncWin, true, null);
 
     const OnChange = (item, column) => {
         const serialised_path_info = JSON.parse(item.data(0, USER_DATA_ROLE).toString());
     
-        const path_info = getOriginalPathInfoInstance(serialised_path_info, folders['']);
+        const path_info = getOriginalPathInfoInstance(serialised_path_info, path_infos['']);
     
         const checked = item.data(0, ItemDataRole.CheckStateRole).toInt();
     
         path_info.checked = checked == CheckState.Checked ? true : false;
     
         if(path_info.type == "folder") {
-            toggleAllChilderen(path_info);
+            toggleAllchildren(path_info);
         }
     }
 
@@ -52,7 +52,7 @@ const openSyncSettingsDialog = (folders) => {
 
     syncRootViewLayout.addWidget(tree);
 
-    createSyncActionsRow(folders, syncRootView, syncWin);
+    createSyncActionsRow(path_infos, syncRootView, syncWin, saveCallback);
 
     syncWin.setCentralWidget(syncRootView);         
     syncWin.show();
@@ -67,8 +67,8 @@ const getOriginalPathInfoInstance = (path_info, path_infos) => {
       return path_infos;
     }
   
-    for(let i in path_infos.childeren) {
-      const pi = path_infos.childeren[i];
+    for(let i in path_infos.children) {
+      const pi = path_infos.children[i];
   
       if(pi.path == path_info.path && pi.name == path_info.name) {
         return pi;
@@ -80,16 +80,16 @@ const getOriginalPathInfoInstance = (path_info, path_infos) => {
     }
   }
   
-  const toggleAllChilderen = (path_info) => {
-    for(let i in path_info.childeren) {
-      const pi = path_info.childeren[i];
+  const toggleAllchildren = (path_info) => {
+    for(let i in path_info.children) {
+      const pi = path_info.children[i];
   
       const checked = path_info.checked == true ? CheckState.Checked : CheckState.Unchecked;
       pi.control.setCheckState(0, checked);
     }
   }
   
-  const createSyncActionsRow = (folders, syncRootView, win) => {
+  const createSyncActionsRow = (path_infos, syncRootView, win, saveCallback) => {
     const actions = new QWidget();
     const actionsLayout = new FlexLayout();
     actions.setObjectName('actions');
@@ -107,10 +107,7 @@ const getOriginalPathInfoInstance = (path_info, path_infos) => {
     btnSave.setObjectName(`btnSave`);
   
     btnSave.addEventListener("clicked", () => {
-      console.log("btnSave clicked");
-  
-      // update original_folder_state with state from folders
-  
+      saveCallback(path_infos);
       win.hide();   
     });
   
@@ -135,8 +132,8 @@ const createFolderItems = (path_info, tree, window, root, parent) => {
         parent.setText(0, path_info.name);
     }
 
-    for(let i in path_info.childeren) {
-        const path = path_info.childeren[i];
+    for(let i in path_info.children) {
+        const path = path_info.children[i];
         if(path.type == "folder") {
             let folder_item = null;
             if(root) {

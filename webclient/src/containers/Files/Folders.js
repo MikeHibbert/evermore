@@ -81,9 +81,9 @@ class FoldersView extends Component {
 
     createRows(file_info, file_rows) {
         if(this.state.folder_name == file_info.name) {
-            if(file_info.childeren.length > 0) {
-                for(let i in file_info.childeren) {
-                    const path = file_info.childeren[i];
+            if(file_info.children.length > 0) {
+                for(let i in file_info.children) {
+                    const path = file_info.children[i];
                     
                     if(path.type == "folder") {
                         file_rows.push(
@@ -97,8 +97,8 @@ class FoldersView extends Component {
                 }   
             }
         } else {
-            for(let i in file_info.childeren) {
-                const path = file_info.childeren[i];
+            for(let i in file_info.children) {
+                const path = file_info.children[i];
                 this.createRows(path, file_rows);
             }
         }

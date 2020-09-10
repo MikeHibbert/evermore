@@ -40,7 +40,7 @@ test("Should get downloadable files and return thier info", async () => {
     setWalletFilePath(test_wallet_path);
 
     getDownloadableFiles().then(downloadable_files => {
-        expect(downloadable_file.length).toBeGreaterThan(0);
+        expect(downloadable_files.length).toBeGreaterThan(0);
     });
     
 })

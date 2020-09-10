@@ -1,10 +1,10 @@
 const dialog = require('dialog-node');
 import {createLoggedInSystray} from '../qt-system-tray';
 import {InitFileWatcher} from '../fsHandling/Init';
+import {getSyncPathInfos} from '../fsHandling/helpers';
 import {getWalletBalance} from '../crypto/arweave-helpers';
 import {setWalletFilePath, AddSyncedFolder} from '../db/helpers';
-//import {setSystrayInstance, ConnectedActions} from '../system-tray';
-
+import openSyncSettingsDialog from './SyncSettingsDialog';
 
 let systray = null;
 const selectFolderCallback = (code, retVal, stderr) => {
@@ -12,6 +12,13 @@ const selectFolderCallback = (code, retVal, stderr) => {
     if(retVal.length == 0) return;
 
     AddSyncedFolder(retVal.replace('\r\n', ''));
+
+    const path_infos = getSyncPathInfos();
+
+    openSyncSettingsDialog(path_infos, (path_infos) => {
+
+    });
+
     InitFileWatcher(retVal.replace('\r\n', ''));
 
     createLoggedInSystray()

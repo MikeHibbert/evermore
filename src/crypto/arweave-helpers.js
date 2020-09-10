@@ -40,8 +40,6 @@ export const getWalletAddress = async (path) => {
 }
 
 export const uploadFile = async (file_info) => {
-    console.log(`uploading ${file_info.file}`);
-
     const wallet_file = walletFileSet();
 
     if(!wallet_file || wallet_file.length == 0) return;
