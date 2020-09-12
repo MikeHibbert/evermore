@@ -26,6 +26,7 @@
   "author": "Mike Hibbert",
   "license": "ISC",
   "dependencies": {
+    "bl": ">=1.2.3",
     "@babel/cli": "^7.10.4",
     "@babel/core": "^7.10.4",
     "@babel/preset-env": "^7.10.4",

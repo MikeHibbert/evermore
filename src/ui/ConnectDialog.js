@@ -13,11 +13,15 @@ const selectFolderCallback = (code, retVal, stderr) => {
 
     AddSyncedFolder(retVal.replace('\r\n', ''));
 
-    const path_infos = getSyncPathInfos();
-
-    openSyncSettingsDialog(path_infos, (path_infos) => {
-
+    const path_infos = getSyncPathInfos((path_infos) => {
+        if(path_infos[''].children.length > 0) {
+            openSyncSettingsDialog(path_infos, (path_infos) => {
+                debugger;
+            });
+        }        
     });
+
+    
 
     InitFileWatcher(retVal.replace('\r\n', ''));
 

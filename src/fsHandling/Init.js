@@ -11,7 +11,8 @@ import {
     GetUploaders, 
     RemoveUploader,
     ResetPendingFile, 
-    ConfirmSyncedFileFromTransaction 
+    ConfirmSyncedFileFromTransaction,
+    SyncPaused
 } from '../db/helpers';
 import { 
     uploadFile, 
@@ -98,23 +99,25 @@ const processAllOutstandingUploads = (existing_files) => {
 const processAllPendingFiles = (pending_files, existing_files) => {
     let uploaded_count = 0;
 
-    for(let i in pending_files) {
-        const txs = fileExistsOnTheBlockchain(pending_files[i], existing_files);
-
-        if(txs.length == 0) {
-            uploadFile(pending_files[i]);
-            uploaded_count++;
-        } else {
-            ConfirmSyncedFileFromTransaction(pending_files[i].path, txs[0]); // only send one because duplicates is dev env, shouldnt be so in production!
-        }        
-    }
-
-    if(uploaded_count > 0) {
-        notifier.notify({
-            title: 'Evermore',
-            message: `${pending_files.length} have been uploaded and will be mined sortly.`
-          });
-    }
+    if(!SyncPaused()) {
+        for(let i in pending_files) {
+            const txs = fileExistsOnTheBlockchain(pending_files[i], existing_files);
+    
+            if(txs.length == 0) {
+                uploadFile(pending_files[i]);
+                uploaded_count++;
+            } else {
+                ConfirmSyncedFileFromTransaction(pending_files[i].path, txs[0]); // only send one because duplicates is dev env, shouldnt be so in production!
+            }        
+        }
+    
+        if(uploaded_count > 0) {
+            notifier.notify({
+                title: 'Evermore',
+                message: `${pending_files.length} have been uploaded and will be mined sortly.`
+              });
+        }
+    }    
     
 }
 

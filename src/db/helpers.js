@@ -16,6 +16,11 @@ function getDB() {
 export function InitDB() {
     db = getDB();
 
+    const sync_status = db.has('sync_status').value();
+    if(sync_status === false) {
+        db.set('sync_status', false).write();
+    }
+
     const pending = db.has('pending').value();
     if(pending === false) {
         db.set('pending', []).write();
@@ -50,6 +55,18 @@ export function InitDB() {
     if(downloads === false) {
         db.set('downloads', []).write();
     }
+}
+
+export const SyncPaused = () => {
+    return db.get('sync_status').value();
+}
+
+export const SetSyncStatus = (paused) =>  {
+    if(!db) {
+        InitDB();
+    }
+    
+    db.set('sync_status', paused).write();
 }
 
 export const walletFileSet = () => {
