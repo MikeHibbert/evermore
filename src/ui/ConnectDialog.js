@@ -1,12 +1,41 @@
 const dialog = require('dialog-node');
+const path = require('path');
 import {createLoggedInSystray} from '../qt-system-tray';
 import {InitFileWatcher} from '../fsHandling/Init';
 import {getSyncPathInfos} from '../fsHandling/helpers';
 import {getWalletBalance} from '../crypto/arweave-helpers';
-import {setWalletFilePath, AddSyncedFolder} from '../db/helpers';
+import {
+    setWalletFilePath, 
+    AddSyncedFolder, 
+    AddPendingFile,
+    ConfirmSyncedFileFromTransaction
+} from '../db/helpers';
 import openSyncSettingsDialog from './SyncSettingsDialog';
 
 let systray = null;
+
+const configureWithPathsFromInfo = (path_info) => {
+    const paths = [];
+    path_info.children.forEach(pi => {
+        if(pi.type == 'folder') {
+            configureWithPathsFromInfo(pi);
+        } else {
+            if(pi.checked) {
+                const online_versions = getOnlineVersions(pi);
+                if(!online_versions) {
+                    AddPendingFile(null, pi.path, 1);
+                } else {
+                    online_versions.sort((a, b) => a.modified - b.modified);
+
+                    const online_version = online_versions[online_versions.length - 1];
+
+                    ConfirmSyncedFileFromTransaction(pi.path, online_version);
+                }
+            }            
+        }
+    })
+}
+
 const selectFolderCallback = (code, retVal, stderr) => {
     console.log(retVal);
     if(retVal.length == 0) return;
@@ -15,8 +44,11 @@ const selectFolderCallback = (code, retVal, stderr) => {
 
     const path_infos = getSyncPathInfos((path_infos) => {
         if(path_infos[''].children.length > 0) {
-            openSyncSettingsDialog(path_infos, (path_infos) => {
-                debugger;
+            openSyncSettingsDialog(path_infos[''], (pis) => {
+                configureWithPathsFromInfo(pis[''])
+            },
+            (pis) => {
+                configureWithPathsFromInfo(pis[''])
             });
         }        
     });

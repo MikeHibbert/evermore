@@ -4,17 +4,18 @@ import {
     GetSyncedFile, 
     ConfirmSyncedFileFromTransaction 
 } from '../db/helpers';
-
+import regeneratorRuntime from "regenerator-runtime";
 import {sendMessage} from '../integration/server';
-import {getFileUpdatedDate, getRalativePath} from '../fsHandling/helpers';
+import {getFileUpdatedDate, getRalativePath, createCRCFor} from '../fsHandling/helpers';
 import {getDownloadableFiles} from '../crypto/arweave-helpers';
 
 const fileAddedHandler = (path) => {
     console.log(`File ${path} has been added`)
 
-    getDownloadableFiles().then(downloadable_files => {
+    getDownloadableFiles().then(async downloadable_files => {
         const new_file_modified = getFileUpdatedDate(path);
         const relative_path = getRalativePath(path);
+        const current_crc = await createCRCFor(path);
 
         let found_in_downloadables = false;
         let confirmed_in_blockchain = false;
@@ -26,9 +27,13 @@ const fileAddedHandler = (path) => {
                 if(downloadable_file.file === relative_path) {
                     if(new_file_modified > downloadable_file.modified) {
                         if(!GetPendingFile(path)) {
-                            AddPendingFile(null, path, downloadable_file.version + 1);
-                            sendMessage(`REGISTER_PATH:${path}\n`, true);
-                            confirmed_in_blockchain = true;
+                            if(downloadable_file.hasOwnProperty('crc')) {
+                                if(downloadable_file.crc != current_crc) {
+                                    AddPendingFile(null, path, downloadable_file.version + 1);
+                                    sendMessage(`REGISTER_PATH:${path}\n`, true);
+                                    confirmed_in_blockchain = true;
+                                }                                
+                            }                            
                         }
                     } else {
                         if(!GetSyncedFile(downloadable_file.id)) {

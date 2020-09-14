@@ -30,6 +30,7 @@ export const OnFileWatcherReady = () => {
     if(pending_files.length > 0) {
         notifier.notify({
             title: 'Evermore Datastore',
+            icon: settings.NOTIFY_ICON_PATH,
             message: `${pending_files.length} have been added to the upload queue.`
           });
     }
@@ -63,6 +64,7 @@ const checkPendingFilesStatus = () => {
     if(confirmed_count > 0) {
         notifier.notify({
             title: 'Evermore Datastore',
+            icon: settings.NOTIFY_ICON_PATH,
             message: `${confirmed_count} files have successfully been mined and are now permanently stored on the blockchain.`
           });
     }
@@ -77,6 +79,7 @@ const processAllOutstandingUploads = (existing_files) => {
 
     notifier.notify({
         title: 'Evermore Datastore',
+        icon: settings.NOTIFY_ICON_PATH,
         message: `${uploaders.length} file uploads have been resumed.`
       });
 
@@ -92,12 +95,20 @@ const processAllOutstandingUploads = (existing_files) => {
 
     notifier.notify({
         title: 'Evermore Datastore',
+        icon: settings.NOTIFY_ICON_PATH,
         message: `${uploaders.length} resumed file uploads have been complete.`
       });
 }
 
 const processAllPendingFiles = (pending_files, existing_files) => {
     let uploaded_count = 0;
+
+    debugger;
+    notifier.notify({
+        title: 'Evermore Test',
+        icon: settings.NOTIFY_ICON_PATH,
+        message: `0 have been uploaded and will be mined sortly.`
+      });
 
     if(GetSyncStatus() != false) {
         for(let i in pending_files) {
@@ -115,6 +126,7 @@ const processAllPendingFiles = (pending_files, existing_files) => {
         if(uploaded_count > 0) {
             notifier.notify({
                 title: 'Evermore',
+                icon: settings.NOTIFY_ICON_PATH,
                 message: `${pending_files.length} have been uploaded and will be mined sortly.`
               });
         }

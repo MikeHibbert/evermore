@@ -1,3 +1,5 @@
+const path = require('path');
+
 let settings = {
     APP_NAME: 'EvermoreDatastore',
     PLATFORM: process.platform,
@@ -11,7 +13,11 @@ let settings = {
         timeout: 20000,
         logging: false
     }, 
-    DB_PATH: 'evermore-db.json'
+    DB_PATH: 'evermore-db.json',
+    NOTIFY_ICON_PATH: path.join(
+        process.cwd(), 
+        "assets\\images\\facebook-logo.png"
+      )
 }
 
 if(typeof jest != "undefined") {

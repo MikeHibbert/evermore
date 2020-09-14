@@ -258,7 +258,8 @@ export const ConfirmSyncedFileFromTransaction = (path, transaction) => {
             path: path,
             version: transaction.version == undefined ? 1 : transaction.version,
             modified: transaction.modified,
-            hostname: transaction.hostname
+            hostname: transaction.hostname,
+            crc: transaction.crc
         })
         .write();
 

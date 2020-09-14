@@ -23,7 +23,7 @@ const folder_icon_path = path.join(
     `assets/images/${process.platform === 'win32' ? 'folder_icon.png' : 'folder_icon.png'}`
   );
 
-const openSyncSettingsDialog = (path_infos, saveCallback) => {
+const openSyncSettingsDialog = (path_infos, saveCallback, cancelCallback) => {
     const syncWin = new QMainWindow();
     syncWin.setWindowTitle("Selective Sync");
     const syncRootView = new QWidget();
@@ -53,7 +53,7 @@ const openSyncSettingsDialog = (path_infos, saveCallback) => {
 
     syncRootViewLayout.addWidget(tree);
 
-    createSyncActionsRow(path_infos, syncRootView, syncWin, saveCallback);
+    createSyncActionsRow(path_infos, syncRootView, syncWin, saveCallback, cancelCallback);
 
     syncWin.setCentralWidget(syncRootView);         
     syncWin.show();
@@ -90,7 +90,8 @@ const getOriginalPathInfoInstance = (path_info, path_infos) => {
     }
   }
   
-  const createSyncActionsRow = (path_infos, syncRootView, win, saveCallback) => {
+  const createSyncActionsRow = (path_infos, syncRootView, win, saveCallback, cancelCallbackinin
+    ) => {
     const actions = new QWidget();
     const actionsLayout = new FlexLayout();
     actions.setObjectName('actions');
@@ -119,6 +120,9 @@ const getOriginalPathInfoInstance = (path_info, path_infos) => {
     btnCancel.setObjectName(`btnCancel`);
   
     btnCancel.addEventListener("clicked", () => {
+      if(cancelCallback) {
+        cancelCallback(path_infos);
+      }
       win.hide();     
     });
   
@@ -133,6 +137,7 @@ const createFolderItems = (path_info, tree, window, root, parent) => {
         parent.setText(0, path_info.name);
     }
 
+    debugger;
     for(let i in path_info.children) {
         const path = path_info.children[i];
         if(path.type == "folder") {
