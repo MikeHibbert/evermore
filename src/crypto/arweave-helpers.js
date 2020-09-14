@@ -1,5 +1,6 @@
 const Arweave = require('arweave/node');
 const fs = require('fs');
+const fse = require('fs-extra');
 import { readContract, selectWeightedPstHolder  } from 'smartweave';
 import {settings} from '../config';
 import regeneratorRuntime from "regenerator-runtime";
@@ -11,6 +12,14 @@ import {
     RemoveUploader,
     RemovePendingFile
 } from '../db/helpers';
+
+import {
+    createCRCFor, 
+    getFileUpdatedDate, 
+    createTempFolder, 
+    removeTempFolder,
+    getSystemPath
+} from '../fsHandling/helpers';
 
 export const arweave = Arweave.init(settings.ARWEAVE_CONFIG);
 
@@ -46,12 +55,15 @@ export const uploadFile = async (file_info) => {
 
     const jwk = getJwkFromWalletFile(wallet_file);
 
-    fs.exists(file_info.path, async (exists) => {
-        if(!exists) {
+    fs.access(file_info.path, fs.constants.F_OK | fs.constants.R_OK, async (err) => {
+        if(err) {
             RemovePendingFile(file_info.path);
         } else {
-            const file_data = fs.readFileSync(file_info.path);
+            const file_data = await getFileData(file_info.path);
+            
             try {
+                const crc_for_data = await createCRCFor(file_info.path);
+
                 const transaction = await arweave.createTransaction({
                     data: file_data
                 }, jwk);
@@ -62,6 +74,7 @@ export const uploadFile = async (file_info) => {
                 transaction.addTag('modified', file_info.modified);
                 transaction.addTag('hostname', file_info.hostname);
                 transaction.addTag('version', file_info.version);
+                transaction.addTag('CRC', crc_for_data);
 
                 await arweave.transactions.sign(transaction, jwk);
 
@@ -93,6 +106,24 @@ export const uploadFile = async (file_info) => {
 
         }        
     }); // for whatever reason this file is now gone!
+}
+
+export const getFileData = (path) => {
+    const data = fs.readFileSync(path);
+
+    const encrypted_data = encryptData(data);
+
+    return encrypted_data;
+}
+
+export const encryptData = (data) => {
+    // TODO: settle on encryption method and implement
+    return data;
+}
+
+export const decryptData = (data) => {
+    // TODO: settle on encryption method and implement
+    return data;
 }
 
 export const sendUsagePayment = async (transaction_cost) => {
@@ -222,4 +253,40 @@ export const getTransactionStatus = async (tx_id) => {
 export const confirmTransaction = async (tx_id) => {
     const status = await getTransactionStatus(tx_id);
     console.log(JSON.stringify(status));
+}
+
+export const downloadFileFromTransaction = async (tx_id) => {
+    const transaction = await arweave.transactions.get(tx_id).then(async (transaction) => {
+        const tx_row = {id: transaction.id};
+        
+        tx.get('tags').forEach(tag => {
+            let key = tag.get('name', { decode: true, string: true });
+            let value = tag.get('value', { decode: true, string: true });
+            
+            if(key == "modified" || key == "version") {
+                tx_row[key] = parseInt(value);
+            } else {
+                tx_row[key] = value;
+            }
+            
+        }); 
+
+        return tx_row;
+    });
+
+    // createTempFolder();
+
+    let data = await arweave.transactions.getData(transaction, {decode: true});
+
+    if(transaction.hasOwnProperty('encrypted')) {
+        if(transaction.encrypted) {
+            data = decryptData(data);
+        }
+    }
+
+    const output_path = getSystemPath(transaction.path); 
+
+    fse.outputFileSync(output_path, data);
+
+    // removeTempFolder();
 }

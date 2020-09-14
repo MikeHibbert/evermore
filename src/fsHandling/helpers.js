@@ -1,5 +1,6 @@
 const fs = require('fs');
 const glob = require('glob');
+const path = require('path');
 import regeneratorRuntime from "regenerator-runtime";
 import {GetSyncedFolders} from '../db/helpers';
 import {arweave} from '../crypto/arweave-helpers';
@@ -27,18 +28,24 @@ export const getRalativePath = (path) => {
     let relative_path = path;
 
     for(let i in sync_folders) {
-    const sync_folder = sync_folders[i];
-    if(path.indexOf(sync_folder) != -1) {
-        relative_path = path.replace(sync_folder, '');
-    }
+        const sync_folder = sync_folders[i];
+        if(path.indexOf(sync_folder) != -1) {
+            relative_path = path.replace(sync_folder, '');
+        }
     }
 
     return relative_path;
 }
 
+export const getSystemPath = (relative_path) => {
+    const sync_folders = GetSyncedFolders();
+
+    return path.join(sync_folders[0], relative_path);
+}
+
 export function addToFolderChildren(path_parts, index, file_info, path_obj) {
     if(index == path_parts.length - 1) {
-        return path_obj.children.push({...file_info, name: path_parts[index], index: index, type: "file"});
+        return path_obj.children.push({...file_info, name: path_parts[index], index: index});
     } else {
         const current_folder = path_parts[index];
 
@@ -137,7 +144,7 @@ export const getSyncPathInfos = (callback) => {
     const sync_folders = GetSyncedFolders();
 
     if(sync_folders.length == 0) callback([]);
-    const glob_result = getDirectoriesAndFiles(sync_folders[0], (err, file_paths) => {
+        const glob_result = getDirectoriesAndFiles(sync_folders[0], (err, file_paths) => {
         if (err) {
             console.log('Error', err);
         } 
@@ -162,7 +169,7 @@ const convertPathsToInfos = (sync_folder, file_paths, is_root) => {
             }
         } catch(e) {}
 
-        const file_info = { path: file_path.replace(sync_folder, ''), children: [], type: path_type };
+        const file_info = { path: file_path.replace(sync_folder, ''), children: [], type: path_type, checked: true };
 
         let path_parts = [];
         if(file_info.path.indexOf('\\') != -1) {
@@ -238,5 +245,29 @@ export const createCRCFor = (path) => {
 
         readStream.read();
     });
+}
+
+export const createTempFolder = () => {
+    const sync_folders = GetSyncedFolders();
+
+    if(sync_folders.length > 0) {
+        const temp_folder = path.join(sync_folders[0], 'tmp');
+     
+        if(!fs.accessSync(temp_folder, fs.constants.F_OK)) {
+            fs.mkdirSync(temp_folder);
+        }
+    }
+}
+
+export const removeTempFolder = () => {
+    const sync_folders = GetSyncedFolders();
+
+    if(sync_folders.length > 0) {
+        const temp_folder = path.join(sync_folders[0], 'tmp');
+     
+        if(fs.accessSync(temp_folder, fs.constants.F_OK)) {
+            fs.unlinkSync(temp_folder);
+        }
+    }
 }
 

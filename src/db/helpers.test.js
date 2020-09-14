@@ -13,7 +13,7 @@ const path = require('path');
 const { settings } = require('../config');
 
 afterAll(() => {
-    if(fs.existsSync(path.join(process.cwd(), settings.DB_PATH))) {
+    if(fs.accessSync(path.join(process.cwd(), settings.DB_PATH), fs.constants.F_OK)) {
         return fs.unlinkSync(settings.DB_PATH);
     }
 });

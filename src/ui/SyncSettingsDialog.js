@@ -25,6 +25,7 @@ const folder_icon_path = path.join(
 
 const openSyncSettingsDialog = (path_infos, saveCallback) => {
     const syncWin = new QMainWindow();
+    syncWin.setWindowTitle("Selective Sync");
     const syncRootView = new QWidget();
     syncRootView.setObjectName("rootView");
     const syncRootViewLayout = new FlexLayout()

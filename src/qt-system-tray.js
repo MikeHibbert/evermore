@@ -15,6 +15,8 @@ import {walletFileSet, resetWalletFilePath} from './db/helpers';
 import {getWalletBalance} from './crypto/arweave-helpers';
 
 export const win = new QMainWindow();
+win.setWindowTitle("Evermore Settings");
+
 console.log(path.join(
     process.cwd(), 
     `assets/images/${process.platform === 'win32' ? 'tray-logo16x16.ico' : 'tray-logo32x32.png'}`

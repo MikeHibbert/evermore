@@ -12,7 +12,7 @@ import {
     RemoveUploader,
     ResetPendingFile, 
     ConfirmSyncedFileFromTransaction,
-    SyncPaused
+    GetSyncStatus
 } from '../db/helpers';
 import { 
     uploadFile, 
@@ -99,7 +99,7 @@ const processAllOutstandingUploads = (existing_files) => {
 const processAllPendingFiles = (pending_files, existing_files) => {
     let uploaded_count = 0;
 
-    if(!SyncPaused()) {
+    if(GetSyncStatus() != false) {
         for(let i in pending_files) {
             const txs = fileExistsOnTheBlockchain(pending_files[i], existing_files);
     

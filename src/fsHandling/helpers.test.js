@@ -3,7 +3,8 @@ const { settings } = require('../config');
 const path = require('path');
 import {
     getSyncPathInfos,
-    comparePathInfos, createCRCFor
+    comparePathInfos, 
+    createCRCFor
 } from './helpers';
 
 const { crc32 } = require('crc');
@@ -18,7 +19,7 @@ beforeAll(() => {
 })
 
 afterAll(() => {
-    if(fs.existsSync(path.join(process.cwd(), settings.DB_PATH))) {
+    if(fs.accessSync(path.join(process.cwd(), settings.DB_PATH), fs.constants.W_OK)) {
        return fs.unlinkSync(settings.DB_PATH);
    }
  });
@@ -41,7 +42,7 @@ test("Path Info Objects should match eachother", () => {
 });
 
 test("Should be able to generate CRC from large file", async  () => {
-    const crc_no_buffering = crc32(fs.readFileSync(path.join(process.cwd(), 'README.md'), 'utf-8')).toString(16)
+    const crc_no_buffering = crc32(fs.readFileSync(path.join(process.cwd(), 'README.md'), 'utf-8')).toString(16);
 
     const crc_result = await createCRCFor(path.join(process.cwd(), 'README.md'));
 
