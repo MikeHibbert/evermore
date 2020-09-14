@@ -4,6 +4,7 @@ import regeneratorRuntime from "regenerator-runtime";
 import {GetSyncedFolders} from '../db/helpers';
 import {arweave} from '../crypto/arweave-helpers';
 import {settings} from '../config';
+const { crc32 } = require('crc');
 
 export const getFileUpdatedDate = (path) => {
     const stats = fs.statSync(path);
@@ -152,7 +153,16 @@ const convertPathsToInfos = (sync_folder, file_paths, is_root) => {
     const folders = {'':{ index: -1, id: "root", type: "folder", name: '', children: []}};
 
     for(let i in file_paths) {
-        const file_info = { path: file_paths[i].replace(sync_folder, ''), children: [] };
+        const file_path = file_paths[i];
+        const path_type = 'file'; 
+
+        try {
+            if(fs.lstatSync(file_path).isDirectory()) {
+                path_type = 'folder'; 
+            }
+        } catch(e) {}
+
+        const file_info = { path: file_path.replace(sync_folder, ''), children: [], type: path_type };
 
         let path_parts = [];
         if(file_info.path.indexOf('\\') != -1) {
@@ -208,3 +218,25 @@ export const comparePathInfos = (a, b) => {
 
     return same;
 }
+
+export const createCRCFor = (path) => {
+    return new Promise((resolve, reject) => {
+        let crc_result = '';
+        const readStream = fs.createReadStream(path);
+
+        readStream.on('data', (chunk) => {
+            crc_result = crc32(chunk, crc_result).toString(16);
+        });
+
+        readStream.on('end', () => {
+            return resolve(crc_result);
+        });
+
+        readStream.on('error', (err) => {
+            return reject(err);
+        });
+
+        readStream.read();
+    });
+}
+

@@ -8,7 +8,7 @@ const fileChangedHandler = (path) => {
 
     const downloadable_files = getDownloadableFiles();
 
-    const new_file_modified = getFileUpdateDate(path);
+    const new_file_modified = getFileUpdatedDate(path);
     const relative_path = getRalativePath(path);
 
     if(downloadable_files.length > 0) {

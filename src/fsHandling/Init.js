@@ -107,7 +107,8 @@ const processAllPendingFiles = (pending_files, existing_files) => {
                 uploadFile(pending_files[i]);
                 uploaded_count++;
             } else {
-                ConfirmSyncedFileFromTransaction(pending_files[i].path, txs[0]); // only send one because duplicates is dev env, shouldnt be so in production!
+                // only send one because duplicates is dev env, shouldnt be so in production!
+                ConfirmSyncedFileFromTransaction(pending_files[i].path, txs[0]); 
             }        
         }
     
