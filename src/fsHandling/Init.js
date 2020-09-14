@@ -103,13 +103,6 @@ const processAllOutstandingUploads = (existing_files) => {
 const processAllPendingFiles = (pending_files, existing_files) => {
     let uploaded_count = 0;
 
-    debugger;
-    notifier.notify({
-        title: 'Evermore Test',
-        icon: settings.NOTIFY_ICON_PATH,
-        message: `0 have been uploaded and will be mined sortly.`
-      });
-
     if(GetSyncStatus() != false) {
         for(let i in pending_files) {
             const txs = fileExistsOnTheBlockchain(pending_files[i], existing_files);
