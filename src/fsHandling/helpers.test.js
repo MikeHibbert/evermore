@@ -21,7 +21,11 @@ beforeAll(() => {
 afterAll(() => {
     if(fs.accessSync(path.join(process.cwd(), settings.DB_PATH), fs.constants.W_OK)) {
        return fs.unlinkSync(settings.DB_PATH);
-   }
+    }
+    if(fs.accessSync(path.join(process.cwd(), settings.DB_PATH), fs.constants.W_OK)) {
+        return fs.unlinkSync(settings.DB_PATH);
+    }
+
  });
 
 test("Should list files and all folder recursively", () => {
@@ -31,7 +35,9 @@ test("Should list files and all folder recursively", () => {
 
     getSyncPathInfos((path_infos) => {
         expect(path_infos[''].children.length).toBeGreaterThan(0);
-    });   
+    }); 
+    
+    
 });
 
 test("Path Info Objects should match eachother", () => {

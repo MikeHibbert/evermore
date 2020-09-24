@@ -6,7 +6,7 @@ const {
     AddFileToDownloads,
     RemoveFileFromDownloads,
     GetDownloads,
-    SyncPaused,
+    GetSyncStatus,
     SetSyncStatus
 } = require('./helpers'); 
 const path = require('path');
@@ -57,16 +57,16 @@ test("Should add File to downloads", () => {
 test("Syncing can be paused", () => {
     SetSyncStatus(true);
 
-    expect(SyncPaused()).toBe(true);
+    expect(GetSyncStatus()).toBe(true);
 });
 
 test("Syncing can be unpaused", () => {
     SetSyncStatus(true);
 
-    expect(SyncPaused()).toBe(true);
+    expect(GetSyncStatus()).toBe(true);
 
     SetSyncStatus(false);
 
-    expect(SyncPaused()).toBe(false);
+    expect(GetSyncStatus()).toBe(false);
 });
 

@@ -109,4 +109,5 @@ dist
 
 evermore-db.json
 test_db.json
+README.md.enc
 *.exe

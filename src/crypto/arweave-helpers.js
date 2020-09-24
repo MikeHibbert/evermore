@@ -1,6 +1,8 @@
 const Arweave = require('arweave/node');
 const fs = require('fs');
 const fse = require('fs-extra');
+const crypto = require('crypto');
+
 import { readContract, selectWeightedPstHolder  } from 'smartweave';
 import {settings} from '../config';
 import regeneratorRuntime from "regenerator-runtime";
@@ -111,19 +113,9 @@ export const uploadFile = async (file_info) => {
 export const getFileData = (path) => {
     const data = fs.readFileSync(path);
 
-    const encrypted_data = encryptData(data);
+    const encrypted_data = encryptDataWithRSAKey(data);
 
     return encrypted_data;
-}
-
-export const encryptData = (data) => {
-    // TODO: settle on encryption method and implement
-    return data;
-}
-
-export const decryptData = (data) => {
-    // TODO: settle on encryption method and implement
-    return data;
 }
 
 export const sendUsagePayment = async (transaction_cost) => {
@@ -290,3 +282,5 @@ export const downloadFileFromTransaction = async (tx_id) => {
 
     // removeTempFolder();
 }
+
+

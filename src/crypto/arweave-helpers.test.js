@@ -1,17 +1,19 @@
 jest.mock('fs');
-
-const fs = jest.requireActual('fs');
+const path = require('path');
+const Arweave = jest.requireActual('arweave/node');
+const settings = require('../config');
 const { 
     arweave, 
     calculatePSTPayment, 
     sendUsagePayment, 
     uploadFile,
-    getDownloadableFiles
+    getDownloadableFiles, 
 } = require('./arweave-helpers');
 
 const { InitDB, setWalletFilePath } = require('../db/helpers'); 
 
 import regeneratorRuntime from "regenerator-runtime";
+
 
 test("Should get correct price for data storage", async () => {
     const price = await arweave.transactions.getPrice(1024);
@@ -43,4 +45,4 @@ test("Should get downloadable files and return thier info", async () => {
         expect(downloadable_files.length).toBeGreaterThan(0);
     });
     
-})
+});
