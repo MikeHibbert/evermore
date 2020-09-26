@@ -150,8 +150,6 @@ test("unzipKey should generate the same result as zipKey's input", async () => {
 
     const zipped_key = zipKey(original_data);
 
-    debugger;
-
     const unzipped_key = unzipKey(zipped_key);
 
     // console.table({original_data, zipped_key, unzipped_key});
