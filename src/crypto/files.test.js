@@ -1,3 +1,5 @@
+jest.setTimeout(400000);
+
 const path = require('path');
 const fs = jest.requireActual('fs');
 const Arweave = jest.requireActual('arweave/node');
@@ -8,7 +10,10 @@ const {
     decryptDataWithRSAKey,
     decryptDataWithWallet,
     getFileEncryptionKey,
-    encryptFile
+    encryptFile,
+    decryptFile,
+    zipKey,
+    unzipKey
 } = require('./files');
 
 const { InitDB, setWalletFilePath } = require('../db/helpers'); 
@@ -16,16 +21,19 @@ const { InitDB, setWalletFilePath } = require('../db/helpers');
 import regeneratorRuntime from "regenerator-runtime";
 
 beforeAll(function () {
-    if(fs.accessSync(path.join(process.cwd(), 'README.md.enc'), fs.constants.W_OK)) {
-       return fs.unlinkSync(path.join(process.cwd(), 'README.md.enc'));
-    }
- });
 
-afterAll(() => {
-    if(fs.accessSync(path.join(process.cwd(), 'README.md.enc'), fs.constants.W_OK)) {
-       return fs.unlinkSync(path.join(process.cwd(), 'README.md.enc'));
-   }
- });
+});
+
+afterEach(() => {
+    if(fs.accessSync(path.join(process.cwd(), 'README.md.enc'), fs.constants.F_OK)) {
+        debugger;
+        return fs.unlinkSync(path.join(process.cwd(), 'README.md.enc'));
+    }
+    if(fs.accessSync(path.join(process.cwd(), 'README.md.dec'), fs.constants.F_OK)) {
+        debugger;
+        return fs.unlinkSync(path.join(process.cwd(), 'README.md.dec'));
+    }
+});
 
 test("Should encrypt data and decrypt back to orriginal data using same JWK", async () => {
     const aw = Arweave.init(settings.ARWEAVE_CONFIG);
@@ -59,9 +67,7 @@ test("Should decrypt data encoded with a specific wallet", async () => {
     expect(decrypted_data).toBe(original_data);
 });
 
-test("getFileEncryptionKey should return the same key that was supplied to create new encrypted file", async () => {
-    process.title = "node"; // needed so tests will not pretend to be in the browser for the NodeRSA module
-    
+test("getFileEncryptionKey should return the same key that was supplied to create new encrypted file", async () => {   
     const aw = Arweave.init(settings.ARWEAVE_CONFIG);
 
     const wallet = await aw.wallets.generate();
@@ -82,4 +88,73 @@ test("getFileEncryptionKey should return the same key that was supplied to creat
     expect(decrypted_data).toBe(original_data);
 
     return;
+});
+
+test("decryptFile should return the same data that was supplied to create new encrypted file", async () => {    
+    const aw = Arweave.init(settings.ARWEAVE_CONFIG);
+
+    const wallet = await aw.wallets.generate();
+    const jwk = await aw.wallets.generate();
+    const key = wallet2PEM(jwk);
+
+    const result = await encryptFile(
+        wallet, 
+        jwk, 
+        path.join(process.cwd(), 'README.md'), 
+        path.join(process.cwd(), 'README.md.enc')
+    );
+
+    const original_data = fs.readFileSync(path.join(process.cwd(), 'README.md')).toString('utf8');
+
+    const private_key = await getFileEncryptionKey(result.file_path, result, wallet);
+
+    expect(private_key).toBe(key.private);
+
+    const decrypted_result = await decryptFile(
+        wallet, 
+        private_key, 
+        result.key_size, 
+        result.file_path, 
+        path.join(process.cwd(), 'README.md.dec')
+    )
+
+    const decrypted_data = fs.readFileSync(path.join(process.cwd(), 'README.md.dec')).toString('utf8');
+
+    expect(decrypted_data).toBe(original_data);
+
+    return;
+});
+
+test("zipKey should generate a smaller string than the private key supplied", async () => {
+    const aw = Arweave.init(settings.ARWEAVE_CONFIG);
+
+    const wallet = await aw.wallets.generate();
+
+    const key = wallet2PEM(wallet);
+
+    const original_data = key.private;
+
+    const zipped_key = zipKey(original_data);
+
+    expect(zipped_key.length).toBeLessThan(original_data.length);
+});
+
+test("unzipKey should generate the same result as zipKey's input", async () => {
+    const aw = Arweave.init(settings.ARWEAVE_CONFIG);
+
+    const wallet = await aw.wallets.generate();
+
+    const key = wallet2PEM(wallet);
+
+    const original_data = key.private;
+
+    const zipped_key = zipKey(original_data);
+
+    debugger;
+
+    const unzipped_key = unzipKey(zipped_key);
+
+    // console.table({original_data, zipped_key, unzipped_key});
+
+    expect(unzipped_key).toBe(original_data);
 });

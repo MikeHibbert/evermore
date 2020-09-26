@@ -1,6 +1,7 @@
 const fs = require('fs');
 const NodeRSA = require('node-rsa');
 const NodeJWK = require('node-jwk');
+const zlib = require('zlib');
 import regeneratorRuntime from "regenerator-runtime";
 
 export const encryptFile = async (wallet, jwk, file_path, dest_path) => {
@@ -26,6 +27,33 @@ export const encryptFile = async (wallet, jwk, file_path, dest_path) => {
                 file_path: dest_path, 
                 key_size: Buffer.byteLength(decode_key, 'binary'), 
                 key: decode_key
+            });
+        });
+
+        readStream.on('error', (err) => {
+            return reject(err);
+        });
+
+        readStream.read();        
+    });
+}
+
+export const decryptFile = async (wallet, private_pem_key, start, file_path, dest_path) => {
+    return new Promise((resolve, reject) => {
+        let crc_result = '';
+
+        const private_key = PEM2RSAKey(private_pem_key);      
+
+        const readStream = fs.createReadStream(file_path, {encoding: 'binary', start: start});
+        const writeableStream = fs.createWriteStream(dest_path, {encoding: 'binary'});
+
+        readStream.on('data', (chunk) => {
+            writeableStream.write(private_key.decrypt(Buffer.from(chunk, 'binary'), 'binary'));
+        });
+
+        readStream.on('end', () => {
+            return resolve({
+                file_path: dest_path
             });
         });
 
@@ -83,3 +111,13 @@ export const PEM2RSAKey = PEM => {
 
     return rsa;
 };
+
+export const zipKey = (private_key) => {
+    const input = new Buffer.from(private_key.toString('base64'));
+    return zlib.deflateSync(input);
+}
+
+export const unzipKey = (zipped_private_key) => {
+    const input = new Buffer.from(zipped_private_key);
+    return zlib.inflateSync(input).toString('utf8');
+}
