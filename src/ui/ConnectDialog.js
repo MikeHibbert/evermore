@@ -37,7 +37,7 @@ const configureWithPathsFromInfo = (path_info) => {
 }
 
 const selectFolderCallback = (code, retVal, stderr) => {
-    console.log(retVal);
+
     if(retVal.length == 0) return;
 
     AddSyncedFolder(retVal.replace('\r\n', ''));

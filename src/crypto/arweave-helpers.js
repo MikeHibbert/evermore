@@ -2,7 +2,9 @@ const Arweave = require('arweave/node');
 const fs = require('fs');
 const fse = require('fs-extra');
 const crypto = require('crypto');
-
+const request = require('request');
+progress = require('request-progress');
+const path = require('path');
 import { readContract, selectWeightedPstHolder  } from 'smartweave';
 import {settings} from '../config';
 import regeneratorRuntime from "regenerator-runtime";
@@ -12,7 +14,8 @@ import {
     ConfirmSyncedFile, 
     SaveUploader, 
     RemoveUploader,
-    RemovePendingFile
+    RemovePendingFile,
+    GetSyncedFolders
 } from '../db/helpers';
 
 import {
@@ -22,6 +25,11 @@ import {
     removeTempFolder,
     getSystemPath
 } from '../fsHandling/helpers';
+
+import {
+    encryptFile,
+    decryptFile
+} from './files';
 
 export const arweave = Arweave.init(settings.ARWEAVE_CONFIG);
 
@@ -55,7 +63,10 @@ export const uploadFile = async (file_info) => {
 
     if(!wallet_file || wallet_file.length == 0) return;
 
-    const jwk = getJwkFromWalletFile(wallet_file);
+    const wallet_jwk = getJwkFromWalletFile(wallet_file);
+    const jwk = await arweave.wallets.generate();
+
+    const encrypted_result = await encryptFile(wallet_jwk, jwk, file_info.path, `${file_info.path}.enc`);
 
     fs.access(file_info.path, fs.constants.F_OK | fs.constants.R_OK, async (err) => {
         if(err) {
@@ -68,7 +79,7 @@ export const uploadFile = async (file_info) => {
 
                 const transaction = await arweave.createTransaction({
                     data: file_data
-                }, jwk);
+                }, wallet_jwk);
 
                 transaction.addTag('App', settings.APP_NAME);
                 transaction.addTag('file', file_info.file.replace(/([^:])(\/\/+)/g, '$1/'));
@@ -77,8 +88,9 @@ export const uploadFile = async (file_info) => {
                 transaction.addTag('hostname', file_info.hostname);
                 transaction.addTag('version', file_info.version);
                 transaction.addTag('CRC', crc_for_data);
+                transaction.addTag('key_size', encrypted_result.key_size);
 
-                await arweave.transactions.sign(transaction, jwk);
+                await arweave.transactions.sign(transaction, wallet_jwk);
 
                 UpdatePendingFileTransactionID(file_info.file, transaction.id);
 
@@ -247,7 +259,7 @@ export const confirmTransaction = async (tx_id) => {
     console.log(JSON.stringify(status));
 }
 
-export const downloadFileFromTransaction = async (tx_id) => {
+export const downloadFileFromTransaction = async (wallet, tx_id) => {
     const transaction = await arweave.transactions.get(tx_id).then(async (transaction) => {
         const tx_row = {id: transaction.id};
         
@@ -268,17 +280,25 @@ export const downloadFileFromTransaction = async (tx_id) => {
 
     // createTempFolder();
 
-    let data = await arweave.transactions.getData(transaction, {decode: true});
+    arweave.transactions.getData(transaction.id).then(data => {
+        const sync_folders = GetSyncedFolders();
 
-    if(transaction.hasOwnProperty('encrypted')) {
-        if(transaction.encrypted) {
-            data = decryptData(data);
-        }
-    }
+        const save_file_encrypted = path.join(sync_folders[0], `${transaction.path}.enc`);
 
-    const output_path = getSystemPath(transaction.path); 
+        fs.writeFile(save_file_encrypted, data, (err) => {
+            if (err) {
+                console.error(err);
+            }
 
-    fse.outputFileSync(output_path, data);
+            const private_key = await getFileEncryptionKey(save_file_encrypted, transaction, wallet);
+            const save_file = path.join(sync_folders[0], `${transaction.path}`);
+            const result = await decryptFile(wallet, private_key, transaction.key_size, save_file_encrypted, save_file);
+
+            fs.unlinkSync(save_file_encrypted);
+        });
+    });
+
+    
 
     // removeTempFolder();
 }
