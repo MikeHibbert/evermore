@@ -10,6 +10,7 @@ import {
     CheckState,
 } from "@nodegui/nodegui";
 import path from "path";
+import {settings} from '../config';
 
 export const USER_DATA_ROLE = 20;
 
@@ -26,6 +27,7 @@ const folder_icon_path = path.join(
 const openSyncSettingsDialog = (path_infos, saveCallback, cancelCallback) => {
     const syncWin = new QMainWindow();
     syncWin.setWindowTitle("Selective Sync");
+    syncWin.setWindowIcon(new QIcon(settings.NOTIFY_ICON_PATH));
     const syncRootView = new QWidget();
     syncRootView.setObjectName("rootView");
     const syncRootViewLayout = new FlexLayout()

@@ -2,8 +2,6 @@ const Arweave = require('arweave/node');
 const fs = require('fs');
 const fse = require('fs-extra');
 const crypto = require('crypto');
-const request = require('request');
-progress = require('request-progress');
 const path = require('path');
 import { readContract, selectWeightedPstHolder  } from 'smartweave';
 import {settings} from '../config';
@@ -285,7 +283,7 @@ export const downloadFileFromTransaction = async (wallet, tx_id) => {
 
         const save_file_encrypted = path.join(sync_folders[0], `${transaction.path}.enc`);
 
-        fs.writeFile(save_file_encrypted, data, (err) => {
+        fs.writeFile(save_file_encrypted, data, async (err) => {
             if (err) {
                 console.error(err);
             }

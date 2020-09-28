@@ -10,12 +10,14 @@ import {
 } from "@nodegui/nodegui";
 import path from "path";
 import openSettingsDialog from "./ui/SettingsDialog";
-import openConnectDialog from './ui/ConnectDialog';
+import OpenInitialSetupDialog from './ui/InitialSetupDialog';
 import {walletFileSet, resetWalletFilePath} from './db/helpers';
 import {getWalletBalance} from './crypto/arweave-helpers';
+import {settings} from './config';
 
 export const win = new QMainWindow();
 win.setWindowTitle("Evermore Settings");
+win.setWindowIcon(new QIcon(settings.NOTIFY_ICON_PATH));
 
 const trayIcon = new QIcon(
     path.join(
@@ -33,9 +35,9 @@ exports.systemTray = tray;
 
 const createLoggedOutSystray = (menu) => {
     const connectAction = new QAction();
-    connectAction.setText("Connect");
+    connectAction.setText("Setup");
     connectAction.addEventListener("triggered", () => {
-        openConnectDialog(win);
+        OpenInitialSetupDialog(tray);
     });
 
     const openWebclientSite = new QAction();

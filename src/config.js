@@ -17,7 +17,19 @@ let settings = {
     NOTIFY_ICON_PATH: path.join(
         process.cwd(), 
         "assets\\images\\facebook-logo.png"
-      )
+    ),
+    SETUP_STAGE_1: path.join(
+        process.cwd(), 
+        "assets\\images\\setup-1.png"
+    ),
+    SETUP_STAGE_2: path.join(
+        process.cwd(), 
+        "assets\\images\\setup-2.png"
+    ),
+    SETUP_STAGE_3: path.join(
+        process.cwd(), 
+        "assets\\images\\setup-3.png"
+    )
 }
 
 if(typeof jest != "undefined") {

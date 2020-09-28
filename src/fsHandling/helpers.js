@@ -144,7 +144,8 @@ export const getSyncPathInfos = (callback) => {
     const sync_folders = GetSyncedFolders();
 
     if(sync_folders.length == 0) callback([]);
-        const glob_result = getDirectoriesAndFiles(sync_folders[0], (err, file_paths) => {
+    
+    const glob_result = getDirectoriesAndFiles(sync_folders[0], (err, file_paths) => {
         if (err) {
             console.log('Error', err);
         } 

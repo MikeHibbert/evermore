@@ -12,7 +12,8 @@ import {
     RemoveUploader,
     ResetPendingFile, 
     ConfirmSyncedFileFromTransaction,
-    GetSyncStatus
+    GetSyncStatus,
+    walletFileSet
 } from '../db/helpers';
 import { 
     uploadFile, 
@@ -121,7 +122,7 @@ const processAllPendingFiles = (pending_files, existing_files) => {
                 title: 'Evermore',
                 icon: settings.NOTIFY_ICON_PATH,
                 message: `${pending_files.length} have been uploaded and will be mined sortly.`
-              });
+            });
         }
     }    
     

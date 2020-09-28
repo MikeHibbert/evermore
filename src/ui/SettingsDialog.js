@@ -1,3 +1,4 @@
+const notifier = require('node-notifier');
 import {
     QPushButton,
     QFileDialog,
@@ -185,6 +186,16 @@ const createSyncRow = async (editable_settings, rootView, win) => {
       const wallet_address = await getWalletAddress(wallet_file);
 
       const path_infos = await getFiles(wallet_address);
+
+      if(path_infos[''].children.length == 0) {
+        notifier.notify({
+          title: 'Evermore Datastore',
+          icon: settings.NOTIFY_ICON_PATH,
+          message: "There are currently no files to download/sync online or offline"
+        });
+
+        return;
+      }
 
       openSyncSettingsDialog(path_infos, (path_infos) => {
         console.log("saveCallback called from createSyncRow");
