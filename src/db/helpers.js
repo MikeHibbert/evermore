@@ -3,6 +3,7 @@ const low = require('lowdb');
 const os = require('os');
 const FileSync = require('lowdb/adapters/FileSync');
 import {settings} from '../config';
+import {startSyncProcessing, stopSyncProcessing} from '../fsHandling/Init';
 
 let db = null;
 
@@ -69,6 +70,12 @@ export const GetSyncStatus = () => {
 export const SetSyncStatus = (paused) =>  {
     if(!db) {
         InitDB();
+    }
+
+    if(!paused) {
+        startSyncProcessing();
+    } else {
+        stopSyncProcessing();
     }
     
     db.set('sync_status', paused).write();

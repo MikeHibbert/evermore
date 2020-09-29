@@ -33,7 +33,13 @@ export const OnFileWatcherReady = () => {
             title: 'Evermore Datastore',
             icon: settings.NOTIFY_ICON_PATH,
             message: `${pending_files.length} have been added to the upload queue.`
-          });
+        });
+    }
+
+    const paused = GetSyncStatus();
+    if(!paused) {
+        processAll();
+        startSyncProcessing();
     }
     
 
@@ -43,6 +49,23 @@ export const OnFileWatcherReady = () => {
     });    
 
     // setTimeout(checkPendingFilesStatus, settings.APP_CHECK_FREQUENCY * 1000);
+}
+
+const processAll = () => {
+    checkPendingFilesStatus();
+}
+
+let sync_processing_interval = null;
+export const startSyncProcessing = () => {
+    sync_processing_interval = setInterval(() => {
+        processAll();
+    }, settings.APP_CHECK_FREQUENCY * 1000)
+}
+
+export const stopSyncProcessing = () => {
+    if(sync_processing_interval) {
+        clearInterval(sync_processing_interval);
+    }
 }
 
 const checkPendingFilesStatus = () => {
@@ -59,6 +82,11 @@ const checkPendingFilesStatus = () => {
                 console.log(`resetting pending file ${file_info.file} as tx not found`);
                 ResetPendingFile(file_info.file, file_info.modified);
             }
+
+            if(response.status == 200) {
+                ConfirmSyncedFileFromTransaction(file_info.file, file_info.tx_id);
+                confirmed_count++;
+            }
         });
     }
 
@@ -67,7 +95,7 @@ const checkPendingFilesStatus = () => {
             title: 'Evermore Datastore',
             icon: settings.NOTIFY_ICON_PATH,
             message: `${confirmed_count} files have successfully been mined and are now permanently stored on the blockchain.`
-          });
+        });
     }
 }
 
@@ -78,11 +106,11 @@ const processAllOutstandingUploads = (existing_files) => {
 
     if(uploaders.length == 0) return;
 
-    notifier.notify({
-        title: 'Evermore Datastore',
-        icon: settings.NOTIFY_ICON_PATH,
-        message: `${uploaders.length} file uploads have been resumed.`
-      });
+    // notifier.notify({
+    //     title: 'Evermore Datastore',
+    //     icon: settings.NOTIFY_ICON_PATH,
+    //     message: `${uploaders.length} file uploads have been resumed.`
+    //   });
 
     for(let i in uploaders) {
         const already_completed = transactionExistsOnTheBlockchain(uploaders[i].transaction.id, existing_files);

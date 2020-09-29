@@ -1,4 +1,5 @@
 const fs = require('fs');
+const notifier = require('node-notifier');
 import {
     QKeySequence,
     QApplication,
@@ -11,7 +12,7 @@ import {
 import path from "path";
 import openSettingsDialog from "./ui/SettingsDialog";
 import OpenInitialSetupDialog from './ui/InitialSetupDialog';
-import {walletFileSet, resetWalletFilePath} from './db/helpers';
+import {walletFileSet, resetWalletFilePath, GetSyncStatus, SetSyncStatus} from './db/helpers';
 import {getWalletBalance} from './crypto/arweave-helpers';
 import {settings} from './config';
 
@@ -91,6 +92,38 @@ export const createLoggedInSystray = (menu) => {
         });
     });
 
+    const syncStatus = new QAction();
+    const paused = GetSyncStatus();
+    const sync_status = paused == true ? "Syncing Active" : "Syncing Deactivated";
+    syncStatus.setText(sync_status);
+    syncStatus.setCheckable(true);
+    syncStatus.setChecked(paused);
+    syncStatus.addEventListener("triggered", () => {
+        const paused = !GetSyncStatus();
+
+        SetSyncStatus(paused);
+
+        const sync_status = paused == true ? "Syncing Active" : "Syncing Deactivated";
+        syncStatus.setText(sync_status);
+        syncStatus.setChecked(paused);
+
+        if(paused) {
+            notifier.notify({
+                title: 'Evermore Datastore',
+                icon: settings.NOTIFY_ICON_PATH,
+                message: 'Syncing has been paused',
+                timeout: 2
+            });
+        } else {
+            notifier.notify({
+                title: 'Evermore Datastore',
+                icon: settings.NOTIFY_ICON_PATH,
+                message: 'Syncing has resumed',
+                timeout: 2
+            });
+        }
+    });
+
     const showSettings = new QAction();
     showSettings.setText("Settings");
     showSettings.addEventListener("triggered", () => {
@@ -107,6 +140,7 @@ export const createLoggedInSystray = (menu) => {
     // Add everything to menu
     // ----------------------
     menu.addAction(balanceAction);
+    menu.addAction(syncStatus);
     menu.addAction(showSettings);
     menu.addAction(openWebclientSite);
 
