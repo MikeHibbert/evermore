@@ -40,19 +40,13 @@ export const OnFileWatcherReady = () => {
     if(!paused) {
         processAll();
         startSyncProcessing();
-    }
-    
-
-    getDownloadableFiles().then(existing_files => {
-        processAllOutstandingUploads(existing_files);
-        processAllPendingFiles(pending_files, existing_files);
-    });    
-
-    // setTimeout(checkPendingFilesStatus, settings.APP_CHECK_FREQUENCY * 1000);
+    }  
 }
 
 const processAll = () => {
     checkPendingFilesStatus();
+    processAllOutstandingUploads();
+    
 }
 
 let sync_processing_interval = null;

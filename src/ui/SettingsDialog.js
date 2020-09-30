@@ -12,7 +12,7 @@ import {walletFileSet, setWalletFilePath} from '../db/helpers';
 import {getWalletAddress} from '../crypto/arweave-helpers';
 import openConnectDialog from './ConnectDialog';
 import { settings } from "../config";
-import { getFiles } from "../fsHandling/helpers";
+import { getOnlineFilesAndFoldersStructure } from "../fsHandling/helpers";
 import openSyncSettingsDialog from './SyncSettingsDialog';
 
 const rootStyleSheet = `
@@ -185,7 +185,7 @@ const createSyncRow = async (editable_settings, rootView, win) => {
     if(wallet_file) {
       const wallet_address = await getWalletAddress(wallet_file);
 
-      const path_infos = await getFiles(wallet_address);
+      const path_infos = await getOnlineFilesAndFoldersStructure(wallet_address);
 
       if(path_infos[''].children.length == 0) {
         notifier.notify({

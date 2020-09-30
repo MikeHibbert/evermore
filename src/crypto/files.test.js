@@ -43,7 +43,7 @@ afterAll(function() {
 });
 
 describe("Encypted File Ops", () => {
-    describe("Should encrypt data and decrypt back to orriginal data using same JWK", async () => {
+    test("Should encrypt data and decrypt back to orriginal data using same JWK", async () => {
         const aw = Arweave.init(settings.ARWEAVE_CONFIG);
 
         const jwk = await aw.wallets.generate();
@@ -59,7 +59,7 @@ describe("Encypted File Ops", () => {
         expect(decrypted_data).toBe(original_data);
     });
 
-    describe("Should decrypt data encoded with a specific wallet", async () => {
+    test("Should decrypt data encoded with a specific wallet", async () => {
         const aw = Arweave.init(settings.ARWEAVE_CONFIG);
 
         const wallet = await aw.wallets.generate();
@@ -75,7 +75,7 @@ describe("Encypted File Ops", () => {
         expect(decrypted_data).toBe(original_data);
     });
 
-    describe("getFileEncryptionKey should return the same key that was supplied to create new encrypted file", async () => {   
+    test("getFileEncryptionKey should return the same key that was supplied to create new encrypted file", async () => {   
         const aw = Arweave.init(settings.ARWEAVE_CONFIG);
 
         const wallet = await aw.wallets.generate();
@@ -98,7 +98,7 @@ describe("Encypted File Ops", () => {
         return;
     });
 
-    describe("decryptFile should return the same data that was supplied to create new encrypted file", async () => {    
+    test("decryptFile should return the same data that was supplied to create new encrypted file", async () => {    
         const aw = Arweave.init(settings.ARWEAVE_CONFIG);
 
         const wallet = await aw.wallets.generate();
@@ -133,7 +133,7 @@ describe("Encypted File Ops", () => {
         return;
     });
 
-    describe("zipKey should generate a smaller string than the private key supplied", async () => {
+    test("zipKey should generate a smaller string than the private key supplied", async () => {
         const aw = Arweave.init(settings.ARWEAVE_CONFIG);
 
         const wallet = await aw.wallets.generate();
@@ -147,7 +147,7 @@ describe("Encypted File Ops", () => {
         expect(zipped_key.length).toBeLessThan(original_data.length);
     });
 
-    describe("unzipKey should generate the same result as zipKey's input", async () => {
+    test("unzipKey should generate the same result as zipKey's input", async () => {
         const aw = Arweave.init(settings.ARWEAVE_CONFIG);
 
         const wallet = await aw.wallets.generate();

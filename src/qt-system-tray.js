@@ -103,7 +103,7 @@ export const createLoggedInSystray = (menu) => {
 
         SetSyncStatus(paused);
 
-        const sync_status = paused == true ? "Syncing Active" : "Syncing Deactivated";
+        const sync_status = paused == true ? "Syncing active" : "Syncing paused";
         syncStatus.setText(sync_status);
         syncStatus.setChecked(paused);
 

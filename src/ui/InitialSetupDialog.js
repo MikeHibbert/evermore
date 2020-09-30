@@ -17,7 +17,7 @@ import {
     ConfirmSyncedFileFromTransaction
 } from '../db/helpers';
 import {InitFileWatcher} from '../fsHandling/Init';
-import {getSyncPathInfos} from '../fsHandling/helpers';
+import {getOfflineFilesAndFoldersStructure} from '../fsHandling/helpers';
 import openSyncSettingsDialog from './SyncSettingsDialog';
 import {createLoggedInSystray} from '../qt-system-tray';
 import {settings} from '../config';
@@ -305,7 +305,7 @@ export const selectFolderCallback = (code, retVal, stderr) => {
     AddSyncedFolder(retVal.replace('\r\n', ''));
 
     debugger;
-    const path_infos = getSyncPathInfos((path_infos) => {
+    const path_infos = getOfflineFilesAndFoldersStructure((path_infos) => {
         if(path_infos[''].children.length > 0) {
             openSyncSettingsDialog(path_infos[''], (pis) => {
                 configureWithPathsFromInfo(pis[''])

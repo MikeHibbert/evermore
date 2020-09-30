@@ -15,7 +15,7 @@
     ]
   },
   "scripts": {
-    "test": "npm-run-all clean transpile && webpack --config webpack.config.js && jest --runInBand --detectOpenHandles",
+    "test": "npm-run-all clean transpile && webpack --config webpack.config.js && jest",
     "service": "node dist/index.js",
     "dev": "babel ./src --out-dir dist && qode dist/index.js",
     "build": "npm-run-all clean transpile && webpack --config webpack.config.js",
@@ -57,7 +57,8 @@
     "smartweave": "https://arweave.net/AM-u4X2po-3Tx7fma3lRonCfLwrjI42IALwDL_YFXBs",
     "systray": "^1.0.5",
     "taskkill": "^3.1.0",
-    "tasklist": "^4.0.1"
+    "tasklist": "^4.0.1",
+    "node-addon-api": "==3.0.0"
   },
   "devDependencies": {
     "@nodegui/packer": "^1.4.1",

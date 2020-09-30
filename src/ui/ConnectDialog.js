@@ -2,7 +2,7 @@ const dialog = require('dialog-node');
 const path = require('path');
 import {createLoggedInSystray} from '../qt-system-tray';
 import {InitFileWatcher} from '../fsHandling/Init';
-import {getSyncPathInfos} from '../fsHandling/helpers';
+import {getOfflineFilesAndFoldersStructure} from '../fsHandling/helpers';
 import {getWalletBalance} from '../crypto/arweave-helpers';
 import {
     setWalletFilePath, 
