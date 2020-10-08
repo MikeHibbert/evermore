@@ -70,7 +70,7 @@ export const uploadFile = async (file_info, encrypt_file) => {
     let required_space = stats['size'] * 1.5;
 
     if(encrypt_file) {
-        required_space = stats['size'] * 2.5;
+        required_space = stats['size'] * 2.5; // abitrary idea that encryption will probably create a larger file than the source.
     }
 
     if(!systemHasEnoughDiskSpace(required_space)) {
@@ -85,8 +85,7 @@ export const uploadFile = async (file_info, encrypt_file) => {
     }
 
     if(encrypt_file) {
-        const encrypted_result = await encryptFile(wallet_jwk, jwk, file_info.path, `${file_info.path}.enc`);
-        
+        const encrypted_result = await encryptFile(wallet_jwk, jwk, file_info.path, `${file_info.path}.enc`);        
     }    
 
 
@@ -103,6 +102,19 @@ export const uploadFile = async (file_info, encrypt_file) => {
                 const transaction = await arweave.createTransaction({
                     data: file_data
                 }, wallet_jwk);
+
+                const wallet_balance = await getWalletBalance();
+
+                if(wallet_balance < arweave.ar.arToWinston(parseInt(transaction.reward))) {
+                    notifier.notify({
+                        title: 'Evermore Datastore',
+                        icon: settings.NOTIFY_ICON_PATH,
+                        message: `Your wallet does not contain enough AR to upload, ${arweave.ar.arToWinston(parseInt(transaction.reward))} is needed `,
+                        timeout: 2
+                    });
+            
+                    return;
+                }
 
                 transaction.addTag('App', settings.APP_NAME);
                 transaction.addTag('file', file_info.file.replace(/([^:])(\/\/+)/g, '$1/'));

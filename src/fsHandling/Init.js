@@ -13,7 +13,7 @@ import {
     ResetPendingFile, 
     ConfirmSyncedFileFromTransaction,
     GetSyncStatus,
-    walletFileSet
+    walletFileSet, GetSyncedFolders
 } from '../db/helpers';
 import { 
     uploadFile, 
@@ -126,12 +126,15 @@ const processAllOutstandingUploads = (existing_files) => {
 const processAllPendingFiles = (pending_files, existing_files) => {
     let uploaded_count = 0;
 
+    const public_sync_folder = path.join(getSystemPath(), 'Public');
+
     if(GetSyncStatus() != false) {
         for(let i in pending_files) {
             const txs = fileExistsOnTheBlockchain(pending_files[i], existing_files);
     
             if(txs.length == 0) {
-                uploadFile(pending_files[i]);
+                const encrypt_file = pending_files[i].path.indexOf(public_sync_folder) != -1;
+                uploadFile(pending_files[i], encrypt_file);
                 uploaded_count++;
             } else {
                 // only send one because duplicates is dev env, shouldnt be so in production!
