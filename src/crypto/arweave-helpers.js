@@ -4,6 +4,7 @@ const fse = require('fs-extra');
 const crypto = require('crypto');
 const path = require('path');
 const notifier = require('node-notifier');
+const mime = require('mime-types')
 import { readContract, selectWeightedPstHolder  } from 'smartweave';
 import {settings} from '../config';
 import regeneratorRuntime from "regenerator-runtime";
@@ -87,9 +88,6 @@ export const uploadFile = async (file_info, encrypt_file) => {
     if(encrypt_file) {
         const encrypted_result = await encryptFile(wallet_jwk, jwk, file_info.path, `${file_info.path}.enc`);        
     }    
-
-
-
     fs.access(file_info.path, fs.constants.F_OK | fs.constants.R_OK, async (err) => {
         if(err) {
             RemovePendingFile(file_info.path);
@@ -117,6 +115,7 @@ export const uploadFile = async (file_info, encrypt_file) => {
                 }
 
                 transaction.addTag('App', settings.APP_NAME);
+                transaction.addTag('Content-Type', mime.lookup(file_info.file));
                 transaction.addTag('file', file_info.file.replace(/([^:])(\/\/+)/g, '$1/'));
                 transaction.addTag('path', file_info.path.replace(/([^:])(\/\/+)/g, '$1/'));
                 transaction.addTag('modified', file_info.modified);

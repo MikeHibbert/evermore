@@ -44,6 +44,7 @@
     "fs-extra": "^9.0.1",
     "glob": "^7.1.6",
     "lowdb": "^1.0.0",
+    "mime-types": "^2.1.27",
     "named-pipes": "0.0.1",
     "native-addon-loader": "^2.0.1",
     "nexe": "^3.3.7",
