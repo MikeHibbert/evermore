@@ -310,7 +310,7 @@ export const downloadFileFromTransaction = async (wallet, tx_id) => {
             let key = tag.get('name', { decode: true, string: true });
             let value = tag.get('value', { decode: true, string: true });
             
-            if(key == "modified" || key == "version") {
+            if(key == "modified" || key == "version" || key == "file_size") {
                 tx_row[key] = parseInt(value);
             } else {
                 tx_row[key] = value;
@@ -321,24 +321,48 @@ export const downloadFileFromTransaction = async (wallet, tx_id) => {
         return tx_row;
     });
 
+    if(!systemHasEnoughDiskSpace(Math.ceil(transaction.file_size * 2))) {
+        notifier.notify({
+            title: 'Evermore Datastore',
+            icon: settings.NOTIFY_ICON_PATH,
+            message: `Not enough disk space to download - ${required_space} bytes required`,
+            timeout: 2
+        });
+
+        return;
+    }
+
     // createTempFolder();
 
     arweave.transactions.getData(transaction.id).then(data => {
         const sync_folders = GetSyncedFolders();
 
-        const save_file_encrypted = path.join(sync_folders[0], `${transaction.path}.enc`);
+        const is_encrypted = transaction.path.indexOf('Public\\') == -1;
 
-        fs.writeFile(save_file_encrypted, data, async (err) => {
-            if (err) {
-                console.error(err);
-            }
+        if(is_encrypted) {
+            const save_file_encrypted = path.join(sync_folders[0], `${transaction.path}.enc`);
 
-            const private_key = await getFileEncryptionKey(save_file_encrypted, transaction, wallet);
-            const save_file = path.join(sync_folders[0], `${transaction.path}`);
-            const result = await decryptFile(wallet, private_key, transaction.key_size, save_file_encrypted, save_file);
+            fs.writeFile(save_file_encrypted, data, async (err) => {
+                if (err) {
+                    console.error(err);
+                }
 
-            fs.unlinkSync(save_file_encrypted);
-        });
+                const private_key = await getFileEncryptionKey(save_file_encrypted, transaction, wallet);
+                const save_file = path.join(sync_folders[0], `${transaction.path}`);
+                const result = await decryptFile(wallet, private_key, transaction.key_size, save_file_encrypted, save_file);
+
+                fs.unlinkSync(save_file_encrypted);
+            });
+        } else {
+            const save_file = path.join(sync_folders[0], transaction.path);
+
+            fs.writeFile(save_file, data, async (err) => {
+                if (err) {
+                    console.error(err);
+                }
+            });
+        }
+        
     });
 
     
