@@ -1,6 +1,7 @@
 const fs = require('fs');
 const glob = require('glob');
 const path = require('path');
+const checkDiskSpace = require('check-disk-space');
 import regeneratorRuntime from "regenerator-runtime";
 import {GetSyncedFolders} from '../db/helpers';
 import {arweave} from '../crypto/arweave-helpers';
@@ -265,6 +266,14 @@ export const diffPathInfos = (a, b, root) => {
 
         return path_infos;
     }   
+}
+
+export const systemHasEnoughDiskSpace = async (required_space) => {
+    const sync_folders = GetSyncedFolders();
+
+    const disk_space = await checkDiskSpace(sync_folders);
+
+    return disk_space >= required_space;
 }
 
 export const createCRCFor = (path) => {

@@ -3,6 +3,7 @@ const fs = require('fs');
 const fse = require('fs-extra');
 const crypto = require('crypto');
 const path = require('path');
+const notifier = require('node-notifier');
 import { readContract, selectWeightedPstHolder  } from 'smartweave';
 import {settings} from '../config';
 import regeneratorRuntime from "regenerator-runtime";
@@ -21,7 +22,8 @@ import {
     getFileUpdatedDate, 
     createTempFolder, 
     removeTempFolder,
-    getSystemPath
+    getSystemPath,
+    systemHasEnoughDiskSpace
 } from '../fsHandling/helpers';
 
 import {
@@ -56,7 +58,7 @@ export const getWalletAddress = async (path) => {
     });
 }
 
-export const uploadFile = async (file_info) => {
+export const uploadFile = async (file_info, encrypt_file) => {
     const wallet_file = walletFileSet();
 
     if(!wallet_file || wallet_file.length == 0) return;
@@ -64,7 +66,30 @@ export const uploadFile = async (file_info) => {
     const wallet_jwk = getJwkFromWalletFile(wallet_file);
     const jwk = await arweave.wallets.generate();
 
-    const encrypted_result = await encryptFile(wallet_jwk, jwk, file_info.path, `${file_info.path}.enc`);
+    let stats = fs.statSync(file_info.path);
+    let required_space = stats['size'] * 1.5;
+
+    if(encrypt_file) {
+        required_space = stats['size'] * 2.5;
+    }
+
+    if(!systemHasEnoughDiskSpace(required_space)) {
+        notifier.notify({
+            title: 'Evermore Datastore',
+            icon: settings.NOTIFY_ICON_PATH,
+            message: `Not enough disk space to upload - ${required_space} bytes required`,
+            timeout: 2
+        });
+
+        return;
+    }
+
+    if(encrypt_file) {
+        const encrypted_result = await encryptFile(wallet_jwk, jwk, file_info.path, `${file_info.path}.enc`);
+        
+    }    
+
+
 
     fs.access(file_info.path, fs.constants.F_OK | fs.constants.R_OK, async (err) => {
         if(err) {
@@ -86,7 +111,15 @@ export const uploadFile = async (file_info) => {
                 transaction.addTag('hostname', file_info.hostname);
                 transaction.addTag('version', file_info.version);
                 transaction.addTag('CRC', crc_for_data);
-                transaction.addTag('key_size', encrypted_result.key_size);
+
+                let stats = fs.statSync(file_info.path);
+
+                if(encrypt_file) {
+                    transaction.addTag('key_size', encrypted_result.key_size);
+                    
+                }
+
+                transaction.addTag('file_size', stats["size"]);
 
                 await arweave.transactions.sign(transaction, wallet_jwk);
 
