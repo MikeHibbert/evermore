@@ -22,9 +22,9 @@ test("Should get correct price for data storage", async () => {
 });
 
 test("Should output a the correct percentage of a transaction cost", () => {
-    const result = calculatePSTPayment(0.1, 0.2);
+    const result = calculatePSTPayment(1000, 0.2);
 
-    expect(result).toBe(0.1 * 0.2); // should be 20%
+    expect(result).toBe(Math.ceil(1000 * 0.2)); // should be 20% or 200
 });
 
 test("Should send usage payment to PST", async () => {

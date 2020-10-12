@@ -148,7 +148,7 @@ export const uploadFile = async (file_info, encrypt_file) => {
                 ConfirmSyncedFile(transaction.id);
 
                 const cost = await arweave.transactions.getPrice(transaction.data_size);
-                sendUsagePayment(arweave.ar.winstonToAr(cost));
+                sendUsagePayment(cost);
 
                 RemoveUploader(uploader);
 
@@ -198,7 +198,7 @@ export const sendUsagePayment = async (transaction_cost) => {
 }
 
 export const calculatePSTPayment = (transaction_cost, percentage) => {
-    return transaction_cost * percentage;
+    return Math.ceil(transaction_cost * percentage);
 }
 
 export const getDownloadableFiles = async () => {
@@ -285,7 +285,7 @@ export const finishUpload = async (savedUploader) => {
         RemoveUploader(uploader);
 
         const cost = await arweave.transactions.getPrice(transaction.data_size);
-        sendUsagePayment(arweave.ar.winstonToAr(cost));
+        sendUsagePayment(cost);
     })
     .catch(err => {
         console.log(`finishUpload: ${err}`);
