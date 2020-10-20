@@ -31,7 +31,7 @@ afterAll(() => {
 
  describe("Filesystem Ops", () => {
     test("Should list files and all folder recursively", () => {
-        const current_folder = process.cwd();
+        const current_folder = path.join(process.cwd(), 'src');
 
         const matches = GetSyncedFolders().filter(folder => folder.path == current_folder);
 

@@ -21,7 +21,7 @@ const { InitDB, setWalletFilePath, AddSyncedFolder, GetSyncedFolders } = require
 import regeneratorRuntime from "regenerator-runtime";
 
 beforeAll(function () {
-    const current_folder = process.cwd();
+    const current_folder = path.join(process.cwd(), 'src');
 
     const matches = GetSyncedFolders().filter(folder => folder.path == current_folder);
 

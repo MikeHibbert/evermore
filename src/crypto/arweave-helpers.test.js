@@ -28,11 +28,16 @@ test("Should output a the correct percentage of a transaction cost", () => {
 });
 
 test("Should send usage payment to PST", async () => {
-    sendUsagePayment(0.2);
+    // const test_wallet_path = "wallet_file.json";
+    // setWalletFilePath(test_wallet_path);
+
+    const tx = await sendUsagePayment(1000);
+
+    // expect(tx.quantity).toBe(200);
 });
 
 test("Should upload file", async () => {
-    uploadFile({file: "a_test_upload_file.txt", path: "a_test_upload_file.txt"});
+    await uploadFile({file: "a_test_upload_file.txt", path: "a_test_upload_file.txt"});
 });
 
 test("Should get downloadable files and return thier info", async () => {

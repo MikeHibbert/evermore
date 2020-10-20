@@ -65,10 +65,10 @@ export const uploadFile = async (file_info, encrypt_file) => {
     if(!wallet_file || wallet_file.length == 0) return;
 
     const wallet_jwk = getJwkFromWalletFile(wallet_file);
-    const jwk = await arweave.wallets.generate();
-
+    
     let stats = fs.statSync(file_info.path);
     let required_space = stats['size'] * 1.5;
+    let processed_file_path = file_info.path;
 
     if(encrypt_file) {
         required_space = stats['size'] * 2.5; // abitrary idea that encryption will probably create a larger file than the source.
@@ -86,13 +86,17 @@ export const uploadFile = async (file_info, encrypt_file) => {
     }
 
     if(encrypt_file) {
-        const encrypted_result = await encryptFile(wallet_jwk, jwk, file_info.path, `${file_info.path}.enc`);        
+        const jwk = await arweave.wallets.generate();
+        processed_file_path = `${file_info.path}.enc`;
+        const encrypted_result = await encryptFile(wallet_jwk, jwk, file_info.path, processed_file_path); 
+        stats = fs.statSync(processed_file_path);       
     }    
-    fs.access(file_info.path, fs.constants.F_OK | fs.constants.R_OK, async (err) => {
+    
+    fs.access(processed_file_path, fs.constants.F_OK | fs.constants.R_OK, async (err) => {
         if(err) {
             RemovePendingFile(file_info.path);
         } else {
-            const file_data = await getFileData(file_info.path);
+            const file_data = await getFileData(processed_file_path);
             
             try {
                 const crc_for_data = await createCRCFor(file_info.path);
@@ -102,19 +106,23 @@ export const uploadFile = async (file_info, encrypt_file) => {
                 }, wallet_jwk);
 
                 const wallet_balance = await getWalletBalance();
+                const data_cost = await arweave.transactions.getPrice(stats['size']);
 
-                if(wallet_balance < arweave.ar.arToWinston(parseInt(transaction.reward))) {
+                const total_winston_cost = parseInt(transaction.reward) + parseInt(data_cost);
+                const total_ar_cost = arweave.ar.arToWinston(total_winston_cost);
+                
+                if(wallet_balance < total_ar_cost) {
                     notifier.notify({
                         title: 'Evermore Datastore',
                         icon: settings.NOTIFY_ICON_PATH,
-                        message: `Your wallet does not contain enough AR to upload, ${arweave.ar.arToWinston(parseInt(transaction.reward))} is needed `,
+                        message: `Your wallet does not contain enough AR to upload, ${total_ar_cost} AR is needed `,
                         timeout: 2
                     });
             
                     return;
                 }
 
-                transaction.addTag('App', settings.APP_NAME);
+                transaction.addTag('App-Name', settings.APP_NAME);
                 transaction.addTag('Content-Type', mime.lookup(file_info.file));
                 transaction.addTag('file', file_info.file.replace(/([^:])(\/\/+)/g, '$1/'));
                 transaction.addTag('path', file_info.path.replace(/([^:])(\/\/+)/g, '$1/'));
@@ -122,15 +130,13 @@ export const uploadFile = async (file_info, encrypt_file) => {
                 transaction.addTag('hostname', file_info.hostname);
                 transaction.addTag('version', file_info.version);
                 transaction.addTag('CRC', crc_for_data);
-
-                let stats = fs.statSync(file_info.path);
+                transaction.addTag('file_size', stats["size"]);
 
                 if(encrypt_file) {
                     transaction.addTag('key_size', encrypted_result.key_size);
-                    
+                } else {
+                    transaction.addTag('key_size', -1);
                 }
-
-                transaction.addTag('file_size', stats["size"]);
 
                 await arweave.transactions.sign(transaction, wallet_jwk);
 
@@ -147,8 +153,7 @@ export const uploadFile = async (file_info, encrypt_file) => {
 
                 ConfirmSyncedFile(transaction.id);
 
-                const cost = await arweave.transactions.getPrice(transaction.data_size);
-                sendUsagePayment(cost);
+                sendUsagePayment(data_cost);
 
                 RemoveUploader(uploader);
 
@@ -157,9 +162,6 @@ export const uploadFile = async (file_info, encrypt_file) => {
                 
                 console.log(e);
             }
-
-            
-
         }        
     }); // for whatever reason this file is now gone!
 }
@@ -183,7 +185,7 @@ export const sendUsagePayment = async (transaction_cost) => {
 
     const holder = selectWeightedPstHolder(contractState.balances)
      // send a fee. You should inform the user about this fee and amount.
-    try {
+    try {     
         const tx = await arweave.createTransaction({ 
             target: holder, 
             quantity: calculatePSTPayment(transaction_cost, settings.USAGE_PERCENTAGE)}
@@ -195,6 +197,7 @@ export const sendUsagePayment = async (transaction_cost) => {
         console.log(e);
     }
     
+    return tx;
 }
 
 export const calculatePSTPayment = (transaction_cost, percentage) => {
@@ -284,8 +287,8 @@ export const finishUpload = async (savedUploader) => {
 
         RemoveUploader(uploader);
 
-        const cost = await arweave.transactions.getPrice(transaction.data_size);
-        sendUsagePayment(cost);
+        const data_cost = await arweave.transactions.getPrice(transaction.data_size);
+        sendUsagePayment(data_cost);
     })
     .catch(err => {
         console.log(`finishUpload: ${err}`);
