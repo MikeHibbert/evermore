@@ -1,4 +1,6 @@
 const dialog = require('dialog-node');
+const fs = require('fs');
+const path = require('path');
 import {
     QMainWindow,
     QWidget,
@@ -304,7 +306,8 @@ export const selectFolderCallback = (code, retVal, stderr) => {
 
     AddSyncedFolder(retVal.replace('\r\n', ''));
 
-    debugger;
+    createDefaultEvermoreFolders(retVal.replace('\r\n', ''));
+
     const path_infos = getOfflineFilesAndFoldersStructure((path_infos) => {
         if(path_infos[''].children.length > 0) {
             openSyncSettingsDialog(path_infos[''], (pis) => {
@@ -319,6 +322,18 @@ export const selectFolderCallback = (code, retVal, stderr) => {
     InitFileWatcher(retVal.replace('\r\n', ''));
 
     createLoggedInSystray();
+}
+
+const createDefaultEvermoreFolders = (sync_folder) => {
+    const photos_exist = fs.existsSync(path.join(sync_folder, 'Photos'));
+    if(!photos_exist) {
+        fs.mkdirSync(path.join(sync_folder, 'Photos'));
+    }
+
+    const public_exist = fs.existsSync(path.join(sync_folder, 'Public'));
+    if(!public_exist) {
+        fs.mkdirSync(path.join(sync_folder, 'Public'));
+    }
 }
 
 export const selectFileCallback = (code, retVal, stderr) => {
