@@ -1,5 +1,6 @@
 import arweave from '../../arweave-config';
 import settings from '../../app-config';
+import { toast } from 'react-toastify';
 
 
 export function createRootFolder(path_parts, index, file_info) {
@@ -130,4 +131,106 @@ export const RemoveUploader = (uploader) => {
     uploaders.push(uploader);
 
     localStorage.setItem("Evermore-uploaders", JSON.stringify(uploaders))
+}
+
+export const setFileStatusAsDeleted = async (file_info) => {
+    const wallet_file = walletFileSet();
+
+    if(!wallet_file || wallet_file.length == 0) return;
+
+    const wallet_jwk = getJwkFromWalletFile(wallet_file);
+
+    const transaction = await arweave.createTransaction({}, wallet_jwk);
+
+    const wallet_balance = await getWalletBalance();
+
+    const total_winston_cost = parseInt(transaction.reward);
+    const total_ar_cost = arweave.ar.arToWinston(total_winston_cost);
+    
+    if(wallet_balance < total_ar_cost) {
+        toast(`Your wallet does not contain enough AR to upload, ${total_ar_cost} AR is needed `, { type: toast.TYPE.ERROR });
+
+        return;
+    }
+
+    transaction.addTag('App-Name', settings.APP_NAME);
+    transaction.addTag('file', file_info.file.replace(/([^:])(\/\/+)/g, '$1/'));
+    transaction.addTag('path', file_info.path.replace(/([^:])(\/\/+)/g, '$1/'));
+    transaction.addTag('modified', file_info.modified);
+    transaction.addTag('hostname', file_info.hostname);
+    transaction.addTag('CRC', file_info.CRC);
+    transaction.addTag('version', file_info.version);
+    transaction.addTag('STATUS', "DELETED");
+    transaction.addTag('ACTION_TIMESTAMP', new Date().getTime());
+
+    await arweave.transactions.sign(transaction, wallet_jwk);
+
+    const response = await arweave.transactions.post(transaction);
+
+    if(response.status != 200) {
+        let error_msg = null;
+
+        if(response.status == 400) {
+            error_msg = "The transaction was rejected as invalid.";
+        }
+
+        if(response.status == 500) {
+            error_msg = "There was an error connecting to the blockchain.";
+        }
+
+        toast(`There was an error updating the status of ${file_info.name} - ${error_msg}`, { type: toast.TYPE.ERROR });
+
+        return;
+    }
+}
+
+export const setFileStatusAsDeleted = async (file_info) => {
+    const wallet_file = walletFileSet();
+
+    if(!wallet_file || wallet_file.length == 0) return;
+
+    const wallet_jwk = getJwkFromWalletFile(wallet_file);
+
+    const transaction = await arweave.createTransaction({}, wallet_jwk);
+
+    const wallet_balance = await getWalletBalance();
+
+    const total_winston_cost = parseInt(transaction.reward);
+    const total_ar_cost = arweave.ar.arToWinston(total_winston_cost);
+    
+    if(wallet_balance < total_ar_cost) {
+        toast(`Your wallet does not contain enough AR to upload, ${total_ar_cost} AR is needed `, { type: toast.TYPE.ERROR });
+
+        return;
+    }
+
+    transaction.addTag('App-Name', settings.APP_NAME);
+    transaction.addTag('file', file_info.file.replace(/([^:])(\/\/+)/g, '$1/'));
+    transaction.addTag('path', file_info.path.replace(/([^:])(\/\/+)/g, '$1/'));
+    transaction.addTag('modified', file_info.modified);
+    transaction.addTag('hostname', file_info.hostname);
+    transaction.addTag('CRC', file_info.CRC);
+    transaction.addTag('version', file_info.version);
+    transaction.addTag('STATUS', "UNDELETED");
+    transaction.addTag('ACTION_TIMESTAMP', new Date().getTime());
+
+    await arweave.transactions.sign(transaction, wallet_jwk);
+
+    const response = await arweave.transactions.post(transaction);
+
+    if(response.status != 200) {
+        let error_msg = null;
+
+        if(response.status == 400) {
+            error_msg = "The transaction was rejected as invalid.";
+        }
+
+        if(response.status == 500) {
+            error_msg = "There was an error connecting to the blockchain.";
+        }
+
+        toast(`There was an error updating the status of ${file_info.name} - ${error_msg}`, { type: toast.TYPE.ERROR });
+
+        return;
+    }
 }

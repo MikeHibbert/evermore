@@ -35,7 +35,7 @@ const openSyncSettingsDialog = (path_infos, saveCallback, cancelCallback) => {
 
     const tree = new QTreeWidget();
 
-    createFolderItems(path_infos[''], tree, syncWin, true, null);
+    createFolderItems(path_infos, tree, syncWin, true, null);
 
     const OnChange = (item, column) => {
         const serialised_path_info = JSON.parse(item.data(0, USER_DATA_ROLE).toString());

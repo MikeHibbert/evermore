@@ -14,12 +14,15 @@ import {
 } from "@nodegui/nodegui";
 import {
     setWalletFilePath, 
+    resetWalletFilePath,
     AddSyncedFolder, 
-    AddPendingFile,
-    ConfirmSyncedFileFromTransaction
+    AddPendingFile
 } from '../db/helpers';
 import {InitFileWatcher} from '../fsHandling/Init';
-import {getOfflineFilesAndFoldersStructure} from '../fsHandling/helpers';
+import {
+    getOfflineFilesAndFoldersStructure,
+    compareLocalFileInfoWithOnlineFileInfo
+} from '../fsHandling/helpers';
 import openSyncSettingsDialog from './SyncSettingsDialog';
 import {createLoggedInSystray} from '../qt-system-tray';
 import {settings} from '../config';
@@ -301,6 +304,7 @@ export const selectFolderCallback = (code, retVal, stderr) => {
 
     if(retVal.length == 0) {
         setupWin.show();
+        resetWalletFilePath();
         doSetupStageTwo(null);
     }
 
@@ -311,10 +315,10 @@ export const selectFolderCallback = (code, retVal, stderr) => {
     const path_infos = getOfflineFilesAndFoldersStructure((path_infos) => {
         if(path_infos[''].children.length > 0) {
             openSyncSettingsDialog(path_infos[''], (pis) => {
-                configureWithPathsFromInfo(pis[''])
+                configureWithPathsFromInfo(pis)
             },
             (pis) => {
-                configureWithPathsFromInfo(pis[''])
+                configureWithPathsFromInfo(pis)
             });
         }        
     });
@@ -336,9 +340,7 @@ const createDefaultEvermoreFolders = (sync_folder) => {
     }
 }
 
-export const selectFileCallback = (code, retVal, stderr) => {
-    debugger;
-    
+export const selectFileCallback = (code, retVal, stderr) => {   
     if(retVal.length == 0) {
         setupWin.show();
         doSetupStageTwo(null);
@@ -360,6 +362,9 @@ export const selectFileCallback = (code, retVal, stderr) => {
 
 export const configureWithPathsFromInfo = (path_info) => {
     const paths = [];
+
+    debugger;
+
     path_info.children.forEach(pi => {
         if(pi.type == 'folder') {
             configureWithPathsFromInfo(pi);
@@ -373,7 +378,7 @@ export const configureWithPathsFromInfo = (path_info) => {
 
                     const online_version = online_versions[online_versions.length - 1];
 
-                    ConfirmSyncedFileFromTransaction(pi.path, online_version);
+                    compareLocalFileInfoWithOnlineFileInfo(pi, online_version);
                 }
             }            
         }

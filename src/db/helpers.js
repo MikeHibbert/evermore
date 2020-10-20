@@ -61,6 +61,11 @@ export function InitDB() {
     if(downloads === false) {
         db.set('downloads', []).write();
     }
+
+    const exclusions = db.has('exclusions').value();
+    if(exclusions === false) {
+        db.set('exclusions', []).write();
+    }
 }
 
 export const GetSyncStatus = () => {
@@ -273,6 +278,8 @@ export const ConfirmSyncedFileFromTransaction = (path, transaction) => {
     db.get('pending').remove({tx_id: transaction.id}).write();
 }
 
+
+
 export const GetSyncedFiles = () => {
     if(!db) {
         InitDB();
@@ -324,6 +331,35 @@ export const GetDownloads = () => {
     }
 
     return db.get('downloads').value();
+}
+
+export const AddFileToExclusions = (file_info) => {
+    if(!db) {
+        InitDB();
+    }
+
+    db.get('exclusions')
+        .push(file_info).write();
+}
+
+export const RemoveFileFromExclusions = (name, path) => {
+    if(!db) {
+        InitDB();
+    }
+
+    db.get('exclusions')
+        .remove({
+            name: name,
+            path: path
+        }).write();
+}
+
+export const GetExclusions = () => {
+    if(!db) {
+        InitDB();
+    }
+
+    return db.get('exclusions').value();
 }
 
 export const AddFolder = (tx_id, path) => {

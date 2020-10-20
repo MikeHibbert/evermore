@@ -3,7 +3,7 @@ const glob = require('glob');
 const path = require('path');
 const checkDiskSpace = require('check-disk-space');
 import regeneratorRuntime from "regenerator-runtime";
-import {GetSyncedFolders} from '../db/helpers';
+import {AddFileToDownloads, GetSyncedFolders} from '../db/helpers';
 import {arweave} from '../crypto/arweave-helpers';
 import {settings} from '../config';
 const { crc32 } = require('crc');
@@ -319,5 +319,27 @@ export const removeTempFolder = () => {
             fs.unlinkSync(temp_folder);
         }
     }
+}
+
+export const compareLocalFileInfoWithOnlineFileInfo = (file_info, online_path_info) => {
+    
+    if(fs.existsSync(file_info.path)) {
+        // check if modified date is newer on local path_info
+        const localCRC = createCRCFor(file_info.path);
+
+        if(file_info.modified >= online_path_info.modified) {
+            if(localCRC != online_path_info.CRC) {
+                AddFileToDownloads(online_path_info); // download the online version as its newer
+            }
+        } else {
+            if(localCRC != online_path_info.CRC) {
+                AddPendingFile(file_info); // add the newer local version to the upload queue
+            }
+        }
+    } else {
+        // doesnt exist on the local file system so download
+        AddFileToDownloads(file_info);
+    }
+    
 }
 

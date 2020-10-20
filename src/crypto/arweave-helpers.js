@@ -204,6 +204,66 @@ export const calculatePSTPayment = (transaction_cost, percentage) => {
     return Math.ceil(transaction_cost * percentage);
 }
 
+export const setFileStatusAsDeleted = async (file_info) => {
+    const wallet_file = walletFileSet();
+
+    if(!wallet_file || wallet_file.length == 0) return;
+
+    const wallet_jwk = getJwkFromWalletFile(wallet_file);
+
+    const transaction = await arweave.createTransaction({}, wallet_jwk);
+
+    const wallet_balance = await getWalletBalance();
+
+    const total_winston_cost = parseInt(transaction.reward);
+    const total_ar_cost = arweave.ar.arToWinston(total_winston_cost);
+    
+    if(wallet_balance < total_ar_cost) {
+        notifier.notify({
+            title: 'Evermore Datastore',
+            icon: settings.NOTIFY_ICON_PATH,
+            message: `Your wallet does not contain enough AR to upload, ${total_ar_cost} AR is needed `,
+            timeout: 2
+        });
+
+        return;
+    }
+
+    transaction.addTag('App-Name', settings.APP_NAME);
+    transaction.addTag('file', file_info.file.replace(/([^:])(\/\/+)/g, '$1/'));
+    transaction.addTag('path', file_info.path.replace(/([^:])(\/\/+)/g, '$1/'));
+    transaction.addTag('modified', file_info.modified);
+    transaction.addTag('hostname', file_info.hostname);
+    transaction.addTag('version', file_info.version);
+    transaction.addTag('STATUS', "DELETED");
+    transaction.addTag('ACTION_TIMESTAMP', new Date().getTime());
+
+    await arweave.transactions.sign(transaction, wallet_jwk);
+
+    const response = await arweave.transactions.post(transaction);
+
+    if(response.status != 200) {
+        let error_msg = null;
+
+        if(response.status == 400) {
+            error_msg = "The transaction was rejected as invalid.";
+        }
+
+        if(response.status == 500) {
+            error_msg = "There was an error connecting to the blockchain.";
+        }
+
+        notifier.notify({
+            title: 'Evermore Datastore',
+            icon: settings.NOTIFY_ICON_PATH,
+            message: `There was an error updating the status of ${file_info.name} - ${error_msg}`,
+            timeout: 2
+        });
+
+        return;
+    }
+}
+
 export const getDownloadableFiles = async () => {
     const wallet_file = walletFileSet();
 
