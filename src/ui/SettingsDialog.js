@@ -3,12 +3,20 @@ import {
     QPushButton,
     QFileDialog,
     QWidget,
+    QLineEdit,
+    QLineEditSignals,
     FlexLayout,
     QLabel,
     FileMode
   } from "@nodegui/nodegui";
 
-import {walletFileSet, setWalletFilePath} from '../db/helpers';
+import {
+  walletFileSet, 
+  setWalletFilePath, 
+  AddFileToExclusions, 
+  GetSyncFrequency,
+  SetSyncFrequency
+} from '../db/helpers';
 import {getWalletAddress} from '../crypto/arweave-helpers';
 import openConnectDialog from './ConnectDialog';
 import { settings } from "../config";
@@ -53,6 +61,24 @@ const rootStyleSheet = `
     flex:2;
   }
 
+  #syncFrequency {
+    flex-direction: row;
+    margin-top: 10px;
+  }
+
+  #syncFrequencyLabel {
+    font-weight: bold;
+    margin-top: 5px;
+  }
+
+  #syncFrequencyLineEdit {
+    width: 30px;
+  }
+
+  #syncFrequencySpacer {
+    flex:2;
+  }
+
   #actions {
     flex-direction: row;
     margin-top: 30px;
@@ -79,13 +105,20 @@ const openSettingsDialog = () => {
       rootView.setLayout(rootViewLayout);
       
       const editable_settings = {
-        changed: false,
-        wallet_path: wallet_path
+        wallet_path_changed: false,
+        wallet_path: wallet_path,
+        sync_frequency_changed: false,
+        sync_frequency: GetSyncFrequency().toString(),
+        file_exclusions_changed: false,
+        file_exclusions: []
       }
+
       // wallet file path
       createWalletPathRow(editable_settings, rootView);
 
       createSyncRow(editable_settings, rootView, win);
+
+      createSyncFrequencyRow(editable_settings, rootView, win);
       
       createActionsRow(editable_settings, rootView, win);
 
@@ -142,7 +175,7 @@ const createWalletPathRow = (editable_settings, rootView) => {
 
       if(selected_file.length > 0) {
         editable_settings.wallet_file = selected_file[0];
-        editable_settings.changed = true;
+        editable_settings.wallet_file_changed = true;
         const wallet_path_parts = editable_settings.wallet_path.split(settings.PLATFORM == "win32" ? '\\':'/');
         walletPathText.setText(wallet_path_parts[wallet_path_parts.length - 1]);
       }        
@@ -208,6 +241,52 @@ const createSyncRow = async (editable_settings, rootView, win) => {
   rootView.layout.addWidget(syncActions);
 }
 
+const createSyncFrequencyRow = async (editable_settings, rootView, win) => { 
+  // label
+  const syncFrequencyLabel = new QLabel();
+  syncFrequencyLabel.setObjectName("syncFrequencyLabel");
+  syncFrequencyLabel.setText("Sync Frequency:");
+
+  rootView.layout.addWidget(syncFrequencyLabel);
+
+  const syncFrequency = new QWidget();
+  const syncFrequencyLayout = new FlexLayout();
+  syncFrequency.setObjectName('syncFrequency');
+  syncFrequency.setLayout(syncFrequencyLayout);
+
+  const syncFrequencySpacer = new QWidget();
+  const syncFrequencySpacerLayout = new FlexLayout();
+  syncFrequencySpacer.setObjectName('syncFrequencySpacer');
+  syncFrequencySpacer.setLayout(syncFrequencySpacerLayout);
+
+  syncFrequencyLayout.addWidget(syncFrequencySpacer);
+
+  
+
+  // label
+  const syncFrequencyLineEditLabel = new QLabel();
+  syncFrequencyLineEditLabel.setObjectName("syncFrequencyLineEditLabel");
+  syncFrequencyLineEditLabel.setText("Sync files every:");
+  syncFrequencyLayout.addWidget(syncFrequencyLineEditLabel);
+
+  const syncFrequencyLineEdit = new QLineEdit();
+  syncFrequencyLineEdit.setObjectName("syncFrequencyLineEdit");
+  syncFrequencyLineEdit.setText(editable_settings.sync_frequency);
+  syncFrequencyLineEdit.addEventListener('textChanged', (changed) => {
+    editable_settings.sync_frequency = changed;
+    editable_settings.sync_frequency_changed = true;
+  })
+
+  syncFrequencyLayout.addWidget(syncFrequencyLineEdit);
+
+  const syncFrequencyMinutesLabel = new QLabel();
+  syncFrequencyMinutesLabel.setObjectName("syncFrequencyMinutesLabel");
+  syncFrequencyMinutesLabel.setText(" minutes");
+  syncFrequencyLayout.addWidget(syncFrequencyMinutesLabel);
+    
+  rootView.layout.addWidget(syncFrequency);
+}
+
 
 
 const createActionsRow = (editable_settings, rootView, win) => {
@@ -228,8 +307,22 @@ const createActionsRow = (editable_settings, rootView, win) => {
   btnSave.setObjectName(`btnSave`);
 
   btnSave.addEventListener("clicked", () => {
-      if(editable_settings.changed) {
+      if(editable_settings.wallet_file_changed) {
         setWalletFilePath(editable_settings.wallet_file);
+      }
+      if(editable_settings.sync_frequency_changed) {
+        const sync_frequency = parseInt(editable_settings.sync_frequency, 10);
+
+        debugger;
+
+        if(sync_frequency != NaN) {
+          SetSyncFrequency(sync_frequency);
+        }        
+      }
+      if(editable_settings.file_exclusions_changed) {
+        editable_settings.file_exclusions.forEach(file_info => {
+          AddFileToExclusions(file_info);
+        });
       }  
 
       win.hide();  

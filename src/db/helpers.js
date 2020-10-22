@@ -24,7 +24,7 @@ export function InitDB() {
 
     const sync_frequency = db.has('sync_frequency').value();
     if(sync_frequency === false) {
-        db.set('sync_frequency', 10 * 60 * 100).write(); // default to every 10 mins
+        db.set('sync_frequency', 10).write(); // default to every 10 mins
     }
 
     const pending = db.has('pending').value();
@@ -72,18 +72,18 @@ export const GetSyncStatus = () => {
     return db.get('sync_status').value();
 }
 
-export const SetSyncStatus = (paused) =>  {
+export const SetSyncStatus = (syncing) =>  {
     if(!db) {
         InitDB();
     }
 
-    if(!paused) {
+    if(syncing) {
         startSyncProcessing();
     } else {
         stopSyncProcessing();
     }
     
-    db.set('sync_status', paused).write();
+    db.set('sync_status', syncing).write();
 }
 
 export const GetSyncFrequency = () => {
@@ -95,7 +95,7 @@ export const SetSyncFrequency = (minutes) =>  {
         InitDB();
     }
     
-    db.set('sync_frequency', minutes * 60 * 1000).write();
+    db.set('sync_frequency', minutes).write();
 }
 
 export const walletFileSet = () => {
@@ -196,7 +196,7 @@ export const GetNewPendingFiles = () => {
         .filter((file_info) => file_info.tx_id == null);
 }
 
-export const GetPendingFiles = () => {
+export const GetPendingFilesWithTransactionIDs = () => {
     if(!db) {
         InitDB();
     }

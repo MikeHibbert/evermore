@@ -7,12 +7,13 @@ import dirAddedHandler from './AddDir';
 import dirDeletedHandler from './DeleteDir';
 import { 
     GetNewPendingFiles, 
-    GetPendingFiles, 
+    GetPendingFilesWithTransactionIDs, 
     GetUploaders, 
     RemoveUploader,
     ResetPendingFile, 
     ConfirmSyncedFileFromTransaction,
     GetSyncStatus,
+    GetSyncFrequency,
     walletFileSet, GetSyncedFolders
 } from '../db/helpers';
 import { 
@@ -36,8 +37,8 @@ export const OnFileWatcherReady = () => {
         });
     }
 
-    const paused = GetSyncStatus();
-    if(!paused) {
+    const syncing = GetSyncStatus();
+    if(syncing) {
         processAll();
         startSyncProcessing();
     }  
@@ -46,14 +47,15 @@ export const OnFileWatcherReady = () => {
 const processAll = () => {
     checkPendingFilesStatus();
     processAllOutstandingUploads();
-    
 }
 
 let sync_processing_interval = null;
 export const startSyncProcessing = () => {
+    processAll();
+
     sync_processing_interval = setInterval(() => {
         processAll();
-    }, settings.APP_CHECK_FREQUENCY * 1000)
+    }, GetSyncFrequency() * 60 * 1000);
 }
 
 export const stopSyncProcessing = () => {
@@ -63,7 +65,7 @@ export const stopSyncProcessing = () => {
 }
 
 const checkPendingFilesStatus = () => {
-    const pending_files = GetPendingFiles();
+    const pending_files = GetPendingFilesWithTransactionIDs();
 
     let confirmed_count = 0;
 
@@ -73,7 +75,7 @@ const checkPendingFilesStatus = () => {
         getTransactionStatus(file_info.tx_id).then((response) => {
             console.log(response);
             if(response.status == 404) {
-                console.log(`resetting pending file ${file_info.file} as tx not found`);
+                console.log(`resetting pending file ${file_info.file} as it was not found on the blcokchain`);
                 ResetPendingFile(file_info.file, file_info.modified);
             }
 
@@ -88,23 +90,13 @@ const checkPendingFilesStatus = () => {
         notifier.notify({
             title: 'Evermore Datastore',
             icon: settings.NOTIFY_ICON_PATH,
-            message: `${confirmed_count} files have successfully been mined and are now permanently stored on the blockchain.`
+            message: `${confirmed_count} files have successfully been mined and are now permanently stored on the blockchain.`            
         });
     }
 }
 
 const processAllOutstandingUploads = (existing_files) => {
-    return;
-
     const uploaders = GetUploaders();
-
-    if(uploaders.length == 0) return;
-
-    // notifier.notify({
-    //     title: 'Evermore Datastore',
-    //     icon: settings.NOTIFY_ICON_PATH,
-    //     message: `${uploaders.length} file uploads have been resumed.`
-    //   });
 
     for(let i in uploaders) {
         const already_completed = transactionExistsOnTheBlockchain(uploaders[i].transaction.id, existing_files);
@@ -116,11 +108,37 @@ const processAllOutstandingUploads = (existing_files) => {
         }        
     }
 
-    notifier.notify({
-        title: 'Evermore Datastore',
-        icon: settings.NOTIFY_ICON_PATH,
-        message: `${uploaders.length} resumed file uploads have been complete.`
-      });
+    if(uploaders.length > 0) {
+        notifier.notify({
+            title: 'Evermore Datastore',
+            icon: settings.NOTIFY_ICON_PATH,
+            message: `${uploaders.length} resumed file uploads have been complete.`
+        });
+    }
+    
+    const pending_files = GetNewPendingFiles();
+
+    if(pending_files.length > 0) {
+        const minutes = settings.APP_CHECK_FREQUENCY / 60;
+        notifier.notify({
+            title: 'Evermore Datastore',
+            icon: settings.NOTIFY_ICON_PATH,
+            message: `${pending_files.length} files have been queued for upload in the last ${minutes} minutes. Would like to review them now?`,
+            actions: ['Review', 'Postpone']
+        });
+
+        notifier.on('review', () => {
+            preparePendingFiles(pending_files);
+        });
+
+        notifier.on('postpone', () => {
+            console.log('"Postpone" was pressed');
+        });
+    }
+}
+
+const preparePendingFiles = (pending_files) => {
+    console.log(pending_files.length);
 }
 
 const processAllPendingFiles = (pending_files, existing_files) => {

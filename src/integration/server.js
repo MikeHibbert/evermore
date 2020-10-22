@@ -3,7 +3,7 @@ const os = require('os');
 
 import {settings} from '../config';
 import processPipeMessage from './actions';
-import {GetSyncedFolders, GetNewPendingFiles, GetPendingFiles, GetSyncedFiles} from '../db/helpers';
+import {GetSyncedFolders, GetNewPendingFiles, GetPendingFilesWithTransactionIDs, GetSyncedFiles} from '../db/helpers';
 import { connected } from 'process';
 
 let server = null;

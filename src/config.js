@@ -1,11 +1,11 @@
 const path = require('path');
+import {GetSyncFrequency} from './db/helpers';
 
 let settings = {
     APP_NAME: 'EvermoreDatastore-v0.9',
     PLATFORM: process.platform,
     CONTRACT_ADDRESS: '1TFZeEewEgUpqT5i2dsZSIRKJq3h1C7ZVi-gE8G-W6U',
     USAGE_PERCENTAGE: 0.2, // 20% usage cost
-    APP_CHECK_FREQUENCY: 30, // every 30 seconds
     ARWEAVE_CONFIG: {
         host: "arweave.net",
         port: 443,

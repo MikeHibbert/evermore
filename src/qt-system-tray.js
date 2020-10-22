@@ -99,15 +99,15 @@ export const createLoggedInSystray = (menu) => {
     syncStatus.setCheckable(true);
     syncStatus.setChecked(paused);
     syncStatus.addEventListener("triggered", () => {
-        const paused = !GetSyncStatus();
+        const syncing = GetSyncStatus();
 
-        SetSyncStatus(paused);
+        SetSyncStatus(!syncing);
 
-        const sync_status = paused == true ? "Syncing active" : "Syncing paused";
+        const sync_status = syncing == true ? "Syncing active" : "Syncing paused";
         syncStatus.setText(sync_status);
-        syncStatus.setChecked(paused);
+        syncStatus.setChecked(syncing);
 
-        if(paused) {
+        if(syncing) {
             notifier.notify({
                 title: 'Evermore Datastore',
                 icon: settings.NOTIFY_ICON_PATH,
