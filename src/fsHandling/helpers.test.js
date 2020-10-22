@@ -123,7 +123,7 @@ afterAll(() => {
         const cheese_files_found = merged_path_infos[''].children.filter(item => item.type == 'file' && item.name == "Cheese.ini")
         expect(cheese_files_found.length).toBe(1);
         const test_folder_found = merged_path_infos[''].children.filter(item => item.type == 'folder' && item.name == "Test")
-        debugger;
+
         expect(test_folder_found.length).toBe(1);
         expect(test_folder_found[0].children.length).toBe(2);
         
