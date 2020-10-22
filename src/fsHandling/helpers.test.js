@@ -6,7 +6,8 @@ import {
     comparePathInfos, 
     createCRCFor,
     setFileUpdatedDatetime,
-    diffPathInfos
+    diffPathInfos,
+    mergePathInfos
 } from './helpers';
 
 const { crc32 } = require('crc');
@@ -109,5 +110,22 @@ afterAll(() => {
         expect(atime_timestamp).toBe(new_timestamp);
 
         fs.unlinkSync(file_path);
+    });
+
+    test("Should return a merged set of path_infos built from two sets provided", () => {
+        const newerPathInfosJSON = '{"":{"index":-1,"id":"root","type":"folder","name":"","children":[{"id":"RZZfLBu2VlnkZgMRYq9XqtJoS2iyRfLWKiTQp4QMjao","checked":true,"App":"EvermoreDatastore","path":"\Desktop.ini","modified":1596523970281,"hostname":"DESKTOP-26VMO3F","name":"Desktop.ini","index":1,"type":"file"},{"id":"1ZZfLBu2VlnkZgMRYq9XqtJoS2iyRfLWKiTQp4QMjao","checked":true,"App":"EvermoreDatastore","path":"\Cheese.ini","modified":1596523970281,"hostname":"DESKTOP-26VMO3F","name":"Cheese.ini","index":1,"type":"file"},{"id":"zBU4VLMhPUGmS9ihRdEqEhryeyO3Qq_Ju9DN24JwcM4","checked":true,"App":"EvermoreDatastore","path":"\New Text Document.txt","modified":1595868023843,"hostname":"DESKTOP-26VMO3F","name":"New Text Document.txt","index":1,"type":"file"},{"id":"boHIUS1KaGih9zdb8-hyYheODAGtMKQ6vPW1_uh2U3w","checked":true,"App":"EvermoreDatastore","path":"\Test\Hamster.bmp","modified":1595789196374,"hostname":"DESKTOP-26VMO3F","name":"Test","index":1,"type":"folder","children":[{"id":"boHIUS1KaGih9zdb8-hyYheODAGtMKQ6vPW1_uh2U3w","checked":true,"App":"EvermoreDatastore","path":"\Test\Hamster.bmp","modified":1595789196374,"hostname":"DESKTOP-26VMO3F","name":"Hamster.bmp","index":2,"type":"file"},{"id":"lJAqZOW9yDQygX2GqSuThWby2jZt3X6EW7RzKfrn5nw","checked":true,"App":"EvermoreDatastore","path":"\Test\New Text Document.txt","modified":1594275818662,"hostname":"DESKTOP-26VMO3F","name":"New Text Document.txt","index":2,"type":"file"}]},{"id":"QhIdQ5RwL7aoE7pya4obrx7BgeBlRSgxJzyzDm_UFck","checked":true,"App":"EvermoreDatastore","path":"\Desktop.ini","modified":1596523970281,"hostname":"DESKTOP-26VMO3F","name":"Desktop.ini","index":1,"type":"file"},{"id":"vPOQlEPA-RAcPGOUKonW4fL0_72Ohkj9xF6RQGEf8Ek","checked":true,"App":"EvermoreDatastore","path":"\New Text Document.txt","modified":1595868023843,"hostname":"DESKTOP-26VMO3F","name":"New Text Document.txt","index":1,"type":"file"}]}}';
+        const pathInfos = JSON.parse(pathInfosJSON);
+        const newerPathInfos = JSON.parse(newerPathInfosJSON);
+
+        const merged_path_infos = mergePathInfos(newerPathInfos[''], pathInfos[''], true);
+
+        expect(merged_path_infos[''].children.length).toBe(6);
+        const cheese_files_found = merged_path_infos[''].children.filter(item => item.type == 'file' && item.name == "Cheese.ini")
+        expect(cheese_files_found.length).toBe(1);
+        const test_folder_found = merged_path_infos[''].children.filter(item => item.type == 'folder' && item.name == "Test")
+        debugger;
+        expect(test_folder_found.length).toBe(1);
+        expect(test_folder_found[0].children.length).toBe(2);
+        
     });
 });

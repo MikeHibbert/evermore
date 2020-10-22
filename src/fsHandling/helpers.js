@@ -268,6 +268,42 @@ export const diffPathInfos = (a, b, root) => {
     }   
 }
 
+export const mergePathInfos = (from, to, root) => {
+    if(root) {
+        const root_info = {'':{ index: -1, id: "root", type: "folder", name: '', children: []}};
+
+        root_info[''].children = mergePathInfos(from, to, false);
+
+        return root_info;
+    } else {
+        const path_infos = [...to.children];
+        from.children.forEach(a => {
+                
+            if(a.type == 'folder') {
+                const to_items = to.children.filter(item => item.type == 'folder' && item.name == a.name);
+                if(to_items.length == 0) {
+                    const b = to_items[0];
+
+                    const folder_info = {name: b.name, type: 'folder', path: b.path }
+                    folder_info['children'] = mergePathInfos(a, b, false);
+
+                    if(folder_info.children.length > 0) {
+                        path_infos.push(folder_info);
+                    }                    
+                }
+            } else {
+                const to_items = to.children.filter(item => item.type == a.type && item.name == a.name);
+                
+                if(to_items.length == 0) {
+                    path_infos.push(a);
+                }            
+            }
+        });
+
+        return path_infos;
+    }   
+}
+
 export const systemHasEnoughDiskSpace = async (required_space) => {
     const sync_folders = GetSyncedFolders();
 

@@ -6,7 +6,7 @@ const path = require('path');
 const notifier = require('node-notifier');
 const mime = require('mime-types')
 import { readContract, selectWeightedPstHolder  } from 'smartweave';
-import {settings} from '../config';
+import settings from '../config';
 import regeneratorRuntime from "regenerator-runtime";
 import {
     walletFileSet, 
@@ -31,6 +31,8 @@ import {
     encryptFile,
     decryptFile
 } from './files';
+
+// debugger;
 
 export const arweave = Arweave.init(settings.ARWEAVE_CONFIG);
 

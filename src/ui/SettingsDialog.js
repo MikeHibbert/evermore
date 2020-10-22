@@ -20,7 +20,10 @@ import {
 import {getWalletAddress} from '../crypto/arweave-helpers';
 import openConnectDialog from './ConnectDialog';
 import { settings } from "../config";
-import { getOnlineFilesAndFoldersStructure } from "../fsHandling/helpers";
+import { 
+  getOnlineFilesAndFoldersStructure,
+  getOfflineFilesAndFoldersStructure 
+} from "../fsHandling/helpers";
 import openSyncSettingsDialog from './SyncSettingsDialog';
 
 const rootStyleSheet = `
@@ -218,21 +221,26 @@ const createSyncRow = async (editable_settings, rootView, win) => {
     if(wallet_file) {
       const wallet_address = await getWalletAddress(wallet_file);
 
-      const path_infos = await getOnlineFilesAndFoldersStructure(wallet_address);
-
-      if(path_infos[''].children.length == 0) {
-        notifier.notify({
-          title: 'Evermore Datastore',
-          icon: settings.NOTIFY_ICON_PATH,
-          message: "There are currently no files to download/sync online or offline"
+      const online_path_infos = await getOnlineFilesAndFoldersStructure(wallet_address);
+      getOfflineFilesAndFoldersStructure((offline_path_infos) => {
+        openSyncSettingsDialog(online_path_infos, (path_infos) => {
+          console.log("saveCallback called from createSyncRow");
         });
-
-        return;
-      }
-
-      openSyncSettingsDialog(path_infos, (path_infos) => {
-        console.log("saveCallback called from createSyncRow");
       });
+
+      debugger;
+
+      // if(online_path_infos[''].children.length == 0) {
+      //   notifier.notify({
+      //     title: 'Evermore Datastore',
+      //     icon: settings.NOTIFY_ICON_PATH,
+      //     message: "There are currently no files to download/sync online"
+      //   });
+
+      //   return;
+      // }
+
+      
     } 
   });
 
