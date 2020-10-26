@@ -19,7 +19,7 @@ const fileChangedHandler = (path) => {
               const pending_file = GetPendingFile(path);
               if(!pending_file) {
                   AddPendingFile(null, path);
-                  sendMessage(`STATUS:SYNC:${path}\n`, true);
+                  sendMessage(`STATUS:SYNC:${path}\n`);
               } else {
                 if(new_file_modified > pending_file.modified) { 
                   // there have been changes made before the uploader has uploaded the last modified changes so queue it 
@@ -35,7 +35,7 @@ const fileChangedHandler = (path) => {
         if(!GetPendingFile(path)) { // if its not in pending files it should have been put in the sync files 
           const synced_file = GetSyncedFileFromPath(path);
           AddPendingFile(null, path, version=synced_file.version + 1); // this the newest version so add it to pending for another upload
-          sendMessage(`STATUS:SYNC:${path}\n`, true);
+          sendMessage(`STATUS:SYNC:${path}\n`);
         }
     }
 }

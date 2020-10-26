@@ -1,9 +1,14 @@
 import {sendMessage} from '../integration/server';
+import {
+    pathExcluded
+} from '../fsHandling/helpers';
 
-const dirAddedHandler = (path) => {
-    console.log(`Directory ${path} has been added`);
+const dirAddedHandler = (folder_path) => {
+    console.log(`Directory ${folder_path} has been added`);
 
-    sendMessage(`REGISTER_PATH:${path}\n`, true);
+    if(!pathExcluded(folder_path)) {
+        sendMessage(`REGISTER_PATH:${folder_path}\n`);
+    }
 }
 
 export default dirAddedHandler;

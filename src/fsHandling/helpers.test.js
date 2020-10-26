@@ -9,7 +9,8 @@ import {
     diffPathInfos,
     mergePathInfos,
     removePathInfosWithChecked,
-    pathFoundInPathInfos
+    pathFoundInPathInfos,
+    pathFoundInFolderPathInfos
 } from './helpers';
 
 const { crc32 } = require('crc');
@@ -170,8 +171,32 @@ afterAll(() => {
             const path_in_sub_folder_found = pathFoundInPathInfos(path.normalize("\\db\\helpers.js"), path_infos['']);
 
             expect(path_in_sub_folder_found).toBe(true); 
+
+            const path_found_folder_paths_only = pathFoundInFolderPathInfos(path.normalize("\\crypto\\helpers.js"), path_infos['']);
+
+            expect(path_found_folder_paths_only).toBe(true); 
+
+            const folder_path_found_folder_paths_only = pathFoundInFolderPathInfos(path.normalize("\\crypto\\"), path_infos['']);
+
+            expect(folder_path_found_folder_paths_only).toBe(true); 
         });
 
         
     });
+
+    test("Should notify of registered and unregidtered folder", () => {
+        getOfflineFilesAndFoldersStructure((path_infos) => {
+            const exclusions = {"":{"index":-1,"id":"root","type":"folder","name":"","children":[]}};
+
+            exclusions[''].children.push({...path_infos[''].children[0]});
+
+            notifications = [];
+            updateInclusionsAndExclusionOverlayPaths(exclusions, (message) => {
+                notifications.push(message);
+            })
+
+            expect(notifications.length).toBeGreaterThan(0);
+        });
+        
+    })
 });

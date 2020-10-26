@@ -10,22 +10,26 @@ let server = null;
 let pipe_stream = null;
 let clients = [];
 
-export const sendMessage = (message, send_update_message) => {
+export const sendMessage = (message, send_update_message=false) => {
     for(let i in clients) {
         try {
-            clients[i].write(message);
+            if(send_update_message == true) {
+                console.log(`UPDATE_VIEW sent send_update_message: ${send_update_message}`);
+                clients[i].write("UPDATE_VIEW\n");
+            }  else {
+                clients[i].write(message);
+            }
+            
         } catch (e) {
+            debugger;
             console.log(e);
-        } finally {
-
         }
-        
-    }
-    // pipe_stream.write(message);
+        // } finally {
 
-    // if(send_update_message) {
-    //     pipe_stream.write("UPDATE_VIEW\n");
-    // }    
+        // }   
+    }
+
+      
 }
 
 const initNamePipe = () => { 

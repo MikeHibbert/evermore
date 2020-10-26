@@ -8,7 +8,12 @@ import {
 import path from 'path';
 import regeneratorRuntime from "regenerator-runtime";
 import {sendMessage} from '../integration/server';
-import {getFileUpdatedDate, getRalativePath, createCRCFor, pathFoundInPathInfos} from '../fsHandling/helpers';
+import {
+    getFileUpdatedDate, 
+    getRalativePath, 
+    createCRCFor, 
+    pathExcluded
+} from '../fsHandling/helpers';
 import {getDownloadableFiles} from '../crypto/arweave-helpers';
 
 const fileAddedHandler = (file_path) => {
@@ -33,9 +38,11 @@ const fileAddedHandler = (file_path) => {
                                 if(downloadable_file.crc != current_crc) {
                                     const exclusions = GetExclusions();
 
-                                    if(!pathFoundInPathInfos(path.normalize(file_path), exclusions)) {
+                                    debugger;
+
+                                    if(!pathExcluded(file_path)) {
                                         AddPendingFile(null, path.normalize(file_path), downloadable_file.version + 1);
-                                        sendMessage(`REGISTER_PATH:${file_path}\n`, true);
+                                        sendMessage(`REGISTER_PATH:${file_path}\n`);
                                         confirmed_in_blockchain = true;
                                     }                                    
                                 }                                
@@ -44,7 +51,7 @@ const fileAddedHandler = (file_path) => {
                     } else {
                         if(!GetSyncedFile(downloadable_file.id)) {
                             ConfirmSyncedFileFromTransaction(file_path, downloadable_file);
-                            sendMessage(`REGISTER_PATH:${file_path}\n`, true);
+                            sendMessage(`REGISTER_PATH:${file_path}\n`);
                             confirmed_in_blockchain = true;
                         }
                     }          
@@ -54,15 +61,14 @@ const fileAddedHandler = (file_path) => {
         } 
         if(!found_in_downloadables && !confirmed_in_blockchain) {
             if(!GetPendingFile(file_path)) {
-                const exclusions = GetExclusions();
-
-                if(!pathFoundInPathInfos(path.normalize(file_path), exclusions)) {
+                if(!pathExcluded(file_path)) {
                     AddPendingFile(null, file_path, 1);
-                    sendMessage(`REGISTER_PATH:${file_path}\n`, true);
+                    sendMessage(`REGISTER_PATH:${file_path}\n`);
                 }
             }
         }
     });    
 }
+
 
 export default fileAddedHandler;

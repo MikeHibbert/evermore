@@ -3,7 +3,7 @@ const glob = require('glob');
 const path = require('path');
 const checkDiskSpace = require('check-disk-space');
 import regeneratorRuntime from "regenerator-runtime";
-import {AddFileToDownloads, GetSyncedFolders} from '../db/helpers';
+import {AddFileToDownloads, GetSyncedFolders, GetExclusions} from '../db/helpers';
 import {arweave} from '../crypto/arweave-helpers';
 import {settings} from '../config';
 const { crc32 } = require('crc');
@@ -363,6 +363,92 @@ export const pathFoundInPathInfos = (path, path_infos) => {
 
     return path_found;
 }
+
+export const pathFoundInFolderPathInfos = (path, path_infos) => {
+    let path_found = false;
+
+    for(let i in path_infos.children) {
+        const pa = path_infos.children[i];
+
+        if(pa.type == 'folder') {
+            if(path.indexOf(pa.path) == -1) {
+                const path_found_in_folder = pathFoundInPathInfos(path, pa);    
+            
+                if(path_found_in_folder) {
+                    path_found = true;
+
+                    break;
+                }
+            } else {
+                path_found = true;
+                break;
+            }
+            
+        } 
+    }
+
+    return path_found;
+}
+
+
+export const pathExcluded = (file_path) => {
+    const exclusions = GetExclusions();
+    const sync_folders = GetSyncedFolders();
+
+    if(sync_folders.length == 0) {
+        return true; // if there are no sync folder then it cant be included!
+    }
+
+    const relative_path = path.normalize(file_path.replace(sync_folders[0], ''));
+    // check for matching full file name paths
+    if(pathFoundInPathInfos(relative_path, exclusions[''])) {
+        return true;
+    }
+
+    // check if path is in one of the excluded folders
+    if(pathFoundInFolderPathInfos(relative_path, exclusions[''])) {
+        return true;
+    }
+
+    return false;
+}
+
+export const updateInclusionsAndExclusionOverlayPaths = async (path_infos, notify_method) {
+    const sync_folders = GetSyncedFolders();
+
+    if(sync_folders.length == 0) return;
+
+    getOfflineFilesAndFoldersStructure((offline_infos) => {
+        
+    });
+}
+
+export const registerPathFolders = (sync_folder, path_infos, notify_method) => {
+    for(let i in path_infos.children) {
+        const pa = path_infos.children[i];
+        
+        if(pa.type == 'folder') {
+            const folder_path = path.join(path.normalize(sync_folder), pa.path);
+            notify_method(`REGISTER_PATH:${folder_path}\n`);
+        } 
+    }
+
+    return path_found;
+}
+
+export const unregisterPathFolders = (sync_folder, path_infos, notify_method) => {
+    for(let i in path_infos.children) {
+        const pa = path_infos.children[i];
+        
+        if(pa.type == 'folder') {
+            const folder_path = path.join(path.normalize(sync_folder), pa.path);
+            notify_method(`UNREGISTER_PATH:${folder_path}\n`);
+        } 
+    }
+
+    return path_found;
+}
+
 
 export const systemHasEnoughDiskSpace = async (required_space) => {
     const sync_folders = GetSyncedFolders();

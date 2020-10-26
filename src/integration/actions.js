@@ -4,6 +4,7 @@ import {
     GetSyncedFileFromPath, 
     GetSyncedFolders 
 } from '../db/helpers';
+import {pathExcluded} from '../fsHandling/helpers';
 import path from 'path';
 import { settings } from '../config';
 
@@ -63,19 +64,21 @@ const getFileStatus = (file_path) => {
         }        
     }
 
-    let file_info = GetSyncedFileFromPath(path.normalize(file_path));
+    if(!pathExcluded(file_path)) {
+        let file_info = GetSyncedFileFromPath(path.normalize(file_path));
 
-    if(file_info) return `STATUS:OK:${file_path}\n`;
+        if(file_info) return `STATUS:OK:${file_path}\n`;
 
-    file_info = GetNewOrPendingFile(path.normalize(file_path));
-    
-    if(file_info) {
-        if(file_info.tx_id == null) {
-            return `STATUS:NEW:${file_path}\n`;
-        } else {
-            return `STATUS:SYNC:${file_path}\n`;
+        file_info = GetNewOrPendingFile(path.normalize(file_path));
+        
+        if(file_info) {
+            if(file_info.tx_id == null) {
+                return `STATUS:NEW:${file_path}\n`;
+            } else {
+                return `STATUS:SYNC:${file_path}\n`;
+            }
         }
-    }
+    }    
 
     return `STATUS:NOP:${file_path}\n`;
 }
@@ -113,19 +116,21 @@ const getFolderStatus = (folder_path) => {
         } else {
             return `STATUS:OK:${folder_path}\n`;
         }
-    } else {        
+    } else {  
         for(let i in pending_files) {
             const pending_file_parent_folder = pending_files[i].path.replace(pending_files[i].file, '');
 
-            if(pending_file_parent_folder == folder_path) {
+            if(pending_file_parent_folder == folder_path && !pathExcluded(folder_path)) {
                 return `STATUS:SYNC:${folder_path}\n`;
             }
         }
 
-        return `STATUS:OK:${folder_path}\n`;
-    }
-
-    return `STATUS:NOP:${folder_path}\n`;
+        if(!pathExcluded(folder_path)) {
+            return `STATUS:OK:${folder_path}\n`;
+        } else {
+            return `STATUS:NOP:${folder_path}\n`;
+        }
+    }    
 }
 
 export default processPipeMessage;

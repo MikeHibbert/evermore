@@ -25,8 +25,10 @@ import {
   getOnlineFilesAndFoldersStructure,
   getOfflineFilesAndFoldersStructure, 
   mergePathInfos,
-  removePathInfosWithChecked
+  removePathInfosWithChecked,
+  unregisterPathFolders
 } from "../fsHandling/helpers";
+import {sendMessage} from '../integration/server';
 import openSyncSettingsDialog from './SyncSettingsDialog';
 
 const rootStyleSheet = `
@@ -244,11 +246,12 @@ const createSyncRow = async (editable_settings, rootView, win) => {
         }
         
         openSyncSettingsDialog(path_infos[''], (edited_path_infos) => {
-          debugger;
-
           const exclusions = removePathInfosWithChecked(edited_path_infos, false);
+          const sync_folder = GetSyncedFolders()[0];
 
           UpdateExclusions(exclusions);
+
+          unregisterPathFolders(exclusions[''], sendMessage);
         });
       });  
     } 
