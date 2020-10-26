@@ -1,5 +1,4 @@
 const path = require('path');
-import {GetSyncFrequency} from './db/helpers';
 
 let settings = {
     APP_NAME: 'EvermoreDatastore-v0.9',

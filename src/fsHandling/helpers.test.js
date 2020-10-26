@@ -1,5 +1,5 @@
 const fs = jest.requireActual('fs');
-const { settings } = require('../config');
+import { settings } from '../config';
 const path = require('path');
 import {
     getOfflineFilesAndFoldersStructure,
@@ -7,7 +7,9 @@ import {
     createCRCFor,
     setFileUpdatedDatetime,
     diffPathInfos,
-    mergePathInfos
+    mergePathInfos,
+    removePathInfosWithChecked,
+    pathFoundInPathInfos
 } from './helpers';
 
 const { crc32 } = require('crc');
@@ -126,6 +128,50 @@ afterAll(() => {
 
         expect(test_folder_found.length).toBe(1);
         expect(test_folder_found[0].children.length).toBe(2);
+        
+    });
+
+    test("Should return remove any path_infos that done have 'checked' set to correct value", () => {
+        const firstPathInfosJSON = '{"":{"index":-1,"id":"root","type":"folder","name":"","children":[{"id":"RZZfLBu2VlnkZgMRYq9XqtJoS2iyRfLWKiTQp4QMjao","checked":false,"App":"EvermoreDatastore","path":"\Desktop.ini","modified":1596523970281,"hostname":"DESKTOP-26VMO3F","name":"Desktop.ini","index":1,"type":"file"},{"id":"1ZZfLBu2VlnkZgMRYq9XqtJoS2iyRfLWKiTQp4QMjao","checked":true,"App":"EvermoreDatastore","path":"\Cheese.ini","modified":1596523970281,"hostname":"DESKTOP-26VMO3F","name":"Cheese.ini","index":1,"type":"file"},{"id":"zBU4VLMhPUGmS9ihRdEqEhryeyO3Qq_Ju9DN24JwcM4","checked":true,"App":"EvermoreDatastore","path":"\New Text Document.txt","modified":1595868023843,"hostname":"DESKTOP-26VMO3F","name":"New Text Document.txt","index":1,"type":"file"},{"id":"boHIUS1KaGih9zdb8-hyYheODAGtMKQ6vPW1_uh2U3w","checked":true,"App":"EvermoreDatastore","path":"\Test\Hamster.bmp","modified":1595789196374,"hostname":"DESKTOP-26VMO3F","name":"Test","index":1,"type":"folder","children":[{"id":"boHIUS1KaGih9zdb8-hyYheODAGtMKQ6vPW1_uh2U3w","checked":true,"App":"EvermoreDatastore","path":"\Test\Hamster.bmp","modified":1595789196374,"hostname":"DESKTOP-26VMO3F","name":"Hamster.bmp","index":2,"type":"file"},{"id":"lJAqZOW9yDQygX2GqSuThWby2jZt3X6EW7RzKfrn5nw","checked":true,"App":"EvermoreDatastore","path":"\Test\New Text Document.txt","modified":1594275818662,"hostname":"DESKTOP-26VMO3F","name":"New Text Document.txt","index":2,"type":"file"}]},{"id":"QhIdQ5RwL7aoE7pya4obrx7BgeBlRSgxJzyzDm_UFck","checked":true,"App":"EvermoreDatastore","path":"\Desktop.ini","modified":1596523970281,"hostname":"DESKTOP-26VMO3F","name":"Desktop.ini","index":1,"type":"file"},{"id":"vPOQlEPA-RAcPGOUKonW4fL0_72Ohkj9xF6RQGEf8Ek","checked":true,"App":"EvermoreDatastore","path":"\New Text Document.txt","modified":1595868023843,"hostname":"DESKTOP-26VMO3F","name":"New Text Document.txt","index":1,"type":"file"}]}}';
+        const firstPathInfos = JSON.parse(firstPathInfosJSON);
+
+        const first_removed_path_infos = removePathInfosWithChecked(firstPathInfos[''], true);
+
+        expect(first_removed_path_infos[''].children.length).toBe(firstPathInfos[''].children.length - 1);
+
+
+        
+        const secondPathInfosJSON = '{"":{"index":-1,"id":"root","type":"folder","name":"","children":[{"id":"RZZfLBu2VlnkZgMRYq9XqtJoS2iyRfLWKiTQp4QMjao","checked":true,"App":"EvermoreDatastore","path":"\Desktop.ini","modified":1596523970281,"hostname":"DESKTOP-26VMO3F","name":"Desktop.ini","index":1,"type":"file"},{"id":"1ZZfLBu2VlnkZgMRYq9XqtJoS2iyRfLWKiTQp4QMjao","checked":false,"App":"EvermoreDatastore","path":"\Cheese.ini","modified":1596523970281,"hostname":"DESKTOP-26VMO3F","name":"Cheese.ini","index":1,"type":"file"},{"id":"zBU4VLMhPUGmS9ihRdEqEhryeyO3Qq_Ju9DN24JwcM4","checked":false,"App":"EvermoreDatastore","path":"\New Text Document.txt","modified":1595868023843,"hostname":"DESKTOP-26VMO3F","name":"New Text Document.txt","index":1,"type":"file"},{"id":"boHIUS1KaGih9zdb8-hyYheODAGtMKQ6vPW1_uh2U3w","checked":false,"App":"EvermoreDatastore","path":"\Test\Hamster.bmp","modified":1595789196374,"hostname":"DESKTOP-26VMO3F","name":"Test","index":1,"type":"folder","children":[{"id":"boHIUS1KaGih9zdb8-hyYheODAGtMKQ6vPW1_uh2U3w","checked":false,"App":"EvermoreDatastore","path":"\Test\Hamster.bmp","modified":1595789196374,"hostname":"DESKTOP-26VMO3F","name":"Hamster.bmp","index":2,"type":"file"},{"id":"lJAqZOW9yDQygX2GqSuThWby2jZt3X6EW7RzKfrn5nw","checked":true,"App":"EvermoreDatastore","path":"\Test\New Text Document.txt","modified":1594275818662,"hostname":"DESKTOP-26VMO3F","name":"New Text Document.txt","index":2,"type":"file"}]},{"id":"QhIdQ5RwL7aoE7pya4obrx7BgeBlRSgxJzyzDm_UFck","checked":true,"App":"EvermoreDatastore","path":"\Desktop.ini","modified":1596523970281,"hostname":"DESKTOP-26VMO3F","name":"Desktop.ini","index":1,"type":"file"},{"id":"vPOQlEPA-RAcPGOUKonW4fL0_72Ohkj9xF6RQGEf8Ek","checked":true,"App":"EvermoreDatastore","path":"\New Text Document.txt","modified":1595868023843,"hostname":"DESKTOP-26VMO3F","name":"New Text Document.txt","index":1,"type":"file"}]}}';
+        const secondPathInfos = JSON.parse(secondPathInfosJSON);
+
+        const second_removed_path_infos = removePathInfosWithChecked(secondPathInfos[''], false);
+
+        expect(second_removed_path_infos[''].children.length).toBe(3);    
+
+        const test_folder_info = second_removed_path_infos[''].children.filter(pi => pi.name = "Test" && pi.type == 'folder')[0];
+
+        expect(test_folder_info.children.length).toBe(1);    
+    });
+
+    test("Should find paths in path_infos", () => {
+        const current_folder = path.join(process.cwd(), 'src');
+
+        const matches = GetSyncedFolders().filter(folder => folder.path == current_folder);
+
+        if(matches.length == 0) {
+            AddSyncedFolder(current_folder);
+        }
+
+        getOfflineFilesAndFoldersStructure((path_infos) => {
+            const path_in_root_folder_found = pathFoundInPathInfos(path.normalize("\\index.js"), path_infos['']);
+
+            expect(path_in_root_folder_found).toBe(true); 
+
+            const path_in_sub_folder_found = pathFoundInPathInfos(path.normalize("\\db\\helpers.js"), path_infos['']);
+
+            expect(path_in_sub_folder_found).toBe(true); 
+        });
+
         
     });
 });

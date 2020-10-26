@@ -64,7 +64,7 @@ export function InitDB() {
 
     const exclusions = db.has('exclusions').value();
     if(exclusions === false) {
-        db.set('exclusions', []).write();
+        db.set('exclusions', '{"":{"index":-1,"id":"root","type":"folder","name":"","children":[]}}').write();
     }
 }
 
@@ -333,33 +333,23 @@ export const GetDownloads = () => {
     return db.get('downloads').value();
 }
 
-export const AddFileToExclusions = (file_info) => {
+export const UpdateExclusions = (file_infos) => {
     if(!db) {
         InitDB();
     }
 
-    db.get('exclusions')
-        .push(file_info).write();
+    db.unset('exclusions').write();
+
+    db.set('exclusions', JSON.stringify(file_infos)).write();
 }
 
-export const RemoveFileFromExclusions = (name, path) => {
-    if(!db) {
-        InitDB();
-    }
-
-    db.get('exclusions')
-        .remove({
-            name: name,
-            path: path
-        }).write();
-}
 
 export const GetExclusions = () => {
     if(!db) {
         InitDB();
     }
 
-    return db.get('exclusions').value();
+    return JSON.parse(db.get('exclusions').value());
 }
 
 export const AddFolder = (tx_id, path) => {

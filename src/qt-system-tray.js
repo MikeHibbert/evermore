@@ -78,9 +78,14 @@ export const createLoggedInSystray = (menu) => {
     const balanceAction = new QAction();
 
     const wallet_path = walletFileSet();
-    getWalletBalance(wallet_path).then((balance) => {
-        balanceAction.setText("Balance: " + balance + " AR");
-    });
+    try {
+        getWalletBalance(wallet_path).then((balance) => {
+            balanceAction.setText("Balance: " + balance + " AR");
+        });
+    } catch(e) {
+        balanceAction.setText("Balance unavailable.");
+    }
+    
     
     balanceAction.addEventListener("triggered", () => {
         const wallet_path = walletFileSet();

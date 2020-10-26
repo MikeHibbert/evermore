@@ -40,7 +40,7 @@ const openSyncSettingsDialog = (path_infos, saveCallback, cancelCallback) => {
     const OnChange = (item, column) => {
         const serialised_path_info = JSON.parse(item.data(0, USER_DATA_ROLE).toString());
     
-        const path_info = getOriginalPathInfoInstance(serialised_path_info, path_infos['']);
+        const path_info = getOriginalPathInfoInstance(serialised_path_info, path_infos);
     
         const checked = item.data(0, ItemDataRole.CheckStateRole).toInt();
     
@@ -92,7 +92,7 @@ const getOriginalPathInfoInstance = (path_info, path_infos) => {
     }
   }
   
-  const createSyncActionsRow = (path_infos, syncRootView, win, saveCallback, cancelCallbackinin
+  const createSyncActionsRow = (path_infos, syncRootView, win, saveCallback, cancelCallback
     ) => {
     const actions = new QWidget();
     const actionsLayout = new FlexLayout();
@@ -122,7 +122,7 @@ const getOriginalPathInfoInstance = (path_info, path_infos) => {
     btnCancel.setObjectName(`btnCancel`);
   
     btnCancel.addEventListener("clicked", () => {
-      if(cancelCallback) {
+       if(cancelCallback) {
         cancelCallback(path_infos);
       }
       win.hide();     
@@ -139,7 +139,6 @@ const createFolderItems = (path_info, tree, window, root, parent) => {
         parent.setText(0, path_info.name);
     }
 
-    debugger;
     for(let i in path_info.children) {
         const path = path_info.children[i];
         if(path.type == "folder") {

@@ -1,7 +1,7 @@
 jest.mock('fs');
 const path = require('path');
 const Arweave = jest.requireActual('arweave/node');
-const settings = require('../config');
+import { settings } from '../config';
 const { 
     arweave, 
     calculatePSTPayment, 

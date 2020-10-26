@@ -164,7 +164,7 @@ export const getOfflineFilesAndFoldersStructure = (callback) => {
 
 const convertPathsToInfos = (sync_folder, file_paths, is_root) => {
 
-    const folders = {'':{ index: -1, id: "root", type: "folder", name: '', children: []}};
+    const folders = {'':{ index: -1, id: "root", type: "folder", name: '', children: []}, checked: true};
 
     for(let i in file_paths) {
         const file_path = file_paths[i];
@@ -176,7 +176,7 @@ const convertPathsToInfos = (sync_folder, file_paths, is_root) => {
             }
         } catch(e) {}
 
-        const file_info = { path: file_path.replace(sync_folder, ''), children: [], type: path_type, checked: true };
+        const file_info = { path: path.normalize(file_path.replace(sync_folder, '')), children: [], type: path_type, checked: true };
 
         let path_parts = [];
         if(file_info.path.indexOf('\\') != -1) {
@@ -277,19 +277,21 @@ export const mergePathInfos = (from, to, root) => {
         return root_info;
     } else {
         const path_infos = [...to.children];
+
         from.children.forEach(a => {
-                
+            
             if(a.type == 'folder') {
                 const to_items = to.children.filter(item => item.type == 'folder' && item.name == a.name);
+
                 if(to_items.length == 0) {
                     const b = to_items[0];
+                    const folder_info = {name: a.name, type: 'folder', path: a.path, children: [], checked: a.checked }
 
-                    const folder_info = {name: b.name, type: 'folder', path: b.path }
-                    folder_info['children'] = mergePathInfos(a, b, false);
-
-                    if(folder_info.children.length > 0) {
-                        path_infos.push(folder_info);
+                    if(b != undefined) {
+                        folder_info.children = mergePathInfos(a, b, false);
                     }                    
+
+                    path_infos.push(folder_info);                  
                 }
             } else {
                 const to_items = to.children.filter(item => item.type == a.type && item.name == a.name);
@@ -299,9 +301,67 @@ export const mergePathInfos = (from, to, root) => {
                 }            
             }
         });
+        
+        
 
         return path_infos;
     }   
+}
+
+export const removePathInfosWithChecked = (path_infos, checked, root=true) => {
+    if(root) {
+        const root_info = {'':{ index: -1, id: "root", type: "folder", name: '', children: []}};
+
+        root_info[''].children = removePathInfosWithChecked(path_infos, checked, false);
+
+        return root_info;
+    } else {
+        const new_path_infos = [];
+
+        path_infos.children.forEach(pa => {
+            if(pa.type == 'folder') {
+                if(pa.checked == checked) {
+                    const folder_info = {name: pa.name, type: 'folder', path: pa.path, children: [], checked: pa.checked }
+
+                    folder_info.children = removePathInfosWithChecked(pa, checked, false);
+
+                    new_path_infos.push(folder_info);                  
+                }
+            } else {
+                if(pa.checked == checked) {
+                    new_path_infos.push(pa);
+                }            
+            }
+        });
+
+        return new_path_infos;
+    }   
+}
+
+export const pathFoundInPathInfos = (path, path_infos) => {
+    let path_found = false;
+
+    for(let i in path_infos.children) {
+        const pa = path_infos.children[i];
+
+        if(pa.type == 'folder') {
+            const path_found_in_folder = pathFoundInPathInfos(path, pa);    
+            
+            if(path_found_in_folder) {
+                path_found = true;
+
+                break;
+            }
+        } else {
+            if(pa.path == path) {
+                path_found = true;
+
+                break;
+            }            
+        }
+    }
+
+    return path_found;
 }
 
 export const systemHasEnoughDiskSpace = async (required_space) => {

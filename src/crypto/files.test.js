@@ -3,7 +3,7 @@ jest.setTimeout(400000);
 const path = require('path');
 const fs = jest.requireActual('fs');
 const Arweave = jest.requireActual('arweave/node');
-const settings = require('../config');
+import { settings } from '../config';
 const { 
     wallet2PEM,
     encryptDataWithRSAKey,

@@ -13,7 +13,8 @@ import {
 import {
   walletFileSet, 
   setWalletFilePath, 
-  AddFileToExclusions, 
+  UpdateExclusions, 
+  GetExclusions,
   GetSyncFrequency,
   SetSyncFrequency
 } from '../db/helpers';
@@ -22,7 +23,9 @@ import openConnectDialog from './ConnectDialog';
 import { settings } from "../config";
 import { 
   getOnlineFilesAndFoldersStructure,
-  getOfflineFilesAndFoldersStructure 
+  getOfflineFilesAndFoldersStructure, 
+  mergePathInfos,
+  removePathInfosWithChecked
 } from "../fsHandling/helpers";
 import openSyncSettingsDialog from './SyncSettingsDialog';
 
@@ -221,26 +224,33 @@ const createSyncRow = async (editable_settings, rootView, win) => {
     if(wallet_file) {
       const wallet_address = await getWalletAddress(wallet_file);
 
+      const exclusions = GetExclusions();
+
       const online_path_infos = await getOnlineFilesAndFoldersStructure(wallet_address);
-      getOfflineFilesAndFoldersStructure((offline_path_infos) => {
-        openSyncSettingsDialog(online_path_infos, (path_infos) => {
-          console.log("saveCallback called from createSyncRow");
-        });
-      });
 
-      debugger;
-
-      // if(online_path_infos[''].children.length == 0) {
-      //   notifier.notify({
-      //     title: 'Evermore Datastore',
-      //     icon: settings.NOTIFY_ICON_PATH,
-      //     message: "There are currently no files to download/sync online"
-      //   });
-
-      //   return;
-      // }
-
+      const exclusions_and_online_path_infos = mergePathInfos(online_path_infos[''], exclusions[''], true);
       
+      getOfflineFilesAndFoldersStructure((offline_path_infos) => {
+        const path_infos = mergePathInfos(offline_path_infos[''], exclusions_and_online_path_infos[''], true);
+
+        if(path_infos[''].children.length == 0) {
+          notifier.notify({
+            title: 'Evermore Datastore',
+            icon: settings.NOTIFY_ICON_PATH,
+            message: "There are currently no files to download/sync online"
+          });
+
+          return;
+        }
+        
+        openSyncSettingsDialog(path_infos[''], (edited_path_infos) => {
+          debugger;
+
+          const exclusions = removePathInfosWithChecked(edited_path_infos, false);
+
+          UpdateExclusions(exclusions);
+        });
+      });  
     } 
   });
 
@@ -329,7 +339,7 @@ const createActionsRow = (editable_settings, rootView, win) => {
       }
       if(editable_settings.file_exclusions_changed) {
         editable_settings.file_exclusions.forEach(file_info => {
-          AddFileToExclusions(file_info);
+          UpdateExclusions(file_info);
         });
       }  
 

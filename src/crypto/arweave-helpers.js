@@ -6,7 +6,7 @@ const path = require('path');
 const notifier = require('node-notifier');
 const mime = require('mime-types')
 import { readContract, selectWeightedPstHolder  } from 'smartweave';
-import settings from '../config';
+import { settings } from '../config';
 import regeneratorRuntime from "regenerator-runtime";
 import {
     walletFileSet, 
@@ -46,11 +46,17 @@ export const getJwkFromWalletFile = (path) => {
 export const getWalletBalance = (path) => {
     const jwk = getJwkFromWalletFile(path);
 
-    return arweave.wallets.jwkToAddress(jwk).then((address) => {
-        return arweave.wallets.getBalance(address).then((balance) => {
-            return arweave.ar.winstonToAr(balance);
-        })
-    });
+    try {
+        return arweave.wallets.jwkToAddress(jwk).then((address) => {
+            return arweave.wallets.getBalance(address).then((balance) => {
+                return arweave.ar.winstonToAr(balance);
+            })
+        });
+    } catch(e) {
+        console.log(e);
+        return 0;
+    }
+    
 }
 
 export const getWalletAddress = async (path) => {
