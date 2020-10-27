@@ -1,5 +1,6 @@
 const chokidar = require('chokidar');
 const notifier = require('node-notifier');
+const path = require('path');
 import fileAddedHandler from './AddFile';
 import fileChangedHandler from './ChangeFile';
 import fileDeletedHandler from './DeleteFile';
@@ -14,7 +15,10 @@ import {
     ConfirmSyncedFileFromTransaction,
     GetSyncStatus,
     GetSyncFrequency,
-    walletFileSet, GetSyncedFolders
+    GetAllProposedFiles, 
+    GetSyncedFolders,
+    AddPendingFile,
+    RemoveProposedFile
 } from '../db/helpers';
 import { 
     uploadFile, 
@@ -22,6 +26,8 @@ import {
     getTransactionStatus, 
     getDownloadableFiles 
 } from '../crypto/arweave-helpers';
+import {convertProposedToInfos} from './helpers';
+import openSyncSettingsDialog from '../ui/SyncSettingsDialog';
 import { settings } from '../config';
 
 export const OnFileWatcherReady = () => {
@@ -116,19 +122,19 @@ const processAllOutstandingUploads = (existing_files) => {
         });
     }
     
-    const pending_files = GetNewPendingFiles();
+    const proposed_files = GetAllProposedFiles();
 
-    if(pending_files.length > 0) {
+    if(proposed_files.length > 0) {
         const minutes = settings.APP_CHECK_FREQUENCY / 60;
         notifier.notify({
             title: 'Evermore Datastore',
             icon: settings.NOTIFY_ICON_PATH,
-            message: `${pending_files.length} files have been queued for upload in the last ${minutes} minutes. Would like to review them now?`,
+            message: `${proposed_files.length} files have been queued for upload in the last ${minutes} minutes. Would like to review them now?`,
             actions: ['Review', 'Postpone']
         });
 
         notifier.on('review', () => {
-            preparePendingFiles(pending_files);
+            prepareProposedFiles(proposed_files);
         });
 
         notifier.on('postpone', () => {
@@ -137,8 +143,32 @@ const processAllOutstandingUploads = (existing_files) => {
     }
 }
 
-const preparePendingFiles = (pending_files) => {
-    console.log(pending_files.length);
+const prepareProposedFiles = (proposed_files) => {
+    const sync_folders = GetSyncedFolders();
+    
+    const path_infos = convertProposedToInfos(sync_folders[0], proposed_files, true);
+
+    openSyncSettingsDialog(path_infos[''], (path_infos_to_be_synced) => {
+        addPathInfosToPending(path_infos_to_be_synced);
+    });
+}
+
+const addPathInfosToPending = (path_infos) => {
+    const sync_folders = GetSyncedFolders();
+    const sync_folder = sync_folders[0];
+
+    for(let i in path_infos.children) {
+        const pa = path_infos.children[i];
+
+        if(pa.type == 'folder') {
+            addPathInfosToPending(path_infos);
+        } else {
+            if(pa.checked) {
+                AddPendingFile(null, pa.path, 1);
+                RemoveProposedFile(path.join(path.normalize(sync_folder), pa.path));
+            }            
+        }
+    }
 }
 
 const processAllPendingFiles = (pending_files, existing_files) => {

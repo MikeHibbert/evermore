@@ -162,9 +162,11 @@ export const getOfflineFilesAndFoldersStructure = (callback) => {
     });
 }
 
-const convertPathsToInfos = (sync_folder, file_paths, is_root) => {
+export const convertPathsToInfos = (sync_folder, file_paths, is_root) => {
 
     const folders = {'':{ index: -1, id: "root", type: "folder", name: '', children: []}, checked: true};
+
+    debugger;
 
     for(let i in file_paths) {
         const file_path = file_paths[i];
@@ -177,6 +179,40 @@ const convertPathsToInfos = (sync_folder, file_paths, is_root) => {
         } catch(e) {}
 
         const file_info = { path: path.normalize(file_path.replace(sync_folder, '')), children: [], type: path_type, checked: true };
+
+        let path_parts = [];
+        if(file_info.path.indexOf('\\') != -1) {
+            path_parts = file_info.path.split('\\')
+        } 
+
+        if(file_info.path.indexOf('/') != -1) {
+            path_parts = file_info.path.split('/')
+        }
+        
+        if(path_parts.length > 1) {
+            if(folders.hasOwnProperty(path_parts[0])) {
+                addToFolderChildren(path_parts, 0, file_info, folders[path_parts[0]], 0);                
+            }           
+        }  
+    }
+
+    return folders;
+}
+
+export const convertProposedToInfos = (sync_folder, proposed_file_paths, is_root) => {
+    const folders = {'':{ index: -1, id: "root", type: "folder", name: '', children: []}, checked: true};
+    
+    for(let i in proposed_file_paths) {
+        const proposed_file = proposed_file_paths[i];
+        const path_type = 'file'; 
+
+        try {
+            if(fs.lstatSync(proposed_file.path).isDirectory()) {
+                path_type = 'folder'; 
+            }
+        } catch(e) {}
+
+        const file_info = { path: path.normalize(proposed_file.path.replace(sync_folder, '')), children: [], type: path_type, checked: true };
 
         let path_parts = [];
         if(file_info.path.indexOf('\\') != -1) {

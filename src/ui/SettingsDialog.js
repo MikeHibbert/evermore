@@ -247,7 +247,7 @@ const createSyncRow = async (editable_settings, rootView, win) => {
         
         openSyncSettingsDialog(path_infos[''], (edited_path_infos) => {
           const exclusions = removePathInfosWithChecked(edited_path_infos, false);
-          
+
           UpdateExclusions(exclusions);
 
           updateInclusionsAndExclusionOverlayPaths(exclusions, sendMessage);
@@ -332,9 +332,7 @@ const createActionsRow = (editable_settings, rootView, win) => {
       }
       if(editable_settings.sync_frequency_changed) {
         const sync_frequency = parseInt(editable_settings.sync_frequency, 10);
-
-        debugger;
-
+        
         if(sync_frequency != NaN) {
           SetSyncFrequency(sync_frequency);
         }        

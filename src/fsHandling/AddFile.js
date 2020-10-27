@@ -1,6 +1,6 @@
 import {
-    AddPendingFile, 
-    GetPendingFile, 
+    AddProposedFile, 
+    GetProposedFile, 
     GetSyncedFile, 
     ConfirmSyncedFileFromTransaction,
     GetExclusions
@@ -33,7 +33,7 @@ const fileAddedHandler = (file_path) => {
 
                 if(downloadable_file.file === relative_path) {
                     if(new_file_modified > downloadable_file.modified) {
-                        if(!GetPendingFile(file_path)) {
+                        if(!GetProposedFile(file_path)) {
                             if(downloadable_file.hasOwnProperty('crc')) {
                                 if(downloadable_file.crc != current_crc) {
                                     const exclusions = GetExclusions();
@@ -41,7 +41,7 @@ const fileAddedHandler = (file_path) => {
                                     debugger;
 
                                     if(!pathExcluded(file_path)) {
-                                        AddPendingFile(null, path.normalize(file_path), downloadable_file.version + 1);
+                                        AddProposedFile(null, path.normalize(file_path), downloadable_file.version + 1);
                                         sendMessage(`REGISTER_PATH:${file_path}\n`);
                                         confirmed_in_blockchain = true;
                                     }                                    
@@ -60,9 +60,9 @@ const fileAddedHandler = (file_path) => {
             }
         } 
         if(!found_in_downloadables && !confirmed_in_blockchain) {
-            if(!GetPendingFile(file_path)) {
+            if(!GetProposedFile(file_path)) {
                 if(!pathExcluded(file_path)) {
-                    AddPendingFile(null, file_path, 1);
+                    AddProposedFile(null, file_path, 1);
                     sendMessage(`REGISTER_PATH:${file_path}\n`);
                 }
             }
