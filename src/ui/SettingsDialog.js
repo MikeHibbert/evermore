@@ -26,7 +26,7 @@ import {
   getOfflineFilesAndFoldersStructure, 
   mergePathInfos,
   removePathInfosWithChecked,
-  unregisterPathFolders
+  updateInclusionsAndExclusionOverlayPaths
 } from "../fsHandling/helpers";
 import {sendMessage} from '../integration/server';
 import openSyncSettingsDialog from './SyncSettingsDialog';
@@ -247,11 +247,10 @@ const createSyncRow = async (editable_settings, rootView, win) => {
         
         openSyncSettingsDialog(path_infos[''], (edited_path_infos) => {
           const exclusions = removePathInfosWithChecked(edited_path_infos, false);
-          const sync_folder = GetSyncedFolders()[0];
-
+          
           UpdateExclusions(exclusions);
 
-          unregisterPathFolders(exclusions[''], sendMessage);
+          updateInclusionsAndExclusionOverlayPaths(exclusions, sendMessage);
         });
       });  
     } 

@@ -1,3 +1,4 @@
+const { platform } = require('os');
 const path = require('path');
 
 let settings = {
@@ -29,6 +30,10 @@ let settings = {
         process.cwd(), 
         "assets\\images\\setup-3.png"
     )
+}
+
+if(process.platform != 'win32') {
+    // TODO: set stuff up for alternate DB location if needs be
 }
 
 if(typeof jest != "undefined") {

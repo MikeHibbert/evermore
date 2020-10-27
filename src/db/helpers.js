@@ -333,14 +333,14 @@ export const GetDownloads = () => {
     return db.get('downloads').value();
 }
 
-export const UpdateExclusions = (file_infos) => {
+export const UpdateExclusions = (exclusions_file_infos) => {
     if(!db) {
         InitDB();
     }
 
     db.unset('exclusions').write();
 
-    db.set('exclusions', JSON.stringify(file_infos)).write();
+    db.set('exclusions', JSON.stringify(exclusions_file_infos)).write();
 }
 
 

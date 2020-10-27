@@ -413,40 +413,27 @@ export const pathExcluded = (file_path) => {
     return false;
 }
 
-export const updateInclusionsAndExclusionOverlayPaths = async (path_infos, notify_method) {
+export const updateInclusionsAndExclusionOverlayPaths = async (exclusion_path_infos, notify_method) => {
     const sync_folders = GetSyncedFolders();
 
     if(sync_folders.length == 0) return;
 
     getOfflineFilesAndFoldersStructure((offline_infos) => {
-        
+        unregisterPaths(sync_folders[0], offline_infos[''], notify_method);
     });
 }
 
-export const registerPathFolders = (sync_folder, path_infos, notify_method) => {
+export const unregisterPaths = (sync_folder, path_infos, notify_method) => {
     for(let i in path_infos.children) {
         const pa = path_infos.children[i];
         
+        const folder_path = path.join(path.normalize(sync_folder), pa.path);
+        notify_method(`UNREGISTER_PATH:${folder_path}\n`);
+
         if(pa.type == 'folder') {
-            const folder_path = path.join(path.normalize(sync_folder), pa.path);
-            notify_method(`REGISTER_PATH:${folder_path}\n`);
-        } 
+            unregisterPaths(sync_folder, pa, notify_method);
+        }
     }
-
-    return path_found;
-}
-
-export const unregisterPathFolders = (sync_folder, path_infos, notify_method) => {
-    for(let i in path_infos.children) {
-        const pa = path_infos.children[i];
-        
-        if(pa.type == 'folder') {
-            const folder_path = path.join(path.normalize(sync_folder), pa.path);
-            notify_method(`UNREGISTER_PATH:${folder_path}\n`);
-        } 
-    }
-
-    return path_found;
 }
 
 
