@@ -29,7 +29,8 @@ let settings = {
     SETUP_STAGE_3: path.join(
         process.cwd(), 
         "assets\\images\\setup-3.png"
-    )
+    ),
+    GRAPHQL_ENDPOINT: 'https://arweave.net/graphql'
 }
 
 if(process.platform != 'win32') {

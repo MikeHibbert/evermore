@@ -24,7 +24,8 @@ import {
     uploadFile, 
     finishUpload, 
     getTransactionStatus, 
-    getDownloadableFiles 
+    getDownloadableFiles,
+    fileExistsOnTheBlockchain 
 } from '../crypto/arweave-helpers';
 import {convertProposedToInfos} from './helpers';
 import openSyncSettingsDialog from '../ui/SyncSettingsDialog';
@@ -108,7 +109,11 @@ const processAllOutstandingUploads = (existing_files) => {
         const already_completed = transactionExistsOnTheBlockchain(uploaders[i].transaction.id, existing_files);
 
         if(!already_completed) {
+            stopSyncProcessing();
+
             finishUpload(uploaders[i]);
+
+            startSyncProcessing();
         } else {
             RemoveUploader(uploaders[i]);
         }        
@@ -141,6 +146,12 @@ const processAllOutstandingUploads = (existing_files) => {
             console.log('"Postpone" was pressed');
         });
     }
+
+    const pending_files = GetNewPendingFiles();
+
+    if(pending_files.length > 0) {
+        processAllPendingFiles(pending_files);
+    }
 }
 
 const prepareProposedFiles = (proposed_files) => {
@@ -150,6 +161,8 @@ const prepareProposedFiles = (proposed_files) => {
 
     openSyncSettingsDialog(path_infos[''], (path_infos_to_be_synced) => {
         addPathInfosToPending(path_infos_to_be_synced);
+
+
     });
 }
 
@@ -171,46 +184,35 @@ const addPathInfosToPending = (path_infos) => {
     }
 }
 
-const processAllPendingFiles = (pending_files, existing_files) => {
+const processAllPendingFiles = (pending_files) => {
     let uploaded_count = 0;
 
     const public_sync_folder = path.join(getSystemPath(), 'Public');
 
-    if(GetSyncStatus() != false) {
-        for(let i in pending_files) {
-            const txs = fileExistsOnTheBlockchain(pending_files[i], existing_files);
-    
-            if(txs.length == 0) {
-                const encrypt_file = pending_files[i].path.indexOf(public_sync_folder) != -1;
-                uploadFile(pending_files[i], encrypt_file);
-                uploaded_count++;
-            } else {
-                // only send one because duplicates is dev env, shouldnt be so in production!
-                ConfirmSyncedFileFromTransaction(pending_files[i].path, txs[0]); 
-            }        
-        }
-    
-        if(uploaded_count > 0) {
-            notifier.notify({
-                title: 'Evermore',
-                icon: settings.NOTIFY_ICON_PATH,
-                message: `${pending_files.length} have been uploaded and will be mined sortly.`
-            });
-        }
-    }    
-    
-}
+    for(let i in pending_files) {
+        const txs = fileExistsOnTheBlockchain(pending_files[i], existing_files);
 
-const fileExistsOnTheBlockchain = (file_info, existing_files) => {
-    const existing = existing_files.filter(
-        tx => {
-            return (file_info.file == tx.file || file_info.file == tx.path) && file_info.modified == tx.modified 
-        }
-    );
+        if(txs.length == 0) {
+            const encrypt_file = pending_files[i].path.indexOf(public_sync_folder) != -1;
+            pauseSyncProcessing()
 
-    debugger;
+            uploadFile(pending_files[i], encrypt_file);
 
-    return existing;
+            unpauseSyncProcessing();
+            uploaded_count++;
+        } else {
+            // only send one because duplicates is dev env, shouldnt be so in production!
+            ConfirmSyncedFileFromTransaction(pending_files[i].path, txs[0]); 
+        }        
+    }
+
+    if(uploaded_count > 0) {
+        notifier.notify({
+            title: 'Evermore',
+            icon: settings.NOTIFY_ICON_PATH,
+            message: `${pending_files.length} have been uploaded and will be mined sortly.`
+        });
+    }     
 }
 
 const transactionExistsOnTheBlockchain = (tx_id, existing_files) => {

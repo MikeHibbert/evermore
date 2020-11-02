@@ -15,7 +15,7 @@
     ]
   },
   "scripts": {
-    "test": "npm-run-all clean transpile && webpack --config webpack.config.js && jest --runInBand --detectOpenHandles",
+    "test": "npm-run-all clean transpile && webpack --config webpack.config.js && qode ./node_modules/jest/bin/jest -i --runInBand --detectOpenHandles",
     "service": "node dist/index.js",
     "dev": "babel ./src --out-dir dist && qode dist/index.js --unhandled-rejections=strict",
     "build": "npm-run-all clean transpile && webpack --config webpack.config.js",

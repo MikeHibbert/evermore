@@ -166,8 +166,6 @@ export const convertPathsToInfos = (sync_folder, file_paths, is_root) => {
 
     const folders = {'':{ index: -1, id: "root", type: "folder", name: '', children: []}, checked: true};
 
-    debugger;
-
     for(let i in file_paths) {
         const file_path = file_paths[i];
         const path_type = 'file'; 
@@ -449,7 +447,7 @@ export const pathExcluded = (file_path) => {
     return false;
 }
 
-export const updateInclusionsAndExclusionOverlayPaths = async (exclusion_path_infos, notify_method) => {
+export const updateInclusionsAndExclusionOverlayPaths = (notify_method) => {
     const sync_folders = GetSyncedFolders();
 
     if(sync_folders.length == 0) return;
@@ -547,4 +545,3 @@ export const compareLocalFileInfoWithOnlineFileInfo = (file_info, online_path_in
     }
     
 }
-

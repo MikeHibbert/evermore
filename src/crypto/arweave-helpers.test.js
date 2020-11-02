@@ -7,7 +7,8 @@ const {
     calculatePSTPayment, 
     sendUsagePayment, 
     uploadFile,
-    getDownloadableFiles, 
+    getDownloadableFiles,
+    getDownloadableFilesGQL, 
 } = require('./arweave-helpers');
 
 const { InitDB, setWalletFilePath } = require('../db/helpers'); 
@@ -47,6 +48,18 @@ test("Should get downloadable files and return thier info", async () => {
     setWalletFilePath(test_wallet_path);
 
     getDownloadableFiles().then(downloadable_files => {
+        expect(downloadable_files.length).toBeGreaterThan(0);
+    });
+    
+});
+
+test("Should get downloadable files from graphql and return thier info", async () => {
+    InitDB();
+
+    const test_wallet_path = "C:\\Users\\hibbe\\Documents\\Arweave Wallet\\arweave-keyfile-h-Bgr13OWUOkRGWrnMT0LuUKfJhRss5pfTdxHmNcXyw.json";
+    setWalletFilePath(test_wallet_path);
+
+    getDownloadableFilesGQL().then(downloadable_files => {
         expect(downloadable_files.length).toBeGreaterThan(0);
     });
     

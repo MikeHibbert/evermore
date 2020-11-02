@@ -2,6 +2,7 @@ const Arweave = require('arweave/node');
 const fs = require('fs');
 const fse = require('fs-extra');
 const crypto = require('crypto');
+const axios = require('axios')
 const path = require('path');
 const notifier = require('node-notifier');
 const mime = require('mime-types')
@@ -322,7 +323,96 @@ export const getDownloadableFiles = async () => {
         return tx_row
     }));
 
-    return tx_rows;
+    // remove old duplicates
+    const final_rows = [];
+    for(let i in tx_rows) {
+        const row = tx_rows[i];
+
+        let found = false;
+        for(let j in final_rows) {
+            const final_row = final_rows[j];
+
+            if(final_row.path == row.path && row.modified > final_row.modified) {
+                found = true;
+                final_rows[j] = row;
+            }
+        }
+
+        if(!found) {
+            final_rows.push(row);
+        }
+    }
+
+    return final_rows;
+}
+
+export const getDownloadableFilesGQL = async () => {
+    const wallet_file = walletFileSet();
+
+    if(!wallet_file || wallet_file.length == 0) return [];
+
+    const jwk = getJwkFromWalletFile(wallet_file);
+
+    const windows = settings.PLATFORM === "win32";
+
+    const address = await arweave.wallets.jwkToAddress(jwk);
+
+    const query = `{
+        transactions(
+            owners: ["${address}"],
+              tags: [
+              {
+                  name: "App",
+                  values: ["${settings.APP_NAME}"]
+              },
+              ]	) {
+              edges {
+                  node {
+                    id
+                    tags {
+                        name
+                        value
+                    }
+                  }
+              }
+          }
+    }`;
+
+    const response = await axios.post(settings.GRAPHQL_ENDPOINT, {
+        operationName: null,
+        query: query,
+        variables: {}
+    });
+
+    if(response.status == 200) {
+        const final_rows = [];
+        for(let i in response.data.transactions.edges) {
+            const row = response.data.transactions.edges[i].node;
+
+            for(let i in row.tags) {
+                const tag = row.tags[i];
+                row[tag.name] = tag.value;
+            }
+
+            let found = false;
+            for(let j in final_rows) {
+                const final_row = final_rows[j];
+
+                if(final_row.path == row.path && row.modified > final_row.modified) {
+                    found = true;
+                    final_rows[j] = row;
+                }
+            }
+
+            if(!found) {
+                final_rows.push(row);
+            }
+        }
+
+        return final_rows;
+    }
+    
+    return null; // if nothing is returned 
 }
 
 export const finishUpload = async (savedUploader) => {
@@ -440,4 +530,44 @@ export const downloadFileFromTransaction = async (wallet, tx_id) => {
     // removeTempFolder();
 }
 
+export const fileExistsOnTheBlockchain = async (file_info) => {
+    const wallet_file = walletFileSet();
 
+    if(!wallet_file || wallet_file.length == 0) return [];
+
+    const jwk = getJwkFromWalletFile(wallet_file);
+
+    const address = await arweave.wallets.jwkToAddress(jwk);
+
+    const existing = await arweave.arql({
+        op: "and",
+        expr1: {
+            op: "and",
+            expr1: {
+                op: "equals",
+                expr1: "App",
+                expr2: settings.APP_NAME
+            },
+            expr2: {
+                op: "equals",
+                expr1: "from",
+                expr2: address
+            }
+        },
+        expr2: {
+            op: "and",
+            expr1: {
+                op: "equals",
+                expr1: "path",
+                expr2: file_info.path
+            },
+            expr2: {
+                op: "equals",
+                expr1: "modified",
+                expr2: file_info.modified
+            }
+        }
+    });
+
+    return existing;
+}
