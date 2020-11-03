@@ -1,8 +1,10 @@
 import {getFileUpdatedDate} from '../fsHandling/helpers';
 const low = require('lowdb');
 const os = require('os');
+const path = require('path');
 const FileSync = require('lowdb/adapters/FileSync');
 import {settings} from '../config';
+import {startSyncProcessing, stopSyncProcessing} from '../fsHandling/Init';
 
 let db = null;
 
@@ -15,6 +17,21 @@ function getDB() {
 
 export function InitDB() {
     db = getDB();
+
+    const sync_status = db.has('sync_status').value();
+    if(sync_status === false) {
+        db.set('sync_status', false).write();
+    }
+
+    const sync_frequency = db.has('sync_frequency').value();
+    if(sync_frequency === false) {
+        db.set('sync_frequency', 10).write(); // default to every 10 mins
+    }
+
+    const proposed = db.has('proposed').value();
+    if(proposed === false) {
+        db.set('proposed', []).write();
+    }
 
     const pending = db.has('pending').value();
     if(pending === false) {
@@ -45,6 +62,46 @@ export function InitDB() {
     if(uploaders === false) {
         db.set('uploaders', []).write();
     }
+
+    const downloads = db.has('downloads').value();
+    if(downloads === false) {
+        db.set('downloads', []).write();
+    }
+
+    const exclusions = db.has('exclusions').value();
+    if(exclusions === false) {
+        db.set('exclusions', '{"":{"index":-1,"id":"root","type":"folder","name":"","children":[]}}').write();
+    }
+}
+
+export const GetSyncStatus = () => {
+    return db.get('sync_status').value();
+}
+
+export const SetSyncStatus = (syncing) =>  {
+    if(!db) {
+        InitDB();
+    }
+
+    if(syncing) {
+        startSyncProcessing();
+    } else {
+        stopSyncProcessing();
+    }
+    
+    db.set('sync_status', syncing).write();
+}
+
+export const GetSyncFrequency = () => {
+    return db.get('sync_frequency').value();
+}
+
+export const SetSyncFrequency = (minutes) =>  {
+    if(!db) {
+        InitDB();
+    }
+    
+    db.set('sync_frequency', minutes).write();
 }
 
 export const walletFileSet = () => {
@@ -72,6 +129,12 @@ export const resetWalletFilePath = () => {
 }
 
 export const AddPendingFile = (tx_id, file, version) => {
+    debugger;
+    
+    if(!db) {
+        InitDB();
+    }
+
     const sync_folders = GetSyncedFolders();
 
     let relative_path = file;
@@ -83,19 +146,19 @@ export const AddPendingFile = (tx_id, file, version) => {
         }
     }
 
-    if(GetPendingFile(relative_path)) return;
+    const full_path = path.join(path.normalize(sync_folders[0]), file);
 
-    if(!db) {
-        InitDB();
-    }
+    if(GetPendingFile(full_path)) return;
+
+    
 
     db.get('pending')
         .push({
             tx_id: tx_id,
             file: relative_path,
-            path: file,
+            path: full_path,
             version: version,
-            modified: getFileUpdatedDate(file),
+            modified: getFileUpdatedDate(full_path),
             hostname: os.hostname()
         }).write();
 }
@@ -145,7 +208,7 @@ export const GetNewPendingFiles = () => {
         .filter((file_info) => file_info.tx_id == null);
 }
 
-export const GetPendingFiles = () => {
+export const GetPendingFilesWithTransactionIDs = () => {
     if(!db) {
         InitDB();
     }
@@ -189,6 +252,84 @@ export const GetPendingFile = (path) => {
     return file;
 }
 
+export const AddProposedFile = (tx_id, file, version) => {
+    const sync_folders = GetSyncedFolders();
+
+    let relative_path = file;
+
+    for(let i in sync_folders) {
+        const sync_folder = sync_folders[i];
+        if(file.indexOf(sync_folder) != -1) {
+            relative_path = file.replace(sync_folder, '');
+        }
+    }
+
+    if(GetProposedFile(relative_path)) return;
+
+    if(!db) {
+        InitDB();
+    }
+
+    db.get('proposed')
+        .push({
+            tx_id: tx_id,
+            file: relative_path,
+            path: file,
+            version: version,
+            modified: getFileUpdatedDate(file),
+            hostname: os.hostname()
+        }).write();
+}
+
+export const GetProposedFile = (path) => {
+    if(!db) {
+        InitDB();
+    }
+
+    const file = db.get('proposed').find({path: path}).value();
+
+    if(file) {
+        const modified = getFileUpdatedDate(file.path);
+        if(modified > file.modified) {
+            return ResetProposedFile(file.file, modified);
+        }
+    }
+    return file;
+}
+
+export const ResetProposedFile = (file, modified) => {
+    if(!db) {
+        InitDB();
+    }
+
+    db.get('proposed')
+        .find({file: file})
+        .assign({tx_id: null, modified: modified})
+        .write();
+
+    return db.get('proposed').find({file: file}).value();
+}
+
+export const RemoveProposedFile = (path) => {
+    if(!db) {
+        InitDB();
+    }
+
+    db.get('proposed')
+        .remove({
+            path: path
+        }).write();
+}
+
+export const GetAllProposedFiles = () => {
+    if(!db) {
+        InitDB();
+    }
+
+    return db.get('proposed')
+        .value();
+}
+
 export const ConfirmSyncedFile = (tx_id) => {
     if(!db) {
         InitDB();
@@ -219,19 +360,22 @@ export const ConfirmSyncedFileFromTransaction = (path, transaction) => {
             path: path,
             version: transaction.version == undefined ? 1 : transaction.version,
             modified: transaction.modified,
-            hostname: transaction.hostname
+            hostname: transaction.hostname,
+            crc: transaction.crc
         })
         .write();
 
     db.get('pending').remove({tx_id: transaction.id}).write();
 }
 
+
+
 export const GetSyncedFiles = () => {
     if(!db) {
         InitDB();
     }
 
-    return db.get('synced_files');
+    return db.get('synced_files').value();
 }
 
 export const GetSyncedFile = (tx_id) => {
@@ -249,6 +393,55 @@ export const GetSyncedFileFromPath = (path) => {
 
     return db.get('synced_files').find({path: path}).value();
 }
+
+export const AddFileToDownloads = (file_info) => {
+    if(!db) {
+        InitDB();
+    }
+
+    db.get('downloads')
+        .push(file_info).write();
+}
+
+export const RemoveFileFromDownloads  = (name, path) => {
+    if(!db) {
+        InitDB();
+    }
+
+    db.get('downloads')
+        .remove({
+            name: name,
+            path: path
+        }).write();
+}
+
+export const GetDownloads = () => {
+    if(!db) {
+        InitDB();
+    }
+
+    return db.get('downloads').value();
+}
+
+export const UpdateExclusions = (exclusions_file_infos) => {
+    if(!db) {
+        InitDB();
+    }
+
+    db.unset('exclusions').write();
+
+    db.set('exclusions', JSON.stringify(exclusions_file_infos)).write();
+}
+
+
+export const GetExclusions = () => {
+    if(!db) {
+        InitDB();
+    }
+
+    return JSON.parse(db.get('exclusions').value());
+}
+
 export const AddFolder = (tx_id, path) => {
     if(!db) {
         InitDB();

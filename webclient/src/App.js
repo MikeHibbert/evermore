@@ -115,7 +115,7 @@ class App extends Component {
 
         const files = await getFiles(wallet_address);
         
-        // if(files.childeren.length > this.state.files.length && this.state.files.length > 0) {
+        // if(files.children.length > this.state.files.length && this.state.files.length > 0) {
         //   const new_count = files.length - this.state.files.length;
         //   this.setState({new_files_count: new_count});
         //   this.addSuccessAlert("You have " + new_count + " new files");

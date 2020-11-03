@@ -108,4 +108,7 @@ dist
 .vs/
 
 evermore-db.json
+test_db.json
+*.enc
+*.dec
 *.exe

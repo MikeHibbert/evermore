@@ -1,20 +1,28 @@
 import {
-    AddPendingFile, 
-    GetPendingFile, 
+    AddProposedFile, 
+    GetProposedFile, 
     GetSyncedFile, 
-    ConfirmSyncedFileFromTransaction 
+    ConfirmSyncedFileFromTransaction,
+    GetExclusions
 } from '../db/helpers';
-
+import path from 'path';
+import regeneratorRuntime from "regenerator-runtime";
 import {sendMessage} from '../integration/server';
-import {getFileUpdatedDate, getRalativePath} from '../fsHandling/helpers';
+import {
+    getFileUpdatedDate, 
+    getRalativePath, 
+    createCRCFor, 
+    pathExcluded
+} from '../fsHandling/helpers';
 import {getDownloadableFiles} from '../crypto/arweave-helpers';
 
-const fileAddedHandler = (path) => {
-    console.log(`File ${path} has been added`)
+const fileAddedHandler = (file_path) => {
+    console.log(`File ${file_path} has been added`)
 
-    getDownloadableFiles().then(downloadable_files => {
-        const new_file_modified = getFileUpdatedDate(path);
-        const relative_path = getRalativePath(path);
+    getDownloadableFiles().then(async downloadable_files => {
+        const new_file_modified = getFileUpdatedDate(file_path);
+        const relative_path = getRalativePath(file_path);
+        const current_crc = await createCRCFor(file_path);
 
         let found_in_downloadables = false;
         let confirmed_in_blockchain = false;
@@ -25,15 +33,25 @@ const fileAddedHandler = (path) => {
 
                 if(downloadable_file.file === relative_path) {
                     if(new_file_modified > downloadable_file.modified) {
-                        if(!GetPendingFile(path)) {
-                            AddPendingFile(null, path, downloadable_file.version + 1);
-                            sendMessage(`REGISTER_PATH:${path}\n`, true);
-                            confirmed_in_blockchain = true;
+                        if(!GetProposedFile(file_path)) {
+                            if(downloadable_file.hasOwnProperty('crc')) {
+                                if(downloadable_file.crc != current_crc) {
+                                    const exclusions = GetExclusions();
+
+                                    debugger;
+
+                                    if(!pathExcluded(file_path)) {
+                                        AddProposedFile(null, path.normalize(file_path), downloadable_file.version + 1);
+                                        sendMessage(`REGISTER_PATH:${file_path}\n`);
+                                        confirmed_in_blockchain = true;
+                                    }                                    
+                                }                                
+                            }                            
                         }
                     } else {
                         if(!GetSyncedFile(downloadable_file.id)) {
-                            ConfirmSyncedFileFromTransaction(path, downloadable_file);
-                            sendMessage(`REGISTER_PATH:${path}\n`, true);
+                            ConfirmSyncedFileFromTransaction(file_path, downloadable_file);
+                            sendMessage(`REGISTER_PATH:${file_path}\n`);
                             confirmed_in_blockchain = true;
                         }
                     }          
@@ -42,12 +60,15 @@ const fileAddedHandler = (path) => {
             }
         } 
         if(!found_in_downloadables && !confirmed_in_blockchain) {
-            if(!GetPendingFile(path)) {
-                AddPendingFile(null, path, 1);
-                sendMessage(`REGISTER_PATH:${path}\n`, true);
+            if(!GetProposedFile(file_path)) {
+                if(!pathExcluded(file_path)) {
+                    AddProposedFile(null, file_path, 1);
+                    sendMessage(`REGISTER_PATH:${file_path}\n`);
+                }
             }
         }
     });    
 }
+
 
 export default fileAddedHandler;

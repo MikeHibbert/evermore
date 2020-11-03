@@ -1,7 +1,13 @@
 const Arweave = require('arweave/node');
 const fs = require('fs');
+const fse = require('fs-extra');
+const crypto = require('crypto');
+const axios = require('axios')
+const path = require('path');
+const notifier = require('node-notifier');
+const mime = require('mime-types')
 import { readContract, selectWeightedPstHolder  } from 'smartweave';
-import {settings} from '../config';
+import { settings } from '../config';
 import regeneratorRuntime from "regenerator-runtime";
 import {
     walletFileSet, 
@@ -9,8 +15,25 @@ import {
     ConfirmSyncedFile, 
     SaveUploader, 
     RemoveUploader,
-    RemovePendingFile
+    RemovePendingFile,
+    GetSyncedFolders
 } from '../db/helpers';
+
+import {
+    createCRCFor, 
+    getFileUpdatedDate, 
+    createTempFolder, 
+    removeTempFolder,
+    getSystemPath,
+    systemHasEnoughDiskSpace
+} from '../fsHandling/helpers';
+
+import {
+    encryptFile,
+    decryptFile
+} from './files';
+
+// debugger;
 
 export const arweave = Arweave.init(settings.ARWEAVE_CONFIG);
 
@@ -24,11 +47,17 @@ export const getJwkFromWalletFile = (path) => {
 export const getWalletBalance = (path) => {
     const jwk = getJwkFromWalletFile(path);
 
-    return arweave.wallets.jwkToAddress(jwk).then((address) => {
-        return arweave.wallets.getBalance(address).then((balance) => {
-            return arweave.ar.winstonToAr(balance);
-        })
-    });
+    try {
+        return arweave.wallets.jwkToAddress(jwk).then((address) => {
+            return arweave.wallets.getBalance(address).then((balance) => {
+                return arweave.ar.winstonToAr(balance);
+            })
+        });
+    } catch(e) {
+        console.log(e);
+        return 0;
+    }
+    
 }
 
 export const getWalletAddress = async (path) => {
@@ -39,33 +68,86 @@ export const getWalletAddress = async (path) => {
     });
 }
 
-export const uploadFile = async (file_info) => {
-    console.log(`uploading ${file_info.file}`);
-
+export const uploadFile = async (file_info, encrypt_file) => {
     const wallet_file = walletFileSet();
 
     if(!wallet_file || wallet_file.length == 0) return;
 
-    const jwk = getJwkFromWalletFile(wallet_file);
+    const wallet_jwk = getJwkFromWalletFile(wallet_file);
+    
+    let stats = fs.statSync(file_info.path);
+    let required_space = stats['size'] * 1.5;
+    let processed_file_path = file_info.path;
 
-    fs.exists(file_info.path, async (exists) => {
-        if(!exists) {
+    if(encrypt_file) {
+        required_space = stats['size'] * 2.5; // abitrary idea that encryption will probably create a larger file than the source.
+    }
+
+    if(!systemHasEnoughDiskSpace(required_space)) {
+        notifier.notify({
+            title: 'Evermore Datastore',
+            icon: settings.NOTIFY_ICON_PATH,
+            message: `Not enough disk space to upload - ${required_space} bytes required`,
+            timeout: 2
+        });
+
+        return;
+    }
+
+    if(encrypt_file) {
+        const jwk = await arweave.wallets.generate();
+        processed_file_path = `${file_info.path}.enc`;
+        const encrypted_result = await encryptFile(wallet_jwk, jwk, file_info.path, processed_file_path); 
+        stats = fs.statSync(processed_file_path);       
+    }    
+    
+    fs.access(processed_file_path, fs.constants.F_OK | fs.constants.R_OK, async (err) => {
+        if(err) {
             RemovePendingFile(file_info.path);
         } else {
-            const file_data = fs.readFileSync(file_info.path);
+            const file_data = await getFileData(processed_file_path);
+            
             try {
+                const crc_for_data = await createCRCFor(file_info.path);
+
                 const transaction = await arweave.createTransaction({
                     data: file_data
-                }, jwk);
+                }, wallet_jwk);
 
-                transaction.addTag('App', settings.APP_NAME);
+                const wallet_balance = await getWalletBalance();
+                const data_cost = await arweave.transactions.getPrice(stats['size']);
+
+                const total_winston_cost = parseInt(transaction.reward) + parseInt(data_cost);
+                const total_ar_cost = arweave.ar.arToWinston(total_winston_cost);
+                
+                if(wallet_balance < total_ar_cost) {
+                    notifier.notify({
+                        title: 'Evermore Datastore',
+                        icon: settings.NOTIFY_ICON_PATH,
+                        message: `Your wallet does not contain enough AR to upload, ${total_ar_cost} AR is needed `,
+                        timeout: 2
+                    });
+            
+                    return;
+                }
+
+                transaction.addTag('App-Name', settings.APP_NAME);
+                transaction.addTag('Content-Type', mime.lookup(file_info.file));
                 transaction.addTag('file', file_info.file.replace(/([^:])(\/\/+)/g, '$1/'));
                 transaction.addTag('path', file_info.path.replace(/([^:])(\/\/+)/g, '$1/'));
                 transaction.addTag('modified', file_info.modified);
                 transaction.addTag('hostname', file_info.hostname);
                 transaction.addTag('version', file_info.version);
+                transaction.addTag('CRC', crc_for_data);
+                transaction.addTag('file_size', stats["size"]);
 
-                await arweave.transactions.sign(transaction, jwk);
+                if(encrypt_file) {
+                    transaction.addTag('key_size', encrypted_result.key_size);
+                } else {
+                    transaction.addTag('key_size', -1);
+                }
+
+                await arweave.transactions.sign(transaction, wallet_jwk);
 
                 UpdatePendingFileTransactionID(file_info.file, transaction.id);
 
@@ -80,8 +162,7 @@ export const uploadFile = async (file_info) => {
 
                 ConfirmSyncedFile(transaction.id);
 
-                const cost = await arweave.transactions.getPrice(transaction.data_size);
-                sendUsagePayment(arweave.ar.winstonToAr(cost));
+                sendUsagePayment(data_cost);
 
                 RemoveUploader(uploader);
 
@@ -90,11 +171,16 @@ export const uploadFile = async (file_info) => {
                 
                 console.log(e);
             }
-
-            
-
         }        
     }); // for whatever reason this file is now gone!
+}
+
+export const getFileData = (path) => {
+    const data = fs.readFileSync(path);
+
+    const encrypted_data = encryptDataWithRSAKey(data);
+
+    return encrypted_data;
 }
 
 export const sendUsagePayment = async (transaction_cost) => {
@@ -108,7 +194,7 @@ export const sendUsagePayment = async (transaction_cost) => {
 
     const holder = selectWeightedPstHolder(contractState.balances)
      // send a fee. You should inform the user about this fee and amount.
-    try {
+    try {     
         const tx = await arweave.createTransaction({ 
             target: holder, 
             quantity: calculatePSTPayment(transaction_cost, settings.USAGE_PERCENTAGE)}
@@ -120,10 +206,71 @@ export const sendUsagePayment = async (transaction_cost) => {
         console.log(e);
     }
     
+    return tx;
 }
 
 export const calculatePSTPayment = (transaction_cost, percentage) => {
-    return transaction_cost * percentage;
+    return Math.ceil(transaction_cost * percentage);
+}
+
+export const setFileStatusAsDeleted = async (file_info) => {
+    const wallet_file = walletFileSet();
+
+    if(!wallet_file || wallet_file.length == 0) return;
+
+    const wallet_jwk = getJwkFromWalletFile(wallet_file);
+
+    const transaction = await arweave.createTransaction({}, wallet_jwk);
+
+    const wallet_balance = await getWalletBalance();
+
+    const total_winston_cost = parseInt(transaction.reward);
+    const total_ar_cost = arweave.ar.arToWinston(total_winston_cost);
+    
+    if(wallet_balance < total_ar_cost) {
+        notifier.notify({
+            title: 'Evermore Datastore',
+            icon: settings.NOTIFY_ICON_PATH,
+            message: `Your wallet does not contain enough AR to upload, ${total_ar_cost} AR is needed `,
+            timeout: 2
+        });
+
+        return;
+    }
+
+    transaction.addTag('App-Name', settings.APP_NAME);
+    transaction.addTag('file', file_info.file.replace(/([^:])(\/\/+)/g, '$1/'));
+    transaction.addTag('path', file_info.path.replace(/([^:])(\/\/+)/g, '$1/'));
+    transaction.addTag('modified', file_info.modified);
+    transaction.addTag('hostname', file_info.hostname);
+    transaction.addTag('version', file_info.version);
+    transaction.addTag('STATUS', "DELETED");
+    transaction.addTag('ACTION_TIMESTAMP', new Date().getTime());
+
+    await arweave.transactions.sign(transaction, wallet_jwk);
+
+    const response = await arweave.transactions.post(transaction);
+
+    if(response.status != 200) {
+        let error_msg = null;
+
+        if(response.status == 400) {
+            error_msg = "The transaction was rejected as invalid.";
+        }
+
+        if(response.status == 500) {
+            error_msg = "There was an error connecting to the blockchain.";
+        }
+
+        notifier.notify({
+            title: 'Evermore Datastore',
+            icon: settings.NOTIFY_ICON_PATH,
+            message: `There was an error updating the status of ${file_info.name} - ${error_msg}`,
+            timeout: 2
+        });
+
+        return;
+    }
 }
 
 export const getDownloadableFiles = async () => {
@@ -176,7 +323,96 @@ export const getDownloadableFiles = async () => {
         return tx_row
     }));
 
-    return tx_rows;
+    // remove old duplicates
+    const final_rows = [];
+    for(let i in tx_rows) {
+        const row = tx_rows[i];
+
+        let found = false;
+        for(let j in final_rows) {
+            const final_row = final_rows[j];
+
+            if(final_row.path == row.path && row.modified > final_row.modified) {
+                found = true;
+                final_rows[j] = row;
+            }
+        }
+
+        if(!found) {
+            final_rows.push(row);
+        }
+    }
+
+    return final_rows;
+}
+
+export const getDownloadableFilesGQL = async () => {
+    const wallet_file = walletFileSet();
+
+    if(!wallet_file || wallet_file.length == 0) return [];
+
+    const jwk = getJwkFromWalletFile(wallet_file);
+
+    const windows = settings.PLATFORM === "win32";
+
+    const address = await arweave.wallets.jwkToAddress(jwk);
+
+    const query = `{
+        transactions(
+            owners: ["${address}"],
+              tags: [
+              {
+                  name: "App",
+                  values: ["${settings.APP_NAME}"]
+              },
+              ]	) {
+              edges {
+                  node {
+                    id
+                    tags {
+                        name
+                        value
+                    }
+                  }
+              }
+          }
+    }`;
+
+    const response = await axios.post(settings.GRAPHQL_ENDPOINT, {
+        operationName: null,
+        query: query,
+        variables: {}
+    });
+
+    if(response.status == 200) {
+        const final_rows = [];
+        for(let i in response.data.transactions.edges) {
+            const row = response.data.transactions.edges[i].node;
+
+            for(let i in row.tags) {
+                const tag = row.tags[i];
+                row[tag.name] = tag.value;
+            }
+
+            let found = false;
+            for(let j in final_rows) {
+                const final_row = final_rows[j];
+
+                if(final_row.path == row.path && row.modified > final_row.modified) {
+                    found = true;
+                    final_rows[j] = row;
+                }
+            }
+
+            if(!found) {
+                final_rows.push(row);
+            }
+        }
+
+        return final_rows;
+    }
+    
+    return null; // if nothing is returned 
 }
 
 export const finishUpload = async (savedUploader) => {
@@ -209,8 +445,8 @@ export const finishUpload = async (savedUploader) => {
 
         RemoveUploader(uploader);
 
-        const cost = await arweave.transactions.getPrice(transaction.data_size);
-        sendUsagePayment(arweave.ar.winstonToAr(cost));
+        const data_cost = await arweave.transactions.getPrice(transaction.data_size);
+        sendUsagePayment(data_cost);
     })
     .catch(err => {
         console.log(`finishUpload: ${err}`);
@@ -224,4 +460,114 @@ export const getTransactionStatus = async (tx_id) => {
 export const confirmTransaction = async (tx_id) => {
     const status = await getTransactionStatus(tx_id);
     console.log(JSON.stringify(status));
+}
+
+export const downloadFileFromTransaction = async (wallet, tx_id) => {
+    const transaction = await arweave.transactions.get(tx_id).then(async (transaction) => {
+        const tx_row = {id: transaction.id};
+        
+        tx.get('tags').forEach(tag => {
+            let key = tag.get('name', { decode: true, string: true });
+            let value = tag.get('value', { decode: true, string: true });
+            
+            if(key == "modified" || key == "version" || key == "file_size") {
+                tx_row[key] = parseInt(value);
+            } else {
+                tx_row[key] = value;
+            }
+            
+        }); 
+
+        return tx_row;
+    });
+
+    if(!systemHasEnoughDiskSpace(Math.ceil(transaction.file_size * 2))) {
+        notifier.notify({
+            title: 'Evermore Datastore',
+            icon: settings.NOTIFY_ICON_PATH,
+            message: `Not enough disk space to download - ${required_space} bytes required`,
+            timeout: 2
+        });
+
+        return;
+    }
+
+    // createTempFolder();
+
+    arweave.transactions.getData(transaction.id).then(data => {
+        const sync_folders = GetSyncedFolders();
+
+        const is_encrypted = transaction.path.indexOf('Public\\') == -1;
+
+        if(is_encrypted) {
+            const save_file_encrypted = path.join(sync_folders[0], `${transaction.path}.enc`);
+
+            fs.writeFile(save_file_encrypted, data, async (err) => {
+                if (err) {
+                    console.error(err);
+                }
+
+                const private_key = await getFileEncryptionKey(save_file_encrypted, transaction, wallet);
+                const save_file = path.join(sync_folders[0], `${transaction.path}`);
+                const result = await decryptFile(wallet, private_key, transaction.key_size, save_file_encrypted, save_file);
+
+                fs.unlinkSync(save_file_encrypted);
+            });
+        } else {
+            const save_file = path.join(sync_folders[0], transaction.path);
+
+            fs.writeFile(save_file, data, async (err) => {
+                if (err) {
+                    console.error(err);
+                }
+            });
+        }
+        
+    });
+
+    
+
+    // removeTempFolder();
+}
+
+export const fileExistsOnTheBlockchain = async (file_info) => {
+    const wallet_file = walletFileSet();
+
+    if(!wallet_file || wallet_file.length == 0) return [];
+
+    const jwk = getJwkFromWalletFile(wallet_file);
+
+    const address = await arweave.wallets.jwkToAddress(jwk);
+
+    const existing = await arweave.arql({
+        op: "and",
+        expr1: {
+            op: "and",
+            expr1: {
+                op: "equals",
+                expr1: "App",
+                expr2: settings.APP_NAME
+            },
+            expr2: {
+                op: "equals",
+                expr1: "from",
+                expr2: address
+            }
+        },
+        expr2: {
+            op: "and",
+            expr1: {
+                op: "equals",
+                expr1: "path",
+                expr2: file_info.path
+            },
+            expr2: {
+                op: "equals",
+                expr1: "modified",
+                expr2: file_info.modified
+            }
+        }
+    });
+
+    return existing;
 }

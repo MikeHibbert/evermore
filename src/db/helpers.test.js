@@ -1,23 +1,21 @@
 const fs = jest.requireActual('fs');
-const { InitDB, walletFileSet, setWalletFilePath } = require('./helpers'); 
+const { 
+    InitDB, 
+    walletFileSet, 
+    setWalletFilePath,
+    AddFileToDownloads,
+    RemoveFileFromDownloads,
+    GetDownloads,
+    GetSyncStatus,
+    SetSyncStatus
+} = require('./helpers'); 
+const path = require('path');
 const { settings } = require('../config');
 
-beforeEach(() => {
-    fs.exists(settings.DB_PATH, (exists) => {
-        if(!exists) {
-            InitDB();
-        }
-    })
-    
-});
-
 afterAll(() => {
-    fs.exists(settings.DB_PATH, (exists) => {
-        if(exists) {
-            fs.unlinkSync(settings.DB_PATH);
-        }
-    })
-    
+    if(fs.accessSync(path.join(process.cwd(), settings.DB_PATH), fs.constants.F_OK)) {
+        return fs.unlinkSync(settings.DB_PATH);
+    }
 });
 
 test("Should set wallet file", () => {
@@ -28,5 +26,47 @@ test("Should set wallet file", () => {
     const wallet_file = walletFileSet();
 
     expect(wallet_file).toBe(test_wallet_path);
+});
+
+test("Should add File to downloads", () => {
+    const file_to_add = {
+        path: "123/456.png",
+        name: "456.png",
+        id: "1233445"
+    };
+
+    AddFileToDownloads(file_to_add);
+
+    const download_files = GetDownloads();
+
+    const match = download_files.filter(df => df.name == file_to_add.name && df.path == file_to_add.path);
+
+    expect(match.length).toBe(1);
+});
+
+test("Should add File to downloads", () => { 
+    RemoveFileFromDownloads("456.png", "123/456.png");
+
+    const download_files = GetDownloads();
+
+    const match = download_files.filter(df => df.name == file_to_add.name && df.path == file_to_add.path);
+
+    expect(match.length).toBe(0);
+});
+
+test("Syncing can be paused", () => {
+    SetSyncStatus(true);
+
+    expect(GetSyncStatus()).toBe(true);
+});
+
+test("Syncing can be unpaused", () => {
+    SetSyncStatus(true);
+
+    expect(GetSyncStatus()).toBe(true);
+
+    SetSyncStatus(false);
+
+    expect(GetSyncStatus()).toBe(false);
 });
 

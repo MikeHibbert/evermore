@@ -12,7 +12,7 @@ test_files["a_test_upload_file.txt"] = {path: "a_test_upload_file.txt", data: "s
 fs.readFileSync = (file_path) => {
     return test_files[file_path].data;
 }
-fs.exists = (path, callback) => {
+fs.access = (path, callback) => {
     if(test_files.hasOwnProperty(path)) {
         callback(true);
     } else {

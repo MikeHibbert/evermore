@@ -1,5 +1,6 @@
 const chokidar = require('chokidar');
 const notifier = require('node-notifier');
+const path = require('path');
 import fileAddedHandler from './AddFile';
 import fileChangedHandler from './ChangeFile';
 import fileDeletedHandler from './DeleteFile';
@@ -7,18 +8,27 @@ import dirAddedHandler from './AddDir';
 import dirDeletedHandler from './DeleteDir';
 import { 
     GetNewPendingFiles, 
-    GetPendingFiles, 
+    GetPendingFilesWithTransactionIDs, 
     GetUploaders, 
     RemoveUploader,
     ResetPendingFile, 
-    ConfirmSyncedFileFromTransaction 
+    ConfirmSyncedFileFromTransaction,
+    GetSyncStatus,
+    GetSyncFrequency,
+    GetAllProposedFiles, 
+    GetSyncedFolders,
+    AddPendingFile,
+    RemoveProposedFile
 } from '../db/helpers';
 import { 
     uploadFile, 
     finishUpload, 
     getTransactionStatus, 
-    getDownloadableFiles 
+    getDownloadableFiles,
+    fileExistsOnTheBlockchain 
 } from '../crypto/arweave-helpers';
+import {convertProposedToInfos} from './helpers';
+import openSyncSettingsDialog from '../ui/SyncSettingsDialog';
 import { settings } from '../config';
 
 export const OnFileWatcherReady = () => {
@@ -29,21 +39,40 @@ export const OnFileWatcherReady = () => {
     if(pending_files.length > 0) {
         notifier.notify({
             title: 'Evermore Datastore',
+            icon: settings.NOTIFY_ICON_PATH,
             message: `${pending_files.length} have been added to the upload queue.`
-          });
+        });
     }
-    
 
-    getDownloadableFiles().then(existing_files => {
-        processAllOutstandingUploads(existing_files);
-        processAllPendingFiles(pending_files, existing_files);
-    });    
+    const syncing = GetSyncStatus();
+    if(syncing) {
+        processAll();
+        startSyncProcessing();
+    }  
+}
 
-    // setTimeout(checkPendingFilesStatus, settings.APP_CHECK_FREQUENCY * 1000);
+const processAll = () => {
+    checkPendingFilesStatus();
+    processAllOutstandingUploads();
+}
+
+let sync_processing_interval = null;
+export const startSyncProcessing = () => {
+    processAll();
+
+    sync_processing_interval = setInterval(() => {
+        processAll();
+    }, GetSyncFrequency() * 60 * 1000);
+}
+
+export const stopSyncProcessing = () => {
+    if(sync_processing_interval) {
+        clearInterval(sync_processing_interval);
+    }
 }
 
 const checkPendingFilesStatus = () => {
-    const pending_files = GetPendingFiles();
+    const pending_files = GetPendingFilesWithTransactionIDs();
 
     let confirmed_count = 0;
 
@@ -53,8 +82,13 @@ const checkPendingFilesStatus = () => {
         getTransactionStatus(file_info.tx_id).then((response) => {
             console.log(response);
             if(response.status == 404) {
-                console.log(`resetting pending file ${file_info.file} as tx not found`);
+                console.log(`resetting pending file ${file_info.file} as it was not found on the blcokchain`);
                 ResetPendingFile(file_info.file, file_info.modified);
+            }
+
+            if(response.status == 200) {
+                ConfirmSyncedFileFromTransaction(file_info.file, file_info.tx_id);
+                confirmed_count++;
             }
         });
     }
@@ -62,72 +96,123 @@ const checkPendingFilesStatus = () => {
     if(confirmed_count > 0) {
         notifier.notify({
             title: 'Evermore Datastore',
-            message: `${confirmed_count} files have successfully been mined and are now permanently stored on the blockchain.`
-          });
+            icon: settings.NOTIFY_ICON_PATH,
+            message: `${confirmed_count} files have successfully been mined and are now permanently stored on the blockchain.`            
+        });
     }
 }
 
 const processAllOutstandingUploads = (existing_files) => {
-    return;
-
     const uploaders = GetUploaders();
-
-    if(uploaders.length == 0) return;
-
-    notifier.notify({
-        title: 'Evermore Datastore',
-        message: `${uploaders.length} file uploads have been resumed.`
-      });
 
     for(let i in uploaders) {
         const already_completed = transactionExistsOnTheBlockchain(uploaders[i].transaction.id, existing_files);
 
         if(!already_completed) {
+            stopSyncProcessing();
+
             finishUpload(uploaders[i]);
+
+            startSyncProcessing();
         } else {
             RemoveUploader(uploaders[i]);
         }        
     }
 
-    notifier.notify({
-        title: 'Evermore Datastore',
-        message: `${uploaders.length} resumed file uploads have been complete.`
-      });
+    if(uploaders.length > 0) {
+        notifier.notify({
+            title: 'Evermore Datastore',
+            icon: settings.NOTIFY_ICON_PATH,
+            message: `${uploaders.length} resumed file uploads have been complete.`
+        });
+    }
+    
+    const proposed_files = GetAllProposedFiles();
+
+    if(proposed_files.length > 0) {
+        const minutes = settings.APP_CHECK_FREQUENCY / 60;
+        notifier.notify({
+            title: 'Evermore Datastore',
+            icon: settings.NOTIFY_ICON_PATH,
+            message: `${proposed_files.length} files have been queued for upload in the last ${minutes} minutes. Would like to review them now?`,
+            actions: ['Review', 'Postpone']
+        });
+
+        notifier.on('review', () => {
+            prepareProposedFiles(proposed_files);
+        });
+
+        notifier.on('postpone', () => {
+            console.log('"Postpone" was pressed');
+        });
+    }
+
+    const pending_files = GetNewPendingFiles();
+
+    if(pending_files.length > 0) {
+        processAllPendingFiles(pending_files);
+    }
 }
 
-const processAllPendingFiles = (pending_files, existing_files) => {
+const prepareProposedFiles = (proposed_files) => {
+    const sync_folders = GetSyncedFolders();
+    
+    const path_infos = convertProposedToInfos(sync_folders[0], proposed_files, true);
+
+    openSyncSettingsDialog(path_infos[''], (path_infos_to_be_synced) => {
+        addPathInfosToPending(path_infos_to_be_synced);
+
+
+    });
+}
+
+const addPathInfosToPending = (path_infos) => {
+    const sync_folders = GetSyncedFolders();
+    const sync_folder = sync_folders[0];
+
+    for(let i in path_infos.children) {
+        const pa = path_infos.children[i];
+
+        if(pa.type == 'folder') {
+            addPathInfosToPending(path_infos);
+        } else {
+            if(pa.checked) {
+                AddPendingFile(null, pa.path, 1);
+                RemoveProposedFile(path.join(path.normalize(sync_folder), pa.path));
+            }            
+        }
+    }
+}
+
+const processAllPendingFiles = (pending_files) => {
     let uploaded_count = 0;
+
+    const public_sync_folder = path.join(getSystemPath(), 'Public');
 
     for(let i in pending_files) {
         const txs = fileExistsOnTheBlockchain(pending_files[i], existing_files);
 
         if(txs.length == 0) {
-            uploadFile(pending_files[i]);
+            const encrypt_file = pending_files[i].path.indexOf(public_sync_folder) != -1;
+            pauseSyncProcessing()
+
+            uploadFile(pending_files[i], encrypt_file);
+
+            unpauseSyncProcessing();
             uploaded_count++;
         } else {
-            ConfirmSyncedFileFromTransaction(pending_files[i].path, txs[0]); // only send one because duplicates is dev env, shouldnt be so in production!
+            // only send one because duplicates is dev env, shouldnt be so in production!
+            ConfirmSyncedFileFromTransaction(pending_files[i].path, txs[0]); 
         }        
     }
 
     if(uploaded_count > 0) {
         notifier.notify({
             title: 'Evermore',
+            icon: settings.NOTIFY_ICON_PATH,
             message: `${pending_files.length} have been uploaded and will be mined sortly.`
-          });
-    }
-    
-}
-
-const fileExistsOnTheBlockchain = (file_info, existing_files) => {
-    const existing = existing_files.filter(
-        tx => {
-            return (file_info.file == tx.file || file_info.file == tx.path) && file_info.modified == tx.modified 
-        }
-    );
-
-    debugger;
-
-    return existing;
+        });
+    }     
 }
 
 const transactionExistsOnTheBlockchain = (tx_id, existing_files) => {

@@ -1,4 +1,5 @@
 const fs = require('fs');
+const notifier = require('node-notifier');
 import {
     QKeySequence,
     QApplication,
@@ -10,15 +11,15 @@ import {
 } from "@nodegui/nodegui";
 import path from "path";
 import openSettingsDialog from "./ui/SettingsDialog";
-import openConnectDialog from './ui/ConnectDialog';
-import {walletFileSet, resetWalletFilePath} from './db/helpers';
+import OpenInitialSetupDialog from './ui/InitialSetupDialog';
+import {walletFileSet, resetWalletFilePath, GetSyncStatus, SetSyncStatus} from './db/helpers';
 import {getWalletBalance} from './crypto/arweave-helpers';
+import {settings} from './config';
 
 export const win = new QMainWindow();
-console.log(path.join(
-    process.cwd(), 
-    `assets/images/${process.platform === 'win32' ? 'tray-logo16x16.ico' : 'tray-logo32x32.png'}`
-));
+win.setWindowTitle("Evermore Settings");
+win.setWindowIcon(new QIcon(settings.NOTIFY_ICON_PATH));
+
 const trayIcon = new QIcon(
     path.join(
         process.cwd(), 
@@ -35,9 +36,9 @@ exports.systemTray = tray;
 
 const createLoggedOutSystray = (menu) => {
     const connectAction = new QAction();
-    connectAction.setText("Connect");
+    connectAction.setText("Setup");
     connectAction.addEventListener("triggered", () => {
-        openConnectDialog(win);
+        OpenInitialSetupDialog(tray);
     });
 
     const openWebclientSite = new QAction();
@@ -77,9 +78,14 @@ export const createLoggedInSystray = (menu) => {
     const balanceAction = new QAction();
 
     const wallet_path = walletFileSet();
-    getWalletBalance(wallet_path).then((balance) => {
-        balanceAction.setText("Balance: " + balance + " AR");
-    });
+    try {
+        getWalletBalance(wallet_path).then((balance) => {
+            balanceAction.setText("Balance: " + balance + " AR");
+        });
+    } catch(e) {
+        balanceAction.setText("Balance unavailable.");
+    }
+    
     
     balanceAction.addEventListener("triggered", () => {
         const wallet_path = walletFileSet();
@@ -89,6 +95,38 @@ export const createLoggedInSystray = (menu) => {
         getWalletBalance(wallet_path).then((balance) => {
             balanceAction.setText("Balance: " + balance + " AR");
         });
+    });
+
+    const syncStatus = new QAction();
+    const paused = GetSyncStatus();
+    const sync_status = paused == true ? "Syncing Active" : "Syncing Deactivated";
+    syncStatus.setText(sync_status);
+    syncStatus.setCheckable(true);
+    syncStatus.setChecked(paused);
+    syncStatus.addEventListener("triggered", () => {
+        const syncing = GetSyncStatus();
+
+        SetSyncStatus(!syncing);
+
+        const sync_status = syncing == true ? "Syncing active" : "Syncing paused";
+        syncStatus.setText(sync_status);
+        syncStatus.setChecked(syncing);
+
+        if(syncing) {
+            notifier.notify({
+                title: 'Evermore Datastore',
+                icon: settings.NOTIFY_ICON_PATH,
+                message: 'Syncing has been paused',
+                timeout: 2
+            });
+        } else {
+            notifier.notify({
+                title: 'Evermore Datastore',
+                icon: settings.NOTIFY_ICON_PATH,
+                message: 'Syncing has resumed',
+                timeout: 2
+            });
+        }
     });
 
     const showSettings = new QAction();
@@ -107,6 +145,7 @@ export const createLoggedInSystray = (menu) => {
     // Add everything to menu
     // ----------------------
     menu.addAction(balanceAction);
+    menu.addAction(syncStatus);
     menu.addAction(showSettings);
     menu.addAction(openWebclientSite);
 

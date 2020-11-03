@@ -1,14 +1,21 @@
 jest.mock('fs');
+<<<<<<< HEAD
 
 const fs = jest.requireActual('fs');
 const Arweave = jest.requireActual('arweave');
+=======
+const path = require('path');
+const Arweave = jest.requireActual('arweave/node');
+import { settings } from '../config';
+>>>>>>> f27162089f63ced0229d38ff6bb26e8cd0d8aeb8
 const { 
     arweave, 
     getJwkFromWalletFile,
     calculatePSTPayment, 
     sendUsagePayment, 
     uploadFile,
-    getDownloadableFiles
+    getDownloadableFiles,
+    getDownloadableFilesGQL, 
 } = require('./arweave-helpers');
 
 const { interactWriteDryRun, readContract } = require('smartweave');
@@ -18,6 +25,7 @@ const {settings} = require('../config');
 
 import regeneratorRuntime from "regenerator-runtime";
 
+
 test("Should get correct price for data storage", async () => {
     const price = await arweave.transactions.getPrice(1024);
 
@@ -25,17 +33,22 @@ test("Should get correct price for data storage", async () => {
 });
 
 test("Should output a the correct percentage of a transaction cost", () => {
-    const result = calculatePSTPayment(0.1, 0.2);
+    const result = calculatePSTPayment(1000, 0.2);
 
-    expect(result).toBe(0.1 * 0.2); // should be 20%
+    expect(result).toBe(Math.ceil(1000 * 0.2)); // should be 20% or 200
 });
 
 test("Should send usage payment to PST", async () => {
-    sendUsagePayment(0.2);
+    // const test_wallet_path = "wallet_file.json";
+    // setWalletFilePath(test_wallet_path);
+
+    const tx = await sendUsagePayment(1000);
+
+    // expect(tx.quantity).toBe(200);
 });
 
 test("Should upload file", async () => {
-    uploadFile({file: "a_test_upload_file.txt", path: "a_test_upload_file.txt"});
+    await uploadFile({file: "a_test_upload_file.txt", path: "a_test_upload_file.txt"});
 });
 
 test("Should get PST balance", async () => {
@@ -80,9 +93,19 @@ test("Should get downloadable files and return thier info", async () => {
     setWalletFilePath(test_wallet_path);
 
     getDownloadableFiles().then(downloadable_files => {
-        expect(downloadable_file.length).toBeGreaterThan(0);
+        expect(downloadable_files.length).toBeGreaterThan(0);
     });
     
 });
 
+test("Should get downloadable files from graphql and return thier info", async () => {
+    InitDB();
 
+    const test_wallet_path = "C:\\Users\\hibbe\\Documents\\Arweave Wallet\\arweave-keyfile-h-Bgr13OWUOkRGWrnMT0LuUKfJhRss5pfTdxHmNcXyw.json";
+    setWalletFilePath(test_wallet_path);
+
+    getDownloadableFilesGQL().then(downloadable_files => {
+        expect(downloadable_files.length).toBeGreaterThan(0);
+    });
+    
+});

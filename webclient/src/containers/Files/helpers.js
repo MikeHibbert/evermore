@@ -1,35 +1,36 @@
 import arweave from '../../arweave-config';
 import settings from '../../app-config';
+import { toast } from 'react-toastify';
 
 
 export function createRootFolder(path_parts, index, file_info) {
     if(index == path_parts.length - 1) {
         return {...file_info, name: path_parts[index], index: index, type: "file"};
     } else {
-        return {name: path_parts[index], index: index, type: "folder", childeren: [createRootFolder(path_parts, index + 1, file_info)]};
+        return {name: path_parts[index], index: index, type: "folder", children: [createRootFolder(path_parts, index + 1, file_info)]};
     }
 }
 
-export function addToFolderChilderen(path_parts, index, file_info, path_obj) {
+export function addToFolderchildren(path_parts, index, file_info, path_obj) {
     if(index == path_parts.length - 1) {
-        return path_obj.childeren.push({...file_info, name: path_parts[index], index: index, type: "file"});
+        return path_obj.children.push({...file_info, name: path_parts[index], index: index, type: "file"});
     } else {
         const current_folder = path_parts[index];
 
         if(current_folder == path_obj.name) {
-            addToFolderChilderen(path_parts, index + 1, file_info, path_obj);
+            addToFolderchildren(path_parts, index + 1, file_info, path_obj);
         } else {
-            const matched_folders = path_obj.childeren.filter((folder) => folder.name == current_folder);
+            const matched_folders = path_obj.children.filter((folder) => folder.name == current_folder);
 
             if(matched_folders.length == 0) {
-                const folder = {name: current_folder, index: index, type: "folder", childeren: []};
-                path_obj.childeren.push(folder);
+                const folder = {name: current_folder, index: index, type: "folder", children: []};
+                path_obj.children.push(folder);
 
-                addToFolderChilderen(path_parts, index + 1, file_info, folder);
+                addToFolderchildren(path_parts, index + 1, file_info, folder);
             } else {
                 for(let i in matched_folders) {
                     const path = matched_folders[i];
-                    addToFolderChilderen(path_parts, index + 1, file_info, path);
+                    addToFolderchildren(path_parts, index + 1, file_info, path);
                 }
             }
         
@@ -105,7 +106,7 @@ export const getFiles = async (address) => {
         
         if(path_parts.length > 1) {
             if(folders.hasOwnProperty(path_parts[0])) {
-                addToFolderChilderen(path_parts, 0, file_info, folders[path_parts[0]], 0);                
+                addToFolderchildren(path_parts, 0, file_info, folders[path_parts[0]], 0);                
             } else {
                 folders[path_parts[0]] = createRootFolder(path_parts, 0, file_info);
             }
@@ -114,7 +115,7 @@ export const getFiles = async (address) => {
     }
 
     if(!folders.hasOwnProperty("")) {
-        folders[""] = {name: "", childeren: [], index: 0, type: "folder"};
+        folders[""] = {name: "", children: [], index: 0, type: "folder"};
     }
 
     return folders;
@@ -144,4 +145,106 @@ export const RemoveUploader = (uploader) => {
     uploaders.push(uploader);
 
     localStorage.setItem("Evermore-uploaders", JSON.stringify(uploaders))
+}
+
+export const setFileStatusAsDeleted = async (file_info) => {
+    const wallet_file = walletFileSet();
+
+    if(!wallet_file || wallet_file.length == 0) return;
+
+    const wallet_jwk = getJwkFromWalletFile(wallet_file);
+
+    const transaction = await arweave.createTransaction({}, wallet_jwk);
+
+    const wallet_balance = await getWalletBalance();
+
+    const total_winston_cost = parseInt(transaction.reward);
+    const total_ar_cost = arweave.ar.arToWinston(total_winston_cost);
+    
+    if(wallet_balance < total_ar_cost) {
+        toast(`Your wallet does not contain enough AR to upload, ${total_ar_cost} AR is needed `, { type: toast.TYPE.ERROR });
+
+        return;
+    }
+
+    transaction.addTag('App-Name', settings.APP_NAME);
+    transaction.addTag('file', file_info.file.replace(/([^:])(\/\/+)/g, '$1/'));
+    transaction.addTag('path', file_info.path.replace(/([^:])(\/\/+)/g, '$1/'));
+    transaction.addTag('modified', file_info.modified);
+    transaction.addTag('hostname', file_info.hostname);
+    transaction.addTag('CRC', file_info.CRC);
+    transaction.addTag('version', file_info.version);
+    transaction.addTag('STATUS', "DELETED");
+    transaction.addTag('ACTION_TIMESTAMP', new Date().getTime());
+
+    await arweave.transactions.sign(transaction, wallet_jwk);
+
+    const response = await arweave.transactions.post(transaction);
+
+    if(response.status != 200) {
+        let error_msg = null;
+
+        if(response.status == 400) {
+            error_msg = "The transaction was rejected as invalid.";
+        }
+
+        if(response.status == 500) {
+            error_msg = "There was an error connecting to the blockchain.";
+        }
+
+        toast(`There was an error updating the status of ${file_info.name} - ${error_msg}`, { type: toast.TYPE.ERROR });
+
+        return;
+    }
+}
+
+export const setFileStatusAsDeleted = async (file_info) => {
+    const wallet_file = walletFileSet();
+
+    if(!wallet_file || wallet_file.length == 0) return;
+
+    const wallet_jwk = getJwkFromWalletFile(wallet_file);
+
+    const transaction = await arweave.createTransaction({}, wallet_jwk);
+
+    const wallet_balance = await getWalletBalance();
+
+    const total_winston_cost = parseInt(transaction.reward);
+    const total_ar_cost = arweave.ar.arToWinston(total_winston_cost);
+    
+    if(wallet_balance < total_ar_cost) {
+        toast(`Your wallet does not contain enough AR to upload, ${total_ar_cost} AR is needed `, { type: toast.TYPE.ERROR });
+
+        return;
+    }
+
+    transaction.addTag('App-Name', settings.APP_NAME);
+    transaction.addTag('file', file_info.file.replace(/([^:])(\/\/+)/g, '$1/'));
+    transaction.addTag('path', file_info.path.replace(/([^:])(\/\/+)/g, '$1/'));
+    transaction.addTag('modified', file_info.modified);
+    transaction.addTag('hostname', file_info.hostname);
+    transaction.addTag('CRC', file_info.CRC);
+    transaction.addTag('version', file_info.version);
+    transaction.addTag('STATUS', "UNDELETED");
+    transaction.addTag('ACTION_TIMESTAMP', new Date().getTime());
+
+    await arweave.transactions.sign(transaction, wallet_jwk);
+
+    const response = await arweave.transactions.post(transaction);
+
+    if(response.status != 200) {
+        let error_msg = null;
+
+        if(response.status == 400) {
+            error_msg = "The transaction was rejected as invalid.";
+        }
+
+        if(response.status == 500) {
+            error_msg = "There was an error connecting to the blockchain.";
+        }
+
+        toast(`There was an error updating the status of ${file_info.name} - ${error_msg}`, { type: toast.TYPE.ERROR });
+
+        return;
+    }
 }

@@ -1,38 +1,22 @@
 const dialog = require('dialog-node');
+const path = require('path');
 import {createLoggedInSystray} from '../qt-system-tray';
 import {InitFileWatcher} from '../fsHandling/Init';
+import {getOfflineFilesAndFoldersStructure} from '../fsHandling/helpers';
 import {getWalletBalance} from '../crypto/arweave-helpers';
-import {setWalletFilePath, AddSyncedFolder} from '../db/helpers';
-//import {setSystrayInstance, ConnectedActions} from '../system-tray';
-
+import {
+    setWalletFilePath, 
+    AddSyncedFolder, 
+    AddPendingFile,
+    ConfirmSyncedFileFromTransaction
+} from '../db/helpers';
+import openSyncSettingsDialog from './SyncSettingsDialog';
 
 let systray = null;
-const selectFolderCallback = (code, retVal, stderr) => {
-    console.log(retVal);
-    if(retVal.length == 0) return;
 
-    AddSyncedFolder(retVal.replace('\r\n', ''));
-    InitFileWatcher(retVal.replace('\r\n', ''));
 
-    createLoggedInSystray()
-}
 
-var selectFileCallback = (code, retVal, stderr) => {
-    if(retVal.length == 0) return;
 
-    const path = retVal.replace('\r\n', '');
-
-    setWalletFilePath(path);
-
-    dialog.folderselect(
-        "Please select the folder you would like to backup",
-        "Please select the folder you would like to backup", 
-        0, 
-        selectFolderCallback
-    );
-
-    // console.log("return value = <" + path + ">");
-}
 
 const openConnectDialog = (oldSystray, action) => {
     systray = oldSystray;
@@ -41,7 +25,7 @@ const openConnectDialog = (oldSystray, action) => {
         "Please select a wallet file to begin saving your data.",
         "Please select a wallet file to begin saving your data.", 
         0, 
-        selectFileCallback
+        action
     );    
 }
 

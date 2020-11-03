@@ -1,44 +1,35 @@
+const notifier = require('node-notifier');
 import {
-    QMainWindow,
     QPushButton,
-    QPushButtonSignals,
-    QAbstractButtonSignals,
     QFileDialog,
-    QTextEdit,
     QWidget,
-    QKeyEvent,
+    QLineEdit,
+    QLineEditSignals,
     FlexLayout,
-    QBoxLayout,
     QLabel,
-    QTreeWidgetItem, 
-    QTreeWidget,
-    QIcon,
-    ItemDataRole,
-    QPixmap,
-    BaseWidgetEvents,
-    NativeElement,
-    FileMode,
-    CheckState,
+    FileMode
   } from "@nodegui/nodegui";
 
-import path from "path";
-import {walletFileSet, setWalletFilePath} from '../db/helpers';
+import {
+  walletFileSet, 
+  setWalletFilePath, 
+  UpdateExclusions, 
+  GetExclusions,
+  GetSyncFrequency,
+  SetSyncFrequency
+} from '../db/helpers';
 import {getWalletAddress} from '../crypto/arweave-helpers';
 import openConnectDialog from './ConnectDialog';
 import { settings } from "../config";
-import { getFiles } from "../fsHandling/helpers";
-
-const folder_icon_path = path.join(
-  process.cwd(), 
-  `assets/images/${process.platform === 'win32' ? 'folder_icon.png' : 'folder_icon.png'}`
-);
-
-const file_icon_file = path.join(
-  process.cwd(), 
-  `assets/images/${process.platform === 'win32' ? 'folder.png' : 'folder.png'}`
-);
-
-const USER_DATA_ROLE = 20;
+import { 
+  getOnlineFilesAndFoldersStructure,
+  getOfflineFilesAndFoldersStructure, 
+  mergePathInfos,
+  removePathInfosWithChecked,
+  updateInclusionsAndExclusionOverlayPaths
+} from "../fsHandling/helpers";
+import {sendMessage} from '../integration/server';
+import openSyncSettingsDialog from './SyncSettingsDialog';
 
 const rootStyleSheet = `
   #rootView {
@@ -78,6 +69,24 @@ const rootStyleSheet = `
     flex:2;
   }
 
+  #syncFrequency {
+    flex-direction: row;
+    margin-top: 10px;
+  }
+
+  #syncFrequencyLabel {
+    font-weight: bold;
+    margin-top: 5px;
+  }
+
+  #syncFrequencyLineEdit {
+    width: 30px;
+  }
+
+  #syncFrequencySpacer {
+    flex:2;
+  }
+
   #actions {
     flex-direction: row;
     margin-top: 30px;
@@ -91,34 +100,42 @@ const rootStyleSheet = `
   }
 `;
 
-const openSettingsDialog = (win) => {
+const openSettingsDialog = () => {
     const wallet_path = walletFileSet();
 
     if(!wallet_path) {
-        openConnectDialog();
+      openConnectDialog();
     } else {
-        const rootView = new QWidget();
-        rootView.setObjectName("rootView");
-        const rootViewLayout = new FlexLayout()
-        rootView.setLayout(rootViewLayout);
-        
-        const editable_settings = {
-          changed: false,
-          wallet_path: wallet_path
-        }
-        // wallet file path
-        createWalletPathRow(editable_settings, rootView);
+      
+      const rootView = new QWidget();
+      rootView.setObjectName("rootView");
+      const rootViewLayout = new FlexLayout()
+      rootView.setLayout(rootViewLayout);
+      
+      const editable_settings = {
+        wallet_path_changed: false,
+        wallet_path: wallet_path,
+        sync_frequency_changed: false,
+        sync_frequency: GetSyncFrequency().toString(),
+        file_exclusions_changed: false,
+        file_exclusions: []
+      }
 
-        createSyncRow(editable_settings, rootView, win);
-       
-        createActionsRow(editable_settings, rootView, win);
+      // wallet file path
+      createWalletPathRow(editable_settings, rootView);
 
-        rootView.setStyleSheet(rootStyleSheet);
+      createSyncRow(editable_settings, rootView, win);
 
-        win.setCentralWidget(rootView);
-        win.setWindowTitle("Evermore Settings");
-        // win.resize(800, 640);
-        win.show();
+      createSyncFrequencyRow(editable_settings, rootView, win);
+      
+      createActionsRow(editable_settings, rootView, win);
+
+      rootView.setStyleSheet(rootStyleSheet);
+
+      win.setCentralWidget(rootView);
+      win.setWindowTitle("Evermore Settings");
+      // win.resize(800, 640);
+      win.show();
     }
 
     
@@ -166,7 +183,7 @@ const createWalletPathRow = (editable_settings, rootView) => {
 
       if(selected_file.length > 0) {
         editable_settings.wallet_file = selected_file[0];
-        editable_settings.changed = true;
+        editable_settings.wallet_file_changed = true;
         const wallet_path_parts = editable_settings.wallet_path.split(settings.PLATFORM == "win32" ? '\\':'/');
         walletPathText.setText(wallet_path_parts[wallet_path_parts.length - 1]);
       }        
@@ -203,39 +220,40 @@ const createSyncRow = async (editable_settings, rootView, win) => {
   btnSelectiveSync.setObjectName(`btnSelectiveSync`);
 
   btnSelectiveSync.addEventListener("clicked", async () => {
-      console.log("btnSelectiveSync clicked"); 
+    
+    const wallet_file = walletFileSet();
 
-      const wallet_file = walletFileSet();
+    if(wallet_file) {
+      const wallet_address = await getWalletAddress(wallet_file);
 
-      if(wallet_file) {
-        const wallet_address = await getWalletAddress(wallet_file);
+      const exclusions = GetExclusions();
 
-        const folders = await getFiles(wallet_address);
+      const online_path_infos = await getOnlineFilesAndFoldersStructure(wallet_address);
 
-        const syncRootView = new QWidget();
-        syncRootView.setObjectName("rootView");
-        const syncRootViewLayout = new FlexLayout()
-        syncRootView.setLayout(syncRootViewLayout);
-
-        
-        const tree = new QTreeWidget();
-
-        createFolderItems(folders[''], tree, win, true, null);
-
-        tree.addEventListener("itemChanged", (item, column) => {
-          const path_info = JSON.parse(item.data(0, USER_DATA_ROLE).toString());
-
-          debugger;
-        });
-
-        syncRootViewLayout.addWidget(tree);
-
-        createSyncActionsRow(folders, syncRootView, rootView, win);
-
-        win.setCentralWidget(syncRootView);         
-        
-      }
+      const exclusions_and_online_path_infos = mergePathInfos(online_path_infos[''], exclusions[''], true);
       
+      getOfflineFilesAndFoldersStructure((offline_path_infos) => {
+        const path_infos = mergePathInfos(offline_path_infos[''], exclusions_and_online_path_infos[''], true);
+
+        if(path_infos[''].children.length == 0) {
+          notifier.notify({
+            title: 'Evermore Datastore',
+            icon: settings.NOTIFY_ICON_PATH,
+            message: "There are currently no files to download/sync online"
+          });
+
+          return;
+        }
+        
+        openSyncSettingsDialog(path_infos[''], (edited_path_infos) => {
+          const exclusions = removePathInfosWithChecked(edited_path_infos, false);
+
+          UpdateExclusions(exclusions);
+
+          updateInclusionsAndExclusionOverlayPaths(exclusions, sendMessage);
+        });
+      });  
+    } 
   });
 
   syncActionsLayout.addWidget(btnSelectiveSync);
@@ -243,96 +261,53 @@ const createSyncRow = async (editable_settings, rootView, win) => {
   rootView.layout.addWidget(syncActions);
 }
 
-const createSyncActionsRow = (folders, syncRootView, rootView, win) => {
-  const actions = new QWidget();
-  const actionsLayout = new FlexLayout();
-  actions.setObjectName('actions');
-  actions.setLayout(actionsLayout);
+const createSyncFrequencyRow = async (editable_settings, rootView, win) => { 
+  // label
+  const syncFrequencyLabel = new QLabel();
+  syncFrequencyLabel.setObjectName("syncFrequencyLabel");
+  syncFrequencyLabel.setText("Sync Frequency:");
 
-  const buttonSpacer = new QWidget();
-  const buttonSpacerLayout = new FlexLayout();
-  buttonSpacer.setObjectName('buttonSpacer');
-  buttonSpacer.setLayout(buttonSpacerLayout);
+  rootView.layout.addWidget(syncFrequencyLabel);
 
-  actionsLayout.addWidget(buttonSpacer);
+  const syncFrequency = new QWidget();
+  const syncFrequencyLayout = new FlexLayout();
+  syncFrequency.setObjectName('syncFrequency');
+  syncFrequency.setLayout(syncFrequencyLayout);
 
-  const btnSave = new QPushButton();
-  btnSave.setText("Save");
-  btnSave.setObjectName(`btnSave`);
+  const syncFrequencySpacer = new QWidget();
+  const syncFrequencySpacerLayout = new FlexLayout();
+  syncFrequencySpacer.setObjectName('syncFrequencySpacer');
+  syncFrequencySpacer.setLayout(syncFrequencySpacerLayout);
 
-  btnSave.addEventListener("clicked", () => {
-    console.log("btnSave clicked");
+  syncFrequencyLayout.addWidget(syncFrequencySpacer);
 
-    win.setCentralWidget(rootView);   
-  });
+  
 
-  actionsLayout.addWidget(btnSave);
+  // label
+  const syncFrequencyLineEditLabel = new QLabel();
+  syncFrequencyLineEditLabel.setObjectName("syncFrequencyLineEditLabel");
+  syncFrequencyLineEditLabel.setText("Sync files every:");
+  syncFrequencyLayout.addWidget(syncFrequencyLineEditLabel);
 
-  const btnCancel = new QPushButton();
-  btnCancel.setText("Cancel");
-  btnCancel.setObjectName(`btnCancel`);
+  const syncFrequencyLineEdit = new QLineEdit();
+  syncFrequencyLineEdit.setObjectName("syncFrequencyLineEdit");
+  syncFrequencyLineEdit.setText(editable_settings.sync_frequency);
+  syncFrequencyLineEdit.addEventListener('textChanged', (changed) => {
+    editable_settings.sync_frequency = changed;
+    editable_settings.sync_frequency_changed = true;
+  })
 
-  btnCancel.addEventListener("clicked", () => {
-    win.setCentralWidget(rootView);        
-  });
+  syncFrequencyLayout.addWidget(syncFrequencyLineEdit);
 
-  actionsLayout.addWidget(btnCancel, btnCancel.getFlexNode(), );
-
-  syncRootView.layout.addWidget(actions);
+  const syncFrequencyMinutesLabel = new QLabel();
+  syncFrequencyMinutesLabel.setObjectName("syncFrequencyMinutesLabel");
+  syncFrequencyMinutesLabel.setText(" minutes");
+  syncFrequencyLayout.addWidget(syncFrequencyMinutesLabel);
+    
+  rootView.layout.addWidget(syncFrequency);
 }
 
-const createFolderItems = (path_info, tree, window, root, parent) => {
 
-  if(!parent && !root) {
-    parent = new QTreeWidgetItem();
-    parent.setText(0, path_info.name);
-  }
-
-  for(let i in path_info.childeren) {
-    const path = path_info.childeren[i];
-    if(path.type == "folder") {
-      let folder_item = null;
-      if(root) {
-        folder_item = createFolderItems(path, tree, window, false, null);
-        tree.addTopLevelItem(folder_item);
-      } else {
-        folder_item = createFolderItems(path, tree, window, false, parent);
-      }
-      folder_item.setText(0, path.name);
-      folder_item.setIcon(0, new QIcon(folder_icon_path));
-
-      let checked = CheckState.Unchecked;
-
-      if(path_info.checked) {
-        checked = CheckState.Checked;
-      }
-
-      folder_item.setData(0, USER_DATA_ROLE, JSON.stringify(path_info));
-      folder_item.setCheckState(0, checked);
-
-    } else {
-      let file_item = null;
-      if(root) {
-        file_item = new QTreeWidgetItem();
-        tree.addTopLevelItem(file_item);
-      } else {
-        file_item = new QTreeWidgetItem(parent);
-      }
-
-      file_item.setText(0, path.name);
-
-      let checked = CheckState.Unchecked;
-      if(path_info.checked) {
-        checked = CheckState.Checked;
-      }
-      
-      file_item.setData(0, USER_DATA_ROLE, JSON.stringify(path_info));
-      file_item.setCheckState(0, checked);
-    }
-  }
-
-  return parent;
-}
 
 const createActionsRow = (editable_settings, rootView, win) => {
   const actions = new QWidget();
@@ -352,8 +327,20 @@ const createActionsRow = (editable_settings, rootView, win) => {
   btnSave.setObjectName(`btnSave`);
 
   btnSave.addEventListener("clicked", () => {
-      if(editable_settings.changed) {
+      if(editable_settings.wallet_file_changed) {
         setWalletFilePath(editable_settings.wallet_file);
+      }
+      if(editable_settings.sync_frequency_changed) {
+        const sync_frequency = parseInt(editable_settings.sync_frequency, 10);
+        
+        if(sync_frequency != NaN) {
+          SetSyncFrequency(sync_frequency);
+        }        
+      }
+      if(editable_settings.file_exclusions_changed) {
+        editable_settings.file_exclusions.forEach(file_info => {
+          UpdateExclusions(file_info);
+        });
       }  
 
       win.hide();  
