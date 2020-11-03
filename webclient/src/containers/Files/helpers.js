@@ -52,7 +52,19 @@ export const getFiles = async (address) => {
         }
     });
 
-    const tx_rows = await Promise.all(tx_ids.map(async (tx_id) => {
+    const sw_tx_ids = await arweave.arql({
+        op: "equals",
+        expr1: "App-Name",
+        expr2: "SmartWeaveContract"
+    });
+    
+    const contracts = sw_tx_ids.slice(0, 20);
+
+    // const txs = ['1TFZeEewEgUpqT5i2dsZSIRKJq3h1C7ZVi-gE8G-W6U']; 
+
+    debugger;
+
+    const tx_rows = await Promise.all(contracts.map(async (tx_id) => {
     
         let tx_row = {id: tx_id};
         
@@ -72,6 +84,8 @@ export const getFiles = async (address) => {
 
         return tx_row
     }));
+
+    debugger;
 
     const final_rows = [];
     const folders = {};    
