@@ -53,7 +53,19 @@ export const getFiles = async (address) => {
         }
     });
 
-    const tx_rows = await Promise.all(tx_ids.map(async (tx_id) => {
+    const sw_tx_ids = await arweave.arql({
+        op: "equals",
+        expr1: "App-Name",
+        expr2: "SmartWeaveContract"
+    });
+    
+    const contracts = sw_tx_ids.slice(0, 20);
+
+    // const txs = ['1TFZeEewEgUpqT5i2dsZSIRKJq3h1C7ZVi-gE8G-W6U']; 
+
+    debugger;
+
+    const tx_rows = await Promise.all(contracts.map(async (tx_id) => {
     
         let tx_row = {id: tx_id};
         
@@ -73,6 +85,8 @@ export const getFiles = async (address) => {
 
         return tx_row
     }));
+
+    debugger;
 
     const final_rows = [];
     const folders = {};    
@@ -133,104 +147,104 @@ export const RemoveUploader = (uploader) => {
     localStorage.setItem("Evermore-uploaders", JSON.stringify(uploaders))
 }
 
-export const setFileStatusAsDeleted = async (file_info) => {
-    const wallet_file = walletFileSet();
+// export const setFileStatusAsDeleted = async (file_info) => {
+//     const wallet_file = walletFileSet();
 
-    if(!wallet_file || wallet_file.length == 0) return;
+//     if(!wallet_file || wallet_file.length == 0) return;
 
-    const wallet_jwk = getJwkFromWalletFile(wallet_file);
+//     const wallet_jwk = getJwkFromWalletFile(wallet_file);
 
-    const transaction = await arweave.createTransaction({}, wallet_jwk);
+//     const transaction = await arweave.createTransaction({}, wallet_jwk);
 
-    const wallet_balance = await getWalletBalance();
+//     const wallet_balance = await getWalletBalance();
 
-    const total_winston_cost = parseInt(transaction.reward);
-    const total_ar_cost = arweave.ar.arToWinston(total_winston_cost);
+//     const total_winston_cost = parseInt(transaction.reward);
+//     const total_ar_cost = arweave.ar.arToWinston(total_winston_cost);
     
-    if(wallet_balance < total_ar_cost) {
-        toast(`Your wallet does not contain enough AR to upload, ${total_ar_cost} AR is needed `, { type: toast.TYPE.ERROR });
+//     if(wallet_balance < total_ar_cost) {
+//         toast(`Your wallet does not contain enough AR to upload, ${total_ar_cost} AR is needed `, { type: toast.TYPE.ERROR });
 
-        return;
-    }
+//         return;
+//     }
 
-    transaction.addTag('App-Name', settings.APP_NAME);
-    transaction.addTag('file', file_info.file.replace(/([^:])(\/\/+)/g, '$1/'));
-    transaction.addTag('path', file_info.path.replace(/([^:])(\/\/+)/g, '$1/'));
-    transaction.addTag('modified', file_info.modified);
-    transaction.addTag('hostname', file_info.hostname);
-    transaction.addTag('CRC', file_info.CRC);
-    transaction.addTag('version', file_info.version);
-    transaction.addTag('STATUS', "DELETED");
-    transaction.addTag('ACTION_TIMESTAMP', new Date().getTime());
+//     transaction.addTag('App-Name', settings.APP_NAME);
+//     transaction.addTag('file', file_info.file.replace(/([^:])(\/\/+)/g, '$1/'));
+//     transaction.addTag('path', file_info.path.replace(/([^:])(\/\/+)/g, '$1/'));
+//     transaction.addTag('modified', file_info.modified);
+//     transaction.addTag('hostname', file_info.hostname);
+//     transaction.addTag('CRC', file_info.CRC);
+//     transaction.addTag('version', file_info.version);
+//     transaction.addTag('STATUS', "DELETED");
+//     transaction.addTag('ACTION_TIMESTAMP', new Date().getTime());
 
-    await arweave.transactions.sign(transaction, wallet_jwk);
+//     await arweave.transactions.sign(transaction, wallet_jwk);
 
-    const response = await arweave.transactions.post(transaction);
+//     const response = await arweave.transactions.post(transaction);
 
-    if(response.status != 200) {
-        let error_msg = null;
+//     if(response.status != 200) {
+//         let error_msg = null;
 
-        if(response.status == 400) {
-            error_msg = "The transaction was rejected as invalid.";
-        }
+//         if(response.status == 400) {
+//             error_msg = "The transaction was rejected as invalid.";
+//         }
 
-        if(response.status == 500) {
-            error_msg = "There was an error connecting to the blockchain.";
-        }
+//         if(response.status == 500) {
+//             error_msg = "There was an error connecting to the blockchain.";
+//         }
 
-        toast(`There was an error updating the status of ${file_info.name} - ${error_msg}`, { type: toast.TYPE.ERROR });
+//         toast(`There was an error updating the status of ${file_info.name} - ${error_msg}`, { type: toast.TYPE.ERROR });
 
-        return;
-    }
-}
+//         return;
+//     }
+// }
 
-export const setFileStatusAsDeleted = async (file_info) => {
-    const wallet_file = walletFileSet();
+// export const setFileStatusAsDeleted = async (file_info) => {
+//     const wallet_file = walletFileSet();
 
-    if(!wallet_file || wallet_file.length == 0) return;
+//     if(!wallet_file || wallet_file.length == 0) return;
 
-    const wallet_jwk = getJwkFromWalletFile(wallet_file);
+//     const wallet_jwk = getJwkFromWalletFile(wallet_file);
 
-    const transaction = await arweave.createTransaction({}, wallet_jwk);
+//     const transaction = await arweave.createTransaction({}, wallet_jwk);
 
-    const wallet_balance = await getWalletBalance();
+//     const wallet_balance = await getWalletBalance();
 
-    const total_winston_cost = parseInt(transaction.reward);
-    const total_ar_cost = arweave.ar.arToWinston(total_winston_cost);
+//     const total_winston_cost = parseInt(transaction.reward);
+//     const total_ar_cost = arweave.ar.arToWinston(total_winston_cost);
     
-    if(wallet_balance < total_ar_cost) {
-        toast(`Your wallet does not contain enough AR to upload, ${total_ar_cost} AR is needed `, { type: toast.TYPE.ERROR });
+//     if(wallet_balance < total_ar_cost) {
+//         toast(`Your wallet does not contain enough AR to upload, ${total_ar_cost} AR is needed `, { type: toast.TYPE.ERROR });
 
-        return;
-    }
+//         return;
+//     }
 
-    transaction.addTag('App-Name', settings.APP_NAME);
-    transaction.addTag('file', file_info.file.replace(/([^:])(\/\/+)/g, '$1/'));
-    transaction.addTag('path', file_info.path.replace(/([^:])(\/\/+)/g, '$1/'));
-    transaction.addTag('modified', file_info.modified);
-    transaction.addTag('hostname', file_info.hostname);
-    transaction.addTag('CRC', file_info.CRC);
-    transaction.addTag('version', file_info.version);
-    transaction.addTag('STATUS', "UNDELETED");
-    transaction.addTag('ACTION_TIMESTAMP', new Date().getTime());
+//     transaction.addTag('App-Name', settings.APP_NAME);
+//     transaction.addTag('file', file_info.file.replace(/([^:])(\/\/+)/g, '$1/'));
+//     transaction.addTag('path', file_info.path.replace(/([^:])(\/\/+)/g, '$1/'));
+//     transaction.addTag('modified', file_info.modified);
+//     transaction.addTag('hostname', file_info.hostname);
+//     transaction.addTag('CRC', file_info.CRC);
+//     transaction.addTag('version', file_info.version);
+//     transaction.addTag('STATUS', "UNDELETED");
+//     transaction.addTag('ACTION_TIMESTAMP', new Date().getTime());
 
-    await arweave.transactions.sign(transaction, wallet_jwk);
+//     await arweave.transactions.sign(transaction, wallet_jwk);
 
-    const response = await arweave.transactions.post(transaction);
+//     const response = await arweave.transactions.post(transaction);
 
-    if(response.status != 200) {
-        let error_msg = null;
+//     if(response.status != 200) {
+//         let error_msg = null;
 
-        if(response.status == 400) {
-            error_msg = "The transaction was rejected as invalid.";
-        }
+//         if(response.status == 400) {
+//             error_msg = "The transaction was rejected as invalid.";
+//         }
 
-        if(response.status == 500) {
-            error_msg = "There was an error connecting to the blockchain.";
-        }
+//         if(response.status == 500) {
+//             error_msg = "There was an error connecting to the blockchain.";
+//         }
 
-        toast(`There was an error updating the status of ${file_info.name} - ${error_msg}`, { type: toast.TYPE.ERROR });
+//         toast(`There was an error updating the status of ${file_info.name} - ${error_msg}`, { type: toast.TYPE.ERROR });
 
-        return;
-    }
-}
+//         return;
+//     }
+// }
