@@ -23,6 +23,8 @@ export const encryptFile = async (wallet, jwk, file_path, dest_path) => {
         });
 
         readStream.on('end', () => {
+            writeableStream.close();
+            
             return resolve({
                 file_path: dest_path, 
                 key_size: Buffer.byteLength(decode_key, 'binary'), 

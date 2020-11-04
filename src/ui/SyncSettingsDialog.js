@@ -24,8 +24,18 @@ const folder_icon_path = path.join(
     `assets/images/${process.platform === 'win32' ? 'folder_icon.png' : 'folder_icon.png'}`
   );
 
+let main_win = null;
+
+export const refreshSyncSettingsDialog = (path_infos, saveCallback, cancelCallback) => {
+  main_win.hide();
+
+  openSyncSettingsDialog(path_infos, saveCallback, cancelCallback);
+}
+
 const openSyncSettingsDialog = (path_infos, saveCallback, cancelCallback) => {
     const syncWin = new QMainWindow();
+    main_win = syncWin;
+
     syncWin.setWindowTitle("Selective Sync");
     syncWin.setWindowIcon(new QIcon(settings.NOTIFY_ICON_PATH));
     const syncRootView = new QWidget();

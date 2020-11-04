@@ -8,18 +8,18 @@ import {arweave} from '../crypto/arweave-helpers';
 import {settings} from '../config';
 const { crc32 } = require('crc');
 
-export const getFileUpdatedDate = (path) => {
-    const stats = fs.statSync(path);
+export const getFileUpdatedDate = (file_path) => {
+    const stats = fs.statSync(file_path);
     return stats.mtime.getTime();
 }
 
-export const setFileUpdatedDatetime = async (path, timestamp) => {
+export const setFileUpdatedDatetime = async (file_path, timestamp) => {
     const datetime = new Date(timestamp);
-    fs.utimesSync(path, datetime, datetime);
+    fs.utimesSync(file_path, datetime, datetime);
 }
 
-export const fileHasBeenModified = (path, modified) => {
-    const current_modified = getFileUpdatedDate(path);
+export const fileHasBeenModified = (file_path, modified) => {
+    const current_modified = getFileUpdatedDate(file_path);
 
     if(current_modified > modified) {
         return true;
@@ -43,10 +43,16 @@ export const getRalativePath = (path) => {
     return relative_path;
 }
 
-export const getSystemPath = (relative_path) => {
+export const getSystemPath = () => {
     const sync_folders = GetSyncedFolders();
 
-    return path.join(sync_folders[0], relative_path);
+    return path.normalize(sync_folders[0]);
+}
+
+export const isPublicFile = (file_path) => {
+    const system_path = getSystemPath();
+
+    return file_path.indexOf(path.join(system_path, 'Public')) != -1;    
 }
 
 export function addToFolderChildren(path_parts, index, file_info, path_obj) {
@@ -474,7 +480,7 @@ export const unregisterPaths = (sync_folder, path_infos, notify_method) => {
 export const systemHasEnoughDiskSpace = async (required_space) => {
     const sync_folders = GetSyncedFolders();
 
-    const disk_space = await checkDiskSpace(sync_folders);
+    const disk_space = await checkDiskSpace(sync_folders[0]);
 
     return disk_space >= required_space;
 }

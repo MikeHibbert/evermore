@@ -1,10 +1,12 @@
+const clipboardy = require('clipboardy');
+const notifier = require('node-notifier');
 import { 
     GetNewOrPendingFile, 
     GetAllPendingFiles,
     GetSyncedFileFromPath, 
     GetSyncedFolders 
 } from '../db/helpers';
-import {pathExcluded} from '../fsHandling/helpers';
+import {pathExcluded, isPublicFile} from '../fsHandling/helpers';
 import path from 'path';
 import { settings } from '../config';
 
@@ -43,8 +45,12 @@ const processPipeMessage = (data) => {
 
                 break;
             case "SHARE":
-                debugger;
+                shareFileLinkToClipboard(command_value);
                 response = "SHARED:OK\n";
+                break;
+            case "DETAILS":
+                openViewblockTransactionPage(command_value);
+                response = "DETAILS:OK\n";
                 break;
             default:
                 response = response + `STATUS:NOP:${command_value}\n`;
@@ -56,6 +62,28 @@ const processPipeMessage = (data) => {
     return response;
 }
 
+export const openViewblockTransactionPage = (file_path) => {
+    const file_info = GetSyncedFileFromPath(path.normalize(file_path));
+    var url = `https://viewblock.io/arweave/tx/${file_info.tx_id}`;
+    var start = (process.platform == 'darwin'? 'open': process.platform == 'win32'? 'start': 'xdg-open');
+    require('child_process').exec(start + ' ' + url);
+}
+
+const shareFileLinkToClipboard = (file_path) => {
+    const file_info = GetSyncedFileFromPath(path.normalize(file_path));
+
+    if(file_info && isPublicFile(file_path) && !pathExcluded(file_path)) {
+        clipboardy.writeSync(`https://arweave.net/${file_info.tx_id}`);
+
+        notifier.notify({
+            title: 'Evermore Datastore',
+            icon: settings.NOTIFY_ICON_PATH,
+            message: `A public link for '${file_info.file}' was copied to your clipboard.`
+        });
+    }
+    
+}
+
 const getFileStatus = (file_path) => {
     if(settings.PLATFORM == 'win32') {
         if(file_path.indexOf('\\') == -1) {
@@ -64,7 +92,7 @@ const getFileStatus = (file_path) => {
         }        
     }
 
-    if(!pathExcluded(file_path)) {
+    if(!pathExcluded(file_path) && !file_path.endsWith('.enc')) {
         let file_info = GetSyncedFileFromPath(path.normalize(file_path));
 
         if(file_info) return `STATUS:OK:${file_path}\n`;
@@ -86,11 +114,13 @@ const getFileStatus = (file_path) => {
 const getFileContextMenuItems = (file_path) => {
     var responses = ""; 
 
-    let file_info = GetSyncedFileFromPath(path.normalize(file_path));
+    const file_info = GetSyncedFileFromPath(path.normalize(file_path));
 
-    if(file_info) {
+    if(file_info && isPublicFile(file_path) && !pathExcluded(file_path)) {
         responses = responses + 'MENU_ITEM:SHARE::Copy Share Link\n';
     }
+
+    responses = responses + 'MENU_ITEM:DETAILS::View Transaction Details\n';
 
     responses = responses + "GET_MENU_ITEMS:END\n";
 

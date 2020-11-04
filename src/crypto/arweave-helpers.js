@@ -30,22 +30,23 @@ import {
 
 import {
     encryptFile,
-    decryptFile
+    decryptFile,
+    encryptDataWithRSAKey
 } from './files';
 
 // debugger;
 
 export const arweave = Arweave.init(settings.ARWEAVE_CONFIG);
 
-export const getJwkFromWalletFile = (path) => {
-    const rawdata = fs.readFileSync(path);
+export const getJwkFromWalletFile = (file_path) => {
+    const rawdata = fs.readFileSync(file_path);
     const jwk = JSON.parse(rawdata);
 
     return jwk;
 }
 
-export const getWalletBalance = (path) => {
-    const jwk = getJwkFromWalletFile(path);
+export const getWalletBalance = async (file_path) => {
+    const jwk = getJwkFromWalletFile(file_path);
 
     try {
         return arweave.wallets.jwkToAddress(jwk).then((address) => {
@@ -60,8 +61,8 @@ export const getWalletBalance = (path) => {
     
 }
 
-export const getWalletAddress = async (path) => {
-    const jwk = getJwkFromWalletFile(path);
+export const getWalletAddress = async (file_path) => {
+    const jwk = getJwkFromWalletFile(file_path);
 
     return arweave.wallets.jwkToAddress(jwk).then((address) => {
         return address;
@@ -76,11 +77,11 @@ export const uploadFile = async (file_info, encrypt_file) => {
     const wallet_jwk = getJwkFromWalletFile(wallet_file);
     
     let stats = fs.statSync(file_info.path);
-    let required_space = stats['size'] * 1.5;
+    let required_space = Math.ceil(stats['size'] * 1.5);
     let processed_file_path = file_info.path;
 
     if(encrypt_file) {
-        required_space = stats['size'] * 2.5; // abitrary idea that encryption will probably create a larger file than the source.
+        required_space = Math.ceil(stats['size'] * 2.5); // abitrary idea that encryption will probably create a larger file than the source.
     }
 
     if(!systemHasEnoughDiskSpace(required_space)) {
@@ -94,10 +95,13 @@ export const uploadFile = async (file_info, encrypt_file) => {
         return;
     }
 
+    let encrypted_result = null;
+
     if(encrypt_file) {
         const jwk = await arweave.wallets.generate();
         processed_file_path = `${file_info.path}.enc`;
-        const encrypted_result = await encryptFile(wallet_jwk, jwk, file_info.path, processed_file_path); 
+
+        encrypted_result = await encryptFile(wallet_jwk, jwk, file_info.path, processed_file_path); 
         stats = fs.statSync(processed_file_path);       
     }    
     
@@ -105,7 +109,8 @@ export const uploadFile = async (file_info, encrypt_file) => {
         if(err) {
             RemovePendingFile(file_info.path);
         } else {
-            const file_data = await getFileData(processed_file_path);
+
+            const file_data = await getFileData(processed_file_path);             
             
             try {
                 const crc_for_data = await createCRCFor(file_info.path);
@@ -114,11 +119,11 @@ export const uploadFile = async (file_info, encrypt_file) => {
                     data: file_data
                 }, wallet_jwk);
 
-                const wallet_balance = await getWalletBalance();
+                const wallet_balance = await getWalletBalance(wallet_file);
                 const data_cost = await arweave.transactions.getPrice(stats['size']);
 
                 const total_winston_cost = parseInt(transaction.reward) + parseInt(data_cost);
-                const total_ar_cost = arweave.ar.arToWinston(total_winston_cost);
+                const total_ar_cost = arweave.ar.winstonToAr(total_winston_cost);
                 
                 if(wallet_balance < total_ar_cost) {
                     notifier.notify({
@@ -143,8 +148,10 @@ export const uploadFile = async (file_info, encrypt_file) => {
 
                 if(encrypt_file) {
                     transaction.addTag('key_size', encrypted_result.key_size);
+                    transaction.addTag('domain', 'Private');
                 } else {
                     transaction.addTag('key_size', -1);
+                    transaction.addTag('domain', 'Public');
                 }
 
                 await arweave.transactions.sign(transaction, wallet_jwk);
@@ -153,18 +160,22 @@ export const uploadFile = async (file_info, encrypt_file) => {
 
                 let uploader = await arweave.transactions.getUploader(transaction);
 
-                SaveUploader(uploader);
+                const uploader_record = SaveUploader(uploader);
 
                 while (!uploader.isComplete) {
                     await uploader.uploadChunk();
                     console.log(`${uploader.pctComplete}% complete, ${uploader.uploadedChunks}/${uploader.totalChunks}`);
                 }
 
-                ConfirmSyncedFile(transaction.id);
-
                 sendUsagePayment(data_cost);
 
-                RemoveUploader(uploader);
+                RemoveUploader(uploader_record);
+
+                if(encrypt_file) {
+                    if(fs.existsSync(processed_file_path)) { 
+                        fs.unlinkSync(processed_file_path);
+                    }
+                }
 
                 console.log(`${file_info.path} uploaded`);
             } catch (e) {
@@ -175,12 +186,10 @@ export const uploadFile = async (file_info, encrypt_file) => {
     }); // for whatever reason this file is now gone!
 }
 
-export const getFileData = (path) => {
-    const data = fs.readFileSync(path);
+export const getFileData = (file_path) => {
+    const data = fs.readFileSync(file_path);
 
-    const encrypted_data = encryptDataWithRSAKey(data);
-
-    return encrypted_data;
+    return data;
 }
 
 export const sendUsagePayment = async (transaction_cost) => {
@@ -193,18 +202,16 @@ export const sendUsagePayment = async (transaction_cost) => {
     const contractState = await readContract(arweave, settings.CONTRACT_ADDRESS);
 
     const holder = selectWeightedPstHolder(contractState.balances)
-     // send a fee. You should inform the user about this fee and amount.
-    try {     
-        const tx = await arweave.createTransaction({ 
+    
+    // send a fee. You should inform the user about this fee and amount.
+
+    const tx = await arweave.createTransaction({ 
             target: holder, 
             quantity: calculatePSTPayment(transaction_cost, settings.USAGE_PERCENTAGE)}
             , jwk);
             
-        await arweave.transactions.sign(tx, jwk);
-        await arweave.transactions.post(tx);
-    } catch (e) {
-        console.log(e);
-    }
+    await arweave.transactions.sign(tx, jwk);
+    await arweave.transactions.post(tx);
     
     return tx;
 }
@@ -293,7 +300,7 @@ export const getDownloadableFiles = async () => {
         },
         expr2: {
             op: "equals",
-            expr1: "App",
+            expr1: "App-Name",
             expr2: settings.APP_NAME
         }
     });
@@ -362,7 +369,7 @@ export const getDownloadableFilesGQL = async () => {
             owners: ["${address}"],
               tags: [
               {
-                  name: "App",
+                  name: "App-Name",
                   values: ["${settings.APP_NAME}"]
               },
               ]	) {
@@ -378,6 +385,8 @@ export const getDownloadableFilesGQL = async () => {
           }
     }`;
 
+    console.log(query);
+
     const response = await axios.post(settings.GRAPHQL_ENDPOINT, {
         operationName: null,
         query: query,
@@ -386,8 +395,9 @@ export const getDownloadableFilesGQL = async () => {
 
     if(response.status == 200) {
         const final_rows = [];
-        for(let i in response.data.transactions.edges) {
-            const row = response.data.transactions.edges[i].node;
+
+        for(let i in response.data.data.transactions.edges) {
+            const row = response.data.data.transactions.edges[i].node;
 
             for(let i in row.tags) {
                 const tag = row.tags[i];
@@ -415,13 +425,13 @@ export const getDownloadableFilesGQL = async () => {
     return null; // if nothing is returned 
 }
 
-export const finishUpload = async (savedUploader) => {
-    let resumeObject = JSON.parse(savedUploader);
+export const finishUpload = async (resumeObject) => {
 
-    const transaction = await arweave.transactions.get(resumeObject.id).then(async (transaction) => {
+    debugger;
+    const transaction = await arweave.transactions.get(resumeObject.transaction.id).then(async (transaction) => {
         const tx_row = {};
         
-        tx.get('tags').forEach(tag => {
+        transaction.get('tags').forEach(tag => {
             let key = tag.get('name', { decode: true, string: true });
             let value = tag.get('value', { decode: true, string: true });
             
@@ -433,20 +443,25 @@ export const finishUpload = async (savedUploader) => {
             
         });  
 
-        let data = fs.readFileSync(tx_row.path);
+        let processed_file_path = tx_row.path;
+        if(encrypt_file) {
+            processed_file_path = `${tx_row.path}.enc`;
+        }   
 
-        let uploader = await arweave.transactions.getUploader(resumeObject, data);
+        fs.access(processed_file_path, fs.constants.F_OK | fs.constants.R_OK, async (err) => {
+            if(err) {
+                RemovePendingFile(file_info.path);
+            } else {
+                const file_data = await getFileData(processed_file_path);
 
-        while (!uploader.isComplete) {
-            await uploader.uploadChunk();
-        }
+                let uploader = await arweave.transactions.getUploader(resumeObject, file_data);
 
-        ConfirmSyncedFile(uploader.transaction.id);
-
-        RemoveUploader(uploader);
-
-        const data_cost = await arweave.transactions.getPrice(transaction.data_size);
-        sendUsagePayment(data_cost);
+                while (!uploader.isComplete) {
+                    await uploader.uploadChunk();
+                    console.log(`${uploader.pctComplete}% complete, ${uploader.uploadedChunks}/${uploader.totalChunks}`);
+                }
+            }
+        });
     })
     .catch(err => {
         console.log(`finishUpload: ${err}`);
@@ -458,8 +473,40 @@ export const getTransactionStatus = async (tx_id) => {
 }
 
 export const confirmTransaction = async (tx_id) => {
-    const status = await getTransactionStatus(tx_id);
+    const response = await getTransactionStatus(tx_id);
     console.log(JSON.stringify(status));
+
+    if(response.status == 200) {
+        if(response.hasOwnProperty('confirmed')) {
+            if(response.confirmed.number_of_confirmations > 4) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+export const getTransactionWithTags = async (tx_id) => {
+    const transaction = await arweave.transactions.get(tx_id).then(async (transaction) => {
+        const tx_row = {id: transaction.id};
+        
+        transaction.get('tags').forEach(tag => {
+            let key = tag.get('name', { decode: true, string: true });
+            let value = tag.get('value', { decode: true, string: true });
+            
+            if(key == "modified" || key == "version" || key == "file_size") {
+                tx_row[key] = parseInt(value);
+            } else {
+                tx_row[key] = value;
+            }
+            
+        }); 
+
+        return tx_row;
+    });
+
+    return transaction;
 }
 
 export const downloadFileFromTransaction = async (wallet, tx_id) => {
@@ -530,6 +577,21 @@ export const downloadFileFromTransaction = async (wallet, tx_id) => {
     // removeTempFolder();
 }
 
+export const transactionExistsOnTheBlockchain = async (tx_id) => {
+    const response = await arweave.transactions.getStatus(tx_id);
+
+    if(response.status == 200) {
+        if(response.hasOwnProperty('confirmed')) {
+            if(response.confirmed.number_of_confirmations > 4) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    return false;
+}
+
 export const fileExistsOnTheBlockchain = async (file_info) => {
     const wallet_file = walletFileSet();
 
@@ -564,7 +626,7 @@ export const fileExistsOnTheBlockchain = async (file_info) => {
             expr2: {
                 op: "equals",
                 expr1: "modified",
-                expr2: file_info.modified
+                expr2: file_info.modified.toString()
             }
         }
     });

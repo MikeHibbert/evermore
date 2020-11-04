@@ -16,6 +16,8 @@ import {
     GetSyncStatus,
     GetSyncFrequency,
     GetAllProposedFiles, 
+    GetProposedFile,
+    GetProposedFileBy,
     GetSyncedFolders,
     AddPendingFile,
     RemoveProposedFile
@@ -25,11 +27,15 @@ import {
     finishUpload, 
     getTransactionStatus, 
     getDownloadableFiles,
-    fileExistsOnTheBlockchain 
+    transactionExistsOnTheBlockchain,
+    fileExistsOnTheBlockchain,
+    getTransactionWithTags
 } from '../crypto/arweave-helpers';
-import {convertProposedToInfos} from './helpers';
-import openSyncSettingsDialog from '../ui/SyncSettingsDialog';
+import {convertProposedToInfos, getSystemPath} from './helpers';
+import openSyncSettingsDialog, {refreshSyncSettingsDialog} from '../ui/SyncSettingsDialog';
 import { settings } from '../config';
+import { sendMessage } from '../integration/server';
+import { nextTick } from 'process';
 
 export const OnFileWatcherReady = () => {
     console.log('Initial scan complete. Ready for changes');
@@ -46,9 +52,27 @@ export const OnFileWatcherReady = () => {
 
     const syncing = GetSyncStatus();
     if(syncing) {
-        processAll();
         startSyncProcessing();
     }  
+
+    startPendingTrasactionConfirmation();
+}
+
+let pending_transaction_confirmation_checking_interval = null
+const startPendingTrasactionConfirmation = () => {
+    const pending_files = GetNewPendingFiles();
+
+    if(pending_files.length > 0) {
+        processAllPendingTransactions(pending_files);
+    }
+
+    pending_transaction_confirmation_checking_interval = setInterval(() => {
+        const pending_files = GetPendingFilesWithTransactionIDs();
+
+        if(pending_files.length > 0) {
+            processAllPendingTransactions(pending_files);
+        }
+    }, 1 * 60 * 1000); // check them every 10 mins
 }
 
 const processAll = () => {
@@ -65,7 +89,21 @@ export const startSyncProcessing = () => {
     }, GetSyncFrequency() * 60 * 1000);
 }
 
+
 export const stopSyncProcessing = () => {
+    if(sync_processing_interval) {
+        clearInterval(sync_processing_interval);
+    }
+}
+
+export const unpauseSyncProcessing = () => {
+    sync_processing_interval = setInterval(() => {
+        processAll();
+    }, GetSyncFrequency() * 60 * 1000);
+}
+
+
+export const pauseSyncProcessing = () => {
     if(sync_processing_interval) {
         clearInterval(sync_processing_interval);
     }
@@ -80,9 +118,8 @@ const checkPendingFilesStatus = () => {
         const file_info = pending_files[i];
 
         getTransactionStatus(file_info.tx_id).then((response) => {
-            console.log(response);
             if(response.status == 404) {
-                console.log(`resetting pending file ${file_info.file} as it was not found on the blcokchain`);
+                console.log(`resetting pending file ${file_info.file} as it was not found on the blockchain`);
                 ResetPendingFile(file_info.file, file_info.modified);
             }
 
@@ -102,35 +139,44 @@ const checkPendingFilesStatus = () => {
     }
 }
 
-const processAllOutstandingUploads = (existing_files) => {
+const processAllOutstandingUploads = async () => {
     const uploaders = GetUploaders();
 
     for(let i in uploaders) {
-        const already_completed = transactionExistsOnTheBlockchain(uploaders[i].transaction.id, existing_files);
+        const uploader_record = uploaders[i];
+        const already_completed = await transactionExistsOnTheBlockchain(uploader_record.uploader.transaction.id);
 
         if(!already_completed) {
-            stopSyncProcessing();
+            const twenty_minutes_ago = new Date();
+            twenty_minutes_ago.setMinutes(new Date().getMinutes() - 20);
 
-            finishUpload(uploaders[i]);
+            if(uploader_record.created < twenty_minutes_ago.getTime()) {
+                pauseSyncProcessing();
 
-            startSyncProcessing();
+                finishUpload(uploader_record.uploader);
+
+                RemoveUploader(uploader_record);
+
+                unpauseSyncProcessing();
+            }
+            
         } else {
-            RemoveUploader(uploaders[i]);
+            RemoveUploader(uploader_record);
         }        
     }
 
-    if(uploaders.length > 0) {
-        notifier.notify({
-            title: 'Evermore Datastore',
-            icon: settings.NOTIFY_ICON_PATH,
-            message: `${uploaders.length} resumed file uploads have been complete.`
-        });
-    }
+    // if(uploaders.length > 0) {
+    //     notifier.notify({
+    //         title: 'Evermore Datastore',
+    //         icon: settings.NOTIFY_ICON_PATH,
+    //         message: `${uploaders.length} resumed file uploads have been complete.`
+    //     });
+    // }
     
     const proposed_files = GetAllProposedFiles();
 
     if(proposed_files.length > 0) {
-        const minutes = settings.APP_CHECK_FREQUENCY / 60;
+        const minutes = GetSyncFrequency();
         notifier.notify({
             title: 'Evermore Datastore',
             icon: settings.NOTIFY_ICON_PATH,
@@ -143,7 +189,7 @@ const processAllOutstandingUploads = (existing_files) => {
         });
 
         notifier.on('postpone', () => {
-            console.log('"Postpone" was pressed');
+            // console.log('"Postpone" was pressed');
         });
     }
 
@@ -154,16 +200,47 @@ const processAllOutstandingUploads = (existing_files) => {
     }
 }
 
+let sync_settings_dialog_open = false;
 const prepareProposedFiles = (proposed_files) => {
     const sync_folders = GetSyncedFolders();
-    
+
     const path_infos = convertProposedToInfos(sync_folders[0], proposed_files, true);
 
-    openSyncSettingsDialog(path_infos[''], (path_infos_to_be_synced) => {
-        addPathInfosToPending(path_infos_to_be_synced);
+    pauseSyncProcessing();
 
+    if(sync_settings_dialog_open) {
+        refreshSyncSettingsDialog(path_infos[''], (path_infos_to_be_synced) => {
+            addPathInfosToPending(path_infos_to_be_synced);
 
-    });
+            const pending_files = GetNewPendingFiles();
+
+            processAllPendingFiles(pending_files);
+
+            unpauseSyncProcessing();
+            sync_settings_dialog_open = false;
+        },
+        () => {
+            unpauseSyncProcessing();
+            sync_settings_dialog_open = false;
+        });
+    } else {
+        sync_settings_dialog_open = true;
+        openSyncSettingsDialog(path_infos[''], (path_infos_to_be_synced) => {
+            addPathInfosToPending(path_infos_to_be_synced);
+
+            const pending_files = GetNewPendingFiles();
+
+            processAllPendingFiles(pending_files);
+
+            unpauseSyncProcessing();
+            sync_settings_dialog_open = false;
+        },
+        () => {
+            unpauseSyncProcessing();
+            sync_settings_dialog_open = false;
+        });
+    }
+    
 }
 
 const addPathInfosToPending = (path_infos) => {
@@ -174,36 +251,38 @@ const addPathInfosToPending = (path_infos) => {
         const pa = path_infos.children[i];
 
         if(pa.type == 'folder') {
-            addPathInfosToPending(path_infos);
+            addPathInfosToPending(pa);
         } else {
             if(pa.checked) {
-                AddPendingFile(null, pa.path, 1);
+                const proposed_file = GetProposedFileBy({file: pa.path});
+                AddPendingFile(null, pa.path, proposed_file.version, proposed_file.is_update);
                 RemoveProposedFile(path.join(path.normalize(sync_folder), pa.path));
             }            
         }
     }
 }
 
-const processAllPendingFiles = (pending_files) => {
+const processAllPendingFiles = async (pending_files) => {
     let uploaded_count = 0;
 
     const public_sync_folder = path.join(getSystemPath(), 'Public');
 
+    debugger;
+
     for(let i in pending_files) {
-        const txs = fileExistsOnTheBlockchain(pending_files[i], existing_files);
+        const txs = await fileExistsOnTheBlockchain(pending_files[i]);
 
         if(txs.length == 0) {
-            const encrypt_file = pending_files[i].path.indexOf(public_sync_folder) != -1;
+            const encrypt_file = pending_files[i].path.indexOf(public_sync_folder) == -1;
+
             pauseSyncProcessing()
 
             uploadFile(pending_files[i], encrypt_file);
 
             unpauseSyncProcessing();
+
             uploaded_count++;
-        } else {
-            // only send one because duplicates is dev env, shouldnt be so in production!
-            ConfirmSyncedFileFromTransaction(pending_files[i].path, txs[0]); 
-        }        
+        }       
     }
 
     if(uploaded_count > 0) {
@@ -215,12 +294,36 @@ const processAllPendingFiles = (pending_files) => {
     }     
 }
 
-const transactionExistsOnTheBlockchain = (tx_id, existing_files) => {
-    const existing = existing_files.filter(
-        tx => { return tx.id == tx_id }
-    );
+const processAllPendingTransactions = async (pending_files) => {
+    let confirmed_count = 0;
 
-    return existing.length > 0;
+    const public_sync_folder = path.join(getSystemPath(), 'Public');
+
+    for(let i in pending_files) {
+        debugger;
+
+        if(!pending_files[i].tx_id) continue;
+
+        const exists_on_the_blockchain = await transactionExistsOnTheBlockchain(pending_files[i].tx_id);
+
+        if(exists_on_the_blockchain) {
+            const transaction = await getTransactionWithTags(pending_files[i].tx_id);
+            
+            ConfirmSyncedFileFromTransaction(pending_files[i].path, transaction);
+            
+            sendMessage(`UNREGISTER_PATH:${pending_files[i].path}\n`)
+
+            confirmed_count++;
+        }       
+    }
+
+    if(confirmed_count > 0) {
+        notifier.notify({
+            title: 'Evermore',
+            icon: settings.NOTIFY_ICON_PATH,
+            message: `${confirmed_count} have been successfully mined and are available on the blockchain.`
+        });
+    } 
 }
 
 export const InitFileWatcher = (sync_folders) => {

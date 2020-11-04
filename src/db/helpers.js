@@ -112,12 +112,12 @@ export const walletFileSet = () => {
     return db.get('wallet_file').value();
 }
 
-export const setWalletFilePath = (path) => {
+export const setWalletFilePath = (file_path) => {
     if(!db) {
         InitDB();
     }
 
-    db.set('wallet_file', path).write();
+    db.set('wallet_file', file_path).write();
 }
 
 export const resetWalletFilePath = () => {
@@ -128,9 +128,7 @@ export const resetWalletFilePath = () => {
     db.unset('wallet_file').write();
 }
 
-export const AddPendingFile = (tx_id, file, version) => {
-    debugger;
-    
+export const AddPendingFile = (tx_id, file, version, is_update=false) => {
     if(!db) {
         InitDB();
     }
@@ -159,7 +157,8 @@ export const AddPendingFile = (tx_id, file, version) => {
             path: full_path,
             version: version,
             modified: getFileUpdatedDate(full_path),
-            hostname: os.hostname()
+            hostname: os.hostname(),
+            is_update: is_update // are we updating an existing file with new data?
         }).write();
 }
 
@@ -187,14 +186,14 @@ export const ResetPendingFile = (file, modified) => {
     return db.get('pending').find({file: file}).value();
 }
 
-export const RemovePendingFile = (path) => {
+export const RemovePendingFile = (file_path) => {
     if(!db) {
         InitDB();
     }
 
     db.get('pending')
         .remove({
-            path: path
+            path: file_path
         }).write();
 }
 
@@ -236,15 +235,15 @@ export const GetAllPendingFiles = () => {
         .value();
 }
 
-export const GetPendingFile = (path) => {
+export const GetPendingFile = (file_path) => {
     if(!db) {
         InitDB();
     }
 
-    const file = db.get('pending').find({path: path}).value();
+    const file = db.get('pending').find({path: file_path}).value();
 
     if(file) {
-        const modified = getFileUpdatedDate(file.path);
+        const modified = getFileUpdatedDate(file.file_path);
         if(modified > file.modified) {
             return ResetPendingFile(file.file, modified);
         }
@@ -252,7 +251,7 @@ export const GetPendingFile = (path) => {
     return file;
 }
 
-export const AddProposedFile = (tx_id, file, version) => {
+export const AddProposedFile = (tx_id, file, version, is_update) => {
     const sync_folders = GetSyncedFolders();
 
     let relative_path = file;
@@ -277,16 +276,33 @@ export const AddProposedFile = (tx_id, file, version) => {
             path: file,
             version: version,
             modified: getFileUpdatedDate(file),
-            hostname: os.hostname()
+            hostname: os.hostname(),
+            is_update: is_update
         }).write();
 }
 
-export const GetProposedFile = (path) => {
+export const GetProposedFile = (file_path) => {
     if(!db) {
         InitDB();
     }
 
-    const file = db.get('proposed').find({path: path}).value();
+    const file = db.get('proposed').find({path: file_path}).value();
+
+    if(file) {
+        const modified = getFileUpdatedDate(file.path);
+        if(modified > file.modified) {
+            return ResetProposedFile(file.file, modified);
+        }
+    }
+    return file;
+}
+
+export const GetProposedFileBy = (query) => {
+    if(!db) {
+        InitDB();
+    }
+
+    const file = db.get('proposed').find(query).value();
 
     if(file) {
         const modified = getFileUpdatedDate(file.path);
@@ -310,14 +326,14 @@ export const ResetProposedFile = (file, modified) => {
     return db.get('proposed').find({file: file}).value();
 }
 
-export const RemoveProposedFile = (path) => {
+export const RemoveProposedFile = (file_path) => {
     if(!db) {
         InitDB();
     }
 
     db.get('proposed')
         .remove({
-            path: path
+            path: file_path
         }).write();
 }
 
@@ -337,34 +353,59 @@ export const ConfirmSyncedFile = (tx_id) => {
 
     const pending = db.get('pending').find({tx_id: tx_id}).value();
 
-    db.get('synced_files')
-        .push(pending)
-        .write();
+    if(pending.is_update) {
+        UpdateSyncedFile(pending.file, pending.tx_id, pending.version, pending.modified)
+    } else {
+        db.get('synced_files')
+            .push(pending)
+            .write();
+    }    
 
     db.get('pending').remove({tx_id: tx_id}).write();
 }
 
-export const ConfirmSyncedFileFromTransaction = (path, transaction) => {
+export const UpdateSyncedFile = (file, tx_id, version, modified) => {
     if(!db) {
         InitDB();
     }
 
-    if(GetSyncedFileFromPath(path)) {
-        return;
+    db.get('synced_files')
+        .find({file: file})
+        .assign({tx_id: tx_id, version: version, modified: modified})
+        .write();
+}
+
+export const ConfirmSyncedFileFromTransaction = (file_path, transaction) => {
+    if(!db) {
+        InitDB();
+    }
+
+    const pending = db.get('pending').find({tx_id: transaction.id}).value();
+
+    
+    if(pending) {
+        if(pending.is_update) {
+            debugger;
+            UpdateSyncedFile(pending.file, pending.tx_id, parseInt(pending.version), pending.modified);
+        } else {
+            debugger;
+            db.get('synced_files')
+                .push({
+                    tx_id: transaction.id,
+                    file: transaction.file,
+                    path: file_path,
+                    version: transaction.version,
+                    modified: transaction.modified,
+                    hostname: transaction.hostname,
+                    crc: transaction.crc
+                })
+                .write();
+        }  
+    } else {
+        UpdateSyncedFile(transaction.file, transaction.id, transaction.version, transaction.modified);
     }
     
-    db.get('synced_files')
-        .push({
-            tx_id: transaction.id,
-            file: transaction.file,
-            path: path,
-            version: transaction.version == undefined ? 1 : transaction.version,
-            modified: transaction.modified,
-            hostname: transaction.hostname,
-            crc: transaction.crc
-        })
-        .write();
-
+    
     db.get('pending').remove({tx_id: transaction.id}).write();
 }
 
@@ -386,12 +427,28 @@ export const GetSyncedFile = (tx_id) => {
     return db.get('synced_files').find({tx_id: tx_id}).value();
 }
 
+export const GetSyncedFileBy = (query) => {
+    if(!db) {
+        InitDB();
+    }
+
+    return db.get('synced_files').find(query).value();
+}
+
 export const GetSyncedFileFromPath = (path) => {
     if(!db) {
         InitDB();
     }
 
     return db.get('synced_files').find({path: path}).value();
+}
+
+export const GetSyncedFileFromPathAndModified = (file_path, modified) => {
+    if(!db) {
+        InitDB();
+    }
+
+    return db.get('synced_files').find({path: file_path, modified: modified}).value();
 }
 
 export const AddFileToDownloads = (file_info) => {
@@ -442,20 +499,20 @@ export const GetExclusions = () => {
     return JSON.parse(db.get('exclusions').value());
 }
 
-export const AddFolder = (tx_id, path) => {
+export const AddFolder = (tx_id, folder_path) => {
     if(!db) {
         InitDB();
     }
 
-    console.log(path);
+    console.log(folder_path);
 
     if(GetFolder(tx_id)) return;
 
     db.get('folders')
         .push({
             tx_id: tx_id,
-            path: path,
-            modified: getFileUpdatedDate(path)
+            path: folder_path,
+            modified: getFileUpdatedDate(folder_path)
         }).write();
 }
 
@@ -529,8 +586,15 @@ export const SaveUploader = (uploader) => {
         InitDB();
     }
 
+    const uploader_record = {
+        created: new Date().getTime(),
+        uploader: uploader
+    }
+
     db.get('uploaders')
-        .push(JSON.stringify(uploader)).write();
+        .push(uploader_record).write();
+
+    return uploader_record;
 }
 
 export const GetUploaders = () => {
@@ -541,11 +605,13 @@ export const GetUploaders = () => {
     return db.get('uploaders').value();
 }
 
-export const RemoveUploader = (uploader) => {
+export const RemoveUploader = (uploader_record) => {
     if(!db) {
         InitDB();
     }
 
+    const query = {created: uploader_record.created};
+
     db.get('uploaders')
-        .remove(uploader).write();
+        .remove(query).write();
 }
