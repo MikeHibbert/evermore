@@ -38,6 +38,11 @@ export function InitDB() {
         db.set('pending', []).write();
     }
 
+    const deleting = db.has('deleting').value();
+    if(deleting === false) {
+        db.set('deleting', []).write();
+    }
+
     const synced_files = db.has('synced_files').value();
     if(synced_files === false) {
         db.set('synced_files', []).write();
@@ -385,10 +390,8 @@ export const ConfirmSyncedFileFromTransaction = (file_path, transaction) => {
     
     if(pending) {
         if(pending.is_update) {
-            debugger;
             UpdateSyncedFile(pending.file, pending.tx_id, parseInt(pending.version), pending.modified);
         } else {
-            debugger;
             db.get('synced_files')
                 .push({
                     tx_id: transaction.id,
@@ -409,7 +412,33 @@ export const ConfirmSyncedFileFromTransaction = (file_path, transaction) => {
     db.get('pending').remove({tx_id: transaction.id}).write();
 }
 
+export const DeleteSyncedFile = (tx_id) => {
+    if(!db) {
+        InitDB();
+    }
 
+    const synced_file = db.get('synced_files').find({tx_id: tx_id}).value();
+    
+    db.get('deleting')
+            .push(synced_file)
+            .write();   
+
+    db.get('synced_files').remove({tx_id: tx_id}).write();
+}
+
+export const UndeleteSyncedFile = (tx_id) => {
+    if(!db) {
+        InitDB();
+    }
+
+    const synced_file = db.get('deleting').find({tx_id: tx_id}).value();
+
+    db.get('synced_files')
+            .push(synced_file)
+            .write();   
+
+    db.get('deleting').remove({tx_id: tx_id}).write();
+}
 
 export const GetSyncedFiles = () => {
     if(!db) {

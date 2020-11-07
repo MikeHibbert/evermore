@@ -1,13 +1,8 @@
 jest.mock('fs');
-<<<<<<< HEAD
 
-const fs = jest.requireActual('fs');
-const Arweave = jest.requireActual('arweave');
-=======
 const path = require('path');
 const Arweave = jest.requireActual('arweave/node');
 import { settings } from '../config';
->>>>>>> f27162089f63ced0229d38ff6bb26e8cd0d8aeb8
 const { 
     arweave, 
     getJwkFromWalletFile,
@@ -17,12 +12,8 @@ const {
     getDownloadableFiles,
     getDownloadableFilesGQL, 
 } = require('./arweave-helpers');
-
 const { interactWriteDryRun, readContract } = require('smartweave');
-
 const { InitDB, setWalletFilePath } = require('../db/helpers'); 
-const {settings} = require('../config');
-
 import regeneratorRuntime from "regenerator-runtime";
 
 
@@ -74,14 +65,12 @@ test("Should get PST balance", async () => {
 
     //const tags = [];
     tx.get('tags').forEach(tag => {
-        debugger;
         let key = tag.get('name', {decode: true, string: true});
         let value = tag.get('value', {decode: true, string: true});
         //tags.push({name: key, val: value});
         console.log(`${key} : ${value}`);
     });
 
-    debugger;
     console.log(tx)
     
 });

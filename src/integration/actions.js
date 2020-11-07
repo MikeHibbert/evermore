@@ -87,7 +87,6 @@ const shareFileLinkToClipboard = (file_path) => {
 const getFileStatus = (file_path) => {
     if(settings.PLATFORM == 'win32') {
         if(file_path.indexOf('\\') == -1) {
-            debugger;
             console.log(file_path);
         }        
     }

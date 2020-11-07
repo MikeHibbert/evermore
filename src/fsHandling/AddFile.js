@@ -45,7 +45,6 @@ const fileAddedHandler = (file_path) => {
                                     const exclusions = GetExclusions();
 
                                     if(!pathExcluded(file_path) && !GetSyncedFileFromPathAndModified(file_path, new_file_modified)) {
-                                        debugger;
                                         AddProposedFile(null, path.normalize(file_path), parseInt(downloadable_file.version + 1));
                                         sendMessage(`REGISTER_PATH:${file_path}\n`);
                                         confirmed_in_blockchain = true;

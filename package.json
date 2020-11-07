@@ -30,6 +30,8 @@
     "@babel/core": "^7.10.4",
     "@babel/preset-env": "^7.10.4",
     "@nodegui/nodegui": "https://github.com/nodegui/nodegui/releases/download/v0.0.0-latest-master/nodegui-master.tgz",
+    "@sentry/node": "^5.27.3",
+    "@sentry/tracing": "^5.27.3",
     "arweave": "^1.9.1",
     "axios": "^0.19.2",
     "bl": ">=1.2.3",

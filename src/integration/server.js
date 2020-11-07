@@ -21,15 +21,9 @@ export const sendMessage = (message, send_update_message=false) => {
             }
             
         } catch (e) {
-            debugger;
             console.log(e);
         }
-        // } finally {
-
-        // }   
-    }
-
-      
+    }      
 }
 
 const initNamePipe = () => { 

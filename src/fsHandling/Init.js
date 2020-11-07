@@ -26,7 +26,7 @@ import {
     uploadFile, 
     finishUpload, 
     getTransactionStatus, 
-    getDownloadableFiles,
+    getDownloadableFilesGQL,
     transactionExistsOnTheBlockchain,
     fileExistsOnTheBlockchain,
     getTransactionWithTags
@@ -173,19 +173,19 @@ const processAllOutstandingUploads = async () => {
     //     });
     // }
     
-    const proposed_files = GetAllProposedFiles();
+    const syncable_files = getAllSyncableFiles();
 
-    if(proposed_files.length > 0) {
+    if(syncable_files.length > 0) {
         const minutes = GetSyncFrequency();
         notifier.notify({
             title: 'Evermore Datastore',
             icon: settings.NOTIFY_ICON_PATH,
-            message: `${proposed_files.length} files have been queued for upload in the last ${minutes} minutes. Would like to review them now?`,
+            message: `${syncable_files.length} files have been queued for sync in the last ${minutes} minutes. Would like to review them now?`,
             actions: ['Review', 'Postpone']
         });
 
         notifier.on('review', () => {
-            prepareProposedFiles(proposed_files);
+            prepareProposedFiles(syncable_files);
         });
 
         notifier.on('postpone', () => {
@@ -198,6 +198,16 @@ const processAllOutstandingUploads = async () => {
     if(pending_files.length > 0) {
         processAllPendingFiles(pending_files);
     }
+}
+
+const getAllSyncableFiles = () => {
+    const proposed_files = GetAllProposedFiles();
+    proposed_files.forEach(pf => {
+        pf['action'] = 'upload';
+    });
+    const downloadable_files = getDownloadableFilesGQL();
+
+
 }
 
 let sync_settings_dialog_open = false;
@@ -267,8 +277,6 @@ const processAllPendingFiles = async (pending_files) => {
 
     const public_sync_folder = path.join(getSystemPath(), 'Public');
 
-    debugger;
-
     for(let i in pending_files) {
         const txs = await fileExistsOnTheBlockchain(pending_files[i]);
 
@@ -300,8 +308,6 @@ const processAllPendingTransactions = async (pending_files) => {
     const public_sync_folder = path.join(getSystemPath(), 'Public');
 
     for(let i in pending_files) {
-        debugger;
-
         if(!pending_files[i].tx_id) continue;
 
         const exists_on_the_blockchain = await transactionExistsOnTheBlockchain(pending_files[i].tx_id);
@@ -311,7 +317,7 @@ const processAllPendingTransactions = async (pending_files) => {
             
             ConfirmSyncedFileFromTransaction(pending_files[i].path, transaction);
             
-            sendMessage(`UNREGISTER_PATH:${pending_files[i].path}\n`)
+            sendMessage(`UNREGISTER_PATH:${pending_files[i].path}\n`);
 
             confirmed_count++;
         }       

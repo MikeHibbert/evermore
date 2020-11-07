@@ -34,8 +34,6 @@ import {
     encryptDataWithRSAKey
 } from './files';
 
-// debugger;
-
 export const arweave = Arweave.init(settings.ARWEAVE_CONFIG);
 
 export const getJwkFromWalletFile = (file_path) => {
@@ -399,6 +397,8 @@ export const getDownloadableFilesGQL = async () => {
         for(let i in response.data.data.transactions.edges) {
             const row = response.data.data.transactions.edges[i].node;
 
+            row['action'] = 'download';
+
             for(let i in row.tags) {
                 const tag = row.tags[i];
                 row[tag.name] = tag.value;
@@ -426,8 +426,6 @@ export const getDownloadableFilesGQL = async () => {
 }
 
 export const finishUpload = async (resumeObject) => {
-
-    debugger;
     const transaction = await arweave.transactions.get(resumeObject.transaction.id).then(async (transaction) => {
         const tx_row = {};
         
@@ -582,7 +580,7 @@ export const transactionExistsOnTheBlockchain = async (tx_id) => {
 
     if(response.status == 200) {
         if(response.hasOwnProperty('confirmed')) {
-            if(response.confirmed.number_of_confirmations > 4) {
+            if(response.confirmed.number_of_confirmations > 3) {
                 return true;
             }
         }
@@ -632,4 +630,36 @@ export const fileExistsOnTheBlockchain = async (file_info) => {
     });
 
     return existing;
+}
+
+export const createPersistenceRecord = (synced_file, deleted) => {
+    const wallet_file = walletFileSet();
+
+    if(!wallet_file || wallet_file.length == 0) return;
+
+    const wallet_jwk = getJwkFromWalletFile(wallet_file);
+
+    const transaction = await arweave.createTransaction({}, wallet_jwk);
+
+    transaction.addTag('App-Name', settings.APP_NAME);
+    transaction.addTag('Content-Type', mime.lookup(synced_file.file));
+    transaction.addTag('file', synced_file.file.replace(/([^:])(\/\/+)/g, '$1/'));
+    transaction.addTag('path', synced_file.path.replace(/([^:])(\/\/+)/g, '$1/'));
+    transaction.addTag('modified', synced_file.modified);
+    transaction.addTag('hostname', synced_file.hostname);
+    transaction.addTag('version', synced_file.version);
+    
+    if(deleted) {
+        transaction.addTag('action', "DELETE");
+    } else {
+        transaction.addTag('action', "UNDELETE");
+    }
+
+    await arweave.transactions.sign(transaction, wallet_jwk);
+
+    const response = await arweave.transactions.post(transaction);
+} 
+
+export const getPersistenceRecords = () => {
+
 }
