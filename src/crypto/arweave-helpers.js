@@ -33,6 +33,7 @@ import {
     decryptFile,
     encryptDataWithRSAKey
 } from './files';
+import { GetDeletedFiles, GetSyncedFileBy } from '../../dist/db/helpers';
 
 export const arweave = Arweave.init(settings.ARWEAVE_CONFIG);
 
@@ -383,8 +384,6 @@ export const getDownloadableFilesGQL = async () => {
           }
     }`;
 
-    console.log(query);
-
     const response = await axios.post(settings.GRAPHQL_ENDPOINT, {
         operationName: null,
         query: query,
@@ -392,7 +391,7 @@ export const getDownloadableFilesGQL = async () => {
     });
 
     if(response.status == 200) {
-        const final_rows = [];
+        const available_rows = [];
 
         for(let i in response.data.data.transactions.edges) {
             const row = response.data.data.transactions.edges[i].node;
@@ -401,23 +400,79 @@ export const getDownloadableFilesGQL = async () => {
 
             for(let i in row.tags) {
                 const tag = row.tags[i];
-                row[tag.name] = tag.value;
+
+                if(tag.name == 'version' || tag.name == 'modified') {
+                    row[tag.name] = parseInt(tag.value);
+                } else {
+                    row[tag.name] = tag.value;
+                }
             }
 
             let found = false;
-            for(let j in final_rows) {
-                const final_row = final_rows[j];
+            for(let j in available_rows) {
+                const final_row = available_rows[j];
 
                 if(final_row.path == row.path && row.modified > final_row.modified) {
                     found = true;
-                    final_rows[j] = row;
+                    available_rows[j] = row;
                 }
             }
 
             if(!found) {
-                final_rows.push(row);
+                available_rows.push(row);
             }
         }
+
+        const final_rows = [];
+
+        const persistence_records = await getPersistenceRecords();
+        const deleted_files = GetDeletedFiles();
+
+        available_rows.forEach(available_row => {
+            available_row['action'] = 'download';
+
+            const synced_file = GetSyncedFileBy({file: available_row.file});
+            if(synced_file) {
+                if(available_row.modified > parseInt(synced_file.modified)) {
+                    if(available_row.CRC != synced_file.CRC) {
+                        const deleted_matches = deleted_files.filter(df => df.action_tx_id == available_row.id);
+                        const persistence_matches = persistence_records.filter(pr => pr.id == available_row.id);
+
+                        let current_persistence_state = 'available';
+
+                        persistence_matches.forEach(pm => {
+                            if(pm.action == 'delete') {
+                                current_persistence_state = 'deleted';
+                            } else {
+                                current_persistence_state = 'available';
+                            }
+                        });
+
+                        if(deleted_matches.length == 0 && current_persistence_state == 'available') {
+                            final_rows.push(available_row);
+                        }                        
+                    } 
+                }
+            } else {
+                const deleted_matches = deleted_files.filter(df => df.action_tx_id == available_row.id);
+                const persistence_matches = persistence_records.filter(pr => pr.id == available_row.id);
+
+                let current_persistence_state = 'available';
+
+                persistence_matches.forEach(pm => {
+                    if(pm.action == 'delete') {
+                        current_persistence_state = 'deleted';
+                    } else {
+                        current_persistence_state = 'available';
+                    }
+                });
+
+                if(deleted_matches.length == 0 && current_persistence_state == 'available') {
+                    final_rows.push(available_row);
+                }      
+            }
+            
+        });
 
         return final_rows;
     }
@@ -632,22 +687,94 @@ export const fileExistsOnTheBlockchain = async (file_info) => {
     return existing;
 }
 
-export const createPersistenceRecord = (synced_file, deleted) => {
+export const getOnlineVersions = async (file_info) => {
+    const wallet_file = walletFileSet();
+
+    if(!wallet_file || wallet_file.length == 0) return [];
+
+    const jwk = getJwkFromWalletFile(wallet_file);
+
+    const windows = settings.PLATFORM === "win32";
+
+    const address = await arweave.wallets.jwkToAddress(jwk);
+
+    const query = `{
+        transactions(
+            owners: ["${address}"],
+              tags: [
+              {
+                  name: "App-Name",
+                  values: ["${settings.APP_NAME}"]
+              },
+              {
+                name: "file",
+                values: ["${file_info.file}"]
+              }
+              ]	) {
+              edges {
+                  node {
+                    id
+                    tags {
+                        name
+                        value
+                    }
+                  }
+              }
+          }
+    }`;
+
+    const response = await axios.post(settings.GRAPHQL_ENDPOINT, {
+        operationName: null,
+        query: query,
+        variables: {}
+    });
+
+    if(response.status == 200) {
+        const final_rows = [];
+
+        for(let i in response.data.data.transactions.edges) {
+            const row = response.data.data.transactions.edges[i].node;
+
+            row['action'] = 'download';
+
+            for(let i in row.tags) {
+                const tag = row.tags[i];
+                if(tag.name == 'version' || tag.name == 'modified') {
+                    row[tag.name] = parseInt(tag.value);
+                } else {
+                    row[tag.name] = tag.value;
+                }
+                
+            }
+
+            final_rows.push(row);
+        }
+
+        return final_rows;
+    }
+    
+    return null; // if nothing is returned 
+}
+
+export const createPersistenceRecord = async (synced_file, deleted) => {
     const wallet_file = walletFileSet();
 
     if(!wallet_file || wallet_file.length == 0) return;
 
     const wallet_jwk = getJwkFromWalletFile(wallet_file);
 
-    const transaction = await arweave.createTransaction({}, wallet_jwk);
+    debugger;
+
+    const transaction = await arweave.createTransaction({data:'PERSISTENCE_RECORD'}, wallet_jwk);
 
     transaction.addTag('App-Name', settings.APP_NAME);
-    transaction.addTag('Content-Type', mime.lookup(synced_file.file));
+    transaction.addTag('Content-Type', 'PERSISTENCE');
     transaction.addTag('file', synced_file.file.replace(/([^:])(\/\/+)/g, '$1/'));
     transaction.addTag('path', synced_file.path.replace(/([^:])(\/\/+)/g, '$1/'));
     transaction.addTag('modified', synced_file.modified);
     transaction.addTag('hostname', synced_file.hostname);
     transaction.addTag('version', synced_file.version);
+    transaction.addTag('tx_id', synced_file.tx_id);
     
     if(deleted) {
         transaction.addTag('action', "DELETE");
@@ -658,8 +785,148 @@ export const createPersistenceRecord = (synced_file, deleted) => {
     await arweave.transactions.sign(transaction, wallet_jwk);
 
     const response = await arweave.transactions.post(transaction);
+
+    if(response.status == 200) {
+        return transaction.id;
+    }
+    
+    return null;
 } 
 
-export const getPersistenceRecords = () => {
+export const getPersistenceRecords = async () => {
+    const wallet_file = walletFileSet();
 
+    if(!wallet_file || wallet_file.length == 0) return [];
+
+    const jwk = getJwkFromWalletFile(wallet_file);
+
+    const address = await arweave.wallets.jwkToAddress(jwk);
+
+    const query = `{
+        transactions(
+            owners: ["${address}"],
+              tags: [
+              {
+                  name: "App-Name",
+                  values: ["${settings.APP_NAME}"]
+              },
+              {
+                name: "Content-Type",
+                values: ["PERSISTENCE"]
+              }
+              ]	) {
+              edges {
+                  node {
+                    id
+                    tags {
+                        name
+                        value
+                    }
+                  }
+              }
+          }
+    }`;
+
+    const response = await axios.post(settings.GRAPHQL_ENDPOINT, {
+        operationName: null,
+        query: query,
+        variables: {}
+    });
+
+    if(response.status == 200) {
+        const final_rows = [];
+
+        for(let i in response.data.data.transactions.edges) {
+            const row = response.data.data.transactions.edges[i].node;
+
+            
+
+            for(let i in row.tags) {
+                const tag = row.tags[i];
+                if(tag.name == 'version' || tag.name == 'modified') {
+                    row[tag.name] = parseInt(tag.value);
+                } else {
+                    row[tag.name] = tag.value;
+                }
+                if(tag.name == 'action') {
+                    row['action'] = tag.value == 'DELETE' ? 'delete' : 'download';
+                }
+            }
+
+            final_rows.push(row);
+        }
+
+        return final_rows;
+    }
+}
+
+export const getPersistenceRecordsFor = async (file_path) => {
+    const wallet_file = walletFileSet();
+
+    if(!wallet_file || wallet_file.length == 0) return [];
+
+    const jwk = getJwkFromWalletFile(wallet_file);
+
+    const address = await arweave.wallets.jwkToAddress(jwk);
+
+    const query = `{
+        transactions(
+            owners: ["${address}"],
+              tags: [
+              {
+                  name: "App-Name",
+                  values: ["${settings.APP_NAME}"]
+              },
+              {
+                name: "Content-Type",
+                values: ["PERSISTENCE"]
+              },
+              {
+                  name: "file".
+                  values: ["${file_path}"]
+              }
+              ]	) {
+              edges {
+                  node {
+                    id
+                    tags {
+                        name
+                        value
+                    }
+                  }
+              }
+          }
+    }`;
+
+    const response = await axios.post(settings.GRAPHQL_ENDPOINT, {
+        operationName: null,
+        query: query,
+        variables: {}
+    });
+
+    if(response.status == 200) {
+        const final_rows = [];
+
+        for(let i in response.data.data.transactions.edges) {
+            const row = response.data.data.transactions.edges[i].node;
+
+            
+
+            for(let i in row.tags) {
+                const tag = row.tags[i];
+                if(tag.name == 'version' || tag.name == 'modified') {
+                    row[tag.name] = parseInt(tag.value);
+                } else {
+                    row[tag.name] = tag.value;
+                }
+                if(tag.name == 'action') {
+                    row['action'] = tag.value == 'DELETE' ? 'delete' : 'download';
+                }
+            }
+
+            final_rows.push(row);
+        }
+
+        return final_rows;
+    }
 }

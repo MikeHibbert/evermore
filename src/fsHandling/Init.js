@@ -20,7 +20,10 @@ import {
     GetProposedFileBy,
     GetSyncedFolders,
     AddPendingFile,
-    RemoveProposedFile
+    RemoveProposedFile,
+    GetDeletingFiles,
+    UpdatePersistenceID,
+    RemovePersistenceRecord
 } from '../db/helpers';
 import { 
     uploadFile, 
@@ -31,26 +34,21 @@ import {
     fileExistsOnTheBlockchain,
     getTransactionWithTags
 } from '../crypto/arweave-helpers';
-import {convertProposedToInfos, getSystemPath} from './helpers';
-import openSyncSettingsDialog, {refreshSyncSettingsDialog} from '../ui/SyncSettingsDialog';
+import {convertDatabaseRecordToInfos, getSystemPath} from './helpers';
+import {openReviewSyncDialog, refreshReviewSyncDialog, processToQueues} from '../ui/ReviewSyncDialog';
 import { settings } from '../config';
 import { sendMessage } from '../integration/server';
-import { nextTick } from 'process';
+import { nextTick, report } from 'process';
+import { mergePathInfos } from '../../dist/fsHandling/helpers';
+import { GetDeletedFiles, GetDownloads, walletFileSet } from '../../dist/db/helpers';
+import { createPersistenceRecord, getPersistenceRecords } from '../../dist/crypto/arweave-helpers';
+import { resolve } from 'path';
 
 export const OnFileWatcherReady = () => {
     console.log('Initial scan complete. Ready for changes');
 
-    const pending_files = GetNewPendingFiles();
-
-    if(pending_files.length > 0) {
-        notifier.notify({
-            title: 'Evermore Datastore',
-            icon: settings.NOTIFY_ICON_PATH,
-            message: `${pending_files.length} have been added to the upload queue.`
-        });
-    }
-
     const syncing = GetSyncStatus();
+
     if(syncing) {
         startSyncProcessing();
     }  
@@ -59,25 +57,58 @@ export const OnFileWatcherReady = () => {
 }
 
 let pending_transaction_confirmation_checking_interval = null
-const startPendingTrasactionConfirmation = () => {
+const startPendingTrasactionConfirmation = async () => {
     const pending_files = GetNewPendingFiles();
 
     if(pending_files.length > 0) {
         processAllPendingTransactions(pending_files);
     }
 
-    pending_transaction_confirmation_checking_interval = setInterval(() => {
+    const presistence_records = await GetDeletedFiles();
+
+    presistence_records.forEach(async pr => {
+        const response = await getTransactionStatus(pr.action_tx_id);
+
+        if(response.status == 200 && response.confirmed.number_of_confirmations > 3) {
+            RemovePersistenceRecord(pr.action_tx_id);
+        }
+    });
+
+    pending_transaction_confirmation_checking_interval = setInterval(async () => {
         const pending_files = GetPendingFilesWithTransactionIDs();
 
         if(pending_files.length > 0) {
             processAllPendingTransactions(pending_files);
         }
+
+        const presistence_records = await GetDeletedFiles();
+
+        presistence_records.forEach(async pr => {
+            const response = await getTransactionStatus(pr.action_tx_id);
+
+            if(response.status == 200 && response.confirmed.number_of_confirmations > 3) {
+                RemovePersistenceRecord(pr.action_tx_id);
+            }
+        });
     }, 1 * 60 * 1000); // check them every 10 mins
 }
 
 const processAll = () => {
     checkPendingFilesStatus();
-    processAllOutstandingUploads();
+
+    processAllOutstandingUploadsAndActions();
+
+    const deleted_file_actions = GetDeletedFiles();
+
+    processAllDeleteActions(deleted_file_actions);
+
+    const pending_files = GetNewPendingFiles();
+
+    processAllPendingFiles(pending_files);
+
+    const downloads = GetDownloads();
+
+    processAllDownloads(downloads);
 }
 
 let sync_processing_interval = null;
@@ -139,7 +170,7 @@ const checkPendingFilesStatus = () => {
     }
 }
 
-const processAllOutstandingUploads = async () => {
+const processAllOutstandingUploadsAndActions = async () => {
     const uploaders = GetUploaders();
 
     for(let i in uploaders) {
@@ -173,19 +204,19 @@ const processAllOutstandingUploads = async () => {
     //     });
     // }
     
-    const syncable_files = getAllSyncableFiles();
+    const syncable_files = await getAllSyncableFiles();
 
-    if(syncable_files.length > 0) {
+    if(syncable_files[''].children.length > 0) {
         const minutes = GetSyncFrequency();
         notifier.notify({
             title: 'Evermore Datastore',
             icon: settings.NOTIFY_ICON_PATH,
-            message: `${syncable_files.length} files have been queued for sync in the last ${minutes} minutes. Would like to review them now?`,
+            message: `${syncable_files[''].children.length} files have been queued for sync in the last ${minutes} minutes. Would like to review them now?`,
             actions: ['Review', 'Postpone']
         });
 
         notifier.on('review', () => {
-            prepareProposedFiles(syncable_files);
+            prepareSyncDialogResponse(syncable_files);
         });
 
         notifier.on('postpone', () => {
@@ -200,31 +231,53 @@ const processAllOutstandingUploads = async () => {
     }
 }
 
-const getAllSyncableFiles = () => {
+const getAllSyncableFiles = async () => {
     const proposed_files = GetAllProposedFiles();
     proposed_files.forEach(pf => {
         pf['action'] = 'upload';
     });
-    const downloadable_files = getDownloadableFilesGQL();
 
+    const sync_folder = GetSyncedFolders()[0];
 
+    let syncable_files = convertDatabaseRecordToInfos(sync_folder, proposed_files)
+
+    const downloadable_files = await getDownloadableFilesGQL();
+
+    if(downloadable_files.length > 0) {
+        syncable_files = mergePathInfos(convertDatabaseRecordToInfos(sync_folder, downloadable_files)[''], syncable_files['']);
+    }
+
+    const deleting_files = GetDeletingFiles();
+
+    if(deleting_files.length > 0) {
+        deleting_files.forEach(pf => {
+            pf['action'] = 'delete';
+        });
+        syncable_files = mergePathInfos(convertDatabaseRecordToInfos(sync_folder, deleting_files)[''], syncable_files['']);
+    }
+
+    return syncable_files;
 }
 
 let sync_settings_dialog_open = false;
-const prepareProposedFiles = (proposed_files) => {
-    const sync_folders = GetSyncedFolders();
-
-    const path_infos = convertProposedToInfos(sync_folders[0], proposed_files, true);
-
+const prepareSyncDialogResponse = (path_infos) => {
     pauseSyncProcessing();
 
     if(sync_settings_dialog_open) {
-        refreshSyncSettingsDialog(path_infos[''], (path_infos_to_be_synced) => {
-            addPathInfosToPending(path_infos_to_be_synced);
+        refreshReviewSyncDialog(path_infos[''], (path_infos_to_be_synced) => {
+            processToQueues(path_infos_to_be_synced);
+
+            const deleted_file_actions = GetDeletedFiles();
+
+            processAllDeleteActions(deleted_file_actions);
 
             const pending_files = GetNewPendingFiles();
 
             processAllPendingFiles(pending_files);
+
+            const downloads = GetDownloads();
+
+            processAllDownloads(downloads);
 
             unpauseSyncProcessing();
             sync_settings_dialog_open = false;
@@ -235,12 +288,22 @@ const prepareProposedFiles = (proposed_files) => {
         });
     } else {
         sync_settings_dialog_open = true;
-        openSyncSettingsDialog(path_infos[''], (path_infos_to_be_synced) => {
-            addPathInfosToPending(path_infos_to_be_synced);
+        openReviewSyncDialog(path_infos[''], (path_infos_to_be_synced) => {
+            debugger;
+
+            processToQueues(path_infos_to_be_synced);
+
+            const deleted_file_actions = GetDeletedFiles();
+
+            processAllDeleteActions(deleted_file_actions);
 
             const pending_files = GetNewPendingFiles();
 
             processAllPendingFiles(pending_files);
+
+            const downloads = GetDownloads();
+
+            processAllDownloads(downloads);
 
             unpauseSyncProcessing();
             sync_settings_dialog_open = false;
@@ -300,6 +363,26 @@ const processAllPendingFiles = async (pending_files) => {
             message: `${pending_files.length} have been uploaded and will be mined sortly.`
         });
     }     
+}
+
+const processAllDeleteActions = async (deleted_files) => {
+    deleted_files.forEach(async df => {
+        if(!df.action_tx_id) {
+            const tx_id = await createPersistenceRecord(df, true);
+
+            UpdatePersistenceID(df.file, tx_id);
+        }        
+    });
+}
+
+const processAllDownloads = (downloads) => {
+    const wallet = walletFileSet();
+
+    if(wallet) {
+        downloads.forEach(download => {
+            debugger;
+        });
+    }    
 }
 
 const processAllPendingTransactions = async (pending_files) => {

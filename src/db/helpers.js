@@ -43,6 +43,11 @@ export function InitDB() {
         db.set('deleting', []).write();
     }
 
+    const deleted = db.has('deleted').value();
+    if(deleted === false) {
+        db.set('deleted', []).write();
+    }
+
     const synced_files = db.has('synced_files').value();
     if(synced_files === false) {
         db.set('synced_files', []).write();
@@ -412,34 +417,6 @@ export const ConfirmSyncedFileFromTransaction = (file_path, transaction) => {
     db.get('pending').remove({tx_id: transaction.id}).write();
 }
 
-export const DeleteSyncedFile = (tx_id) => {
-    if(!db) {
-        InitDB();
-    }
-
-    const synced_file = db.get('synced_files').find({tx_id: tx_id}).value();
-    
-    db.get('deleting')
-            .push(synced_file)
-            .write();   
-
-    db.get('synced_files').remove({tx_id: tx_id}).write();
-}
-
-export const UndeleteSyncedFile = (tx_id) => {
-    if(!db) {
-        InitDB();
-    }
-
-    const synced_file = db.get('deleting').find({tx_id: tx_id}).value();
-
-    db.get('synced_files')
-            .push(synced_file)
-            .write();   
-
-    db.get('deleting').remove({tx_id: tx_id}).write();
-}
-
 export const GetSyncedFiles = () => {
     if(!db) {
         InitDB();
@@ -478,6 +455,93 @@ export const GetSyncedFileFromPathAndModified = (file_path, modified) => {
     }
 
     return db.get('synced_files').find({path: file_path, modified: modified}).value();
+}
+
+export const DeleteSyncedFile = (tx_id) => {
+    if(!db) {
+        InitDB();
+    }
+
+    const synced_file = db.get('synced_files').find({tx_id: tx_id}).value();
+    
+    db.get('deleting')
+            .push(synced_file)
+            .write();   
+
+    db.get('synced_files').remove({tx_id: tx_id}).write();
+}
+
+export const UndeleteSyncedFile = (tx_id) => {
+    if(!db) {
+        InitDB();
+    }
+
+    const synced_file = db.get('deleting').find({tx_id: tx_id}).value();
+
+    db.get('synced_files')
+            .push(synced_file)
+            .write();   
+
+    db.get('deleting').remove({tx_id: tx_id}).write();
+}
+
+export const ConfirmDeletedFile = (tx_id) => {
+    if(!db) {
+        InitDB();
+    }
+
+    const file_to_delete = db.get('deleting').find({tx_id: tx_id}).value();
+
+    file_to_delete['action_tx_id'] = null;
+    
+    db.get('deleted')
+            .push(file_to_delete)
+            .write();   
+
+    db.get('deleting').remove({tx_id: tx_id}).write();
+}
+
+export const UpdatePersistenceID = (file, tx_id) => {
+    if(!db) {
+        InitDB();
+    }
+
+    db.get('deleted')
+        .find({file: file})
+        .assign({action_tx_id: tx_id})
+        .write();
+}
+
+export const RemovePersistenceRecord = (action_tx_id) => {
+    if(!db) {
+        InitDB();
+    }  
+
+    db.get('deleted').remove({action_tx_id: action_tx_id}).write();
+}
+
+export const GetDeletedFileFromPath = (path) => {
+    if(!db) {
+        InitDB();
+    }
+
+    return db.get('deleting').find({path: path}).value();
+}
+
+export const GetDeletingFiles = () => {
+    if(!db) {
+        InitDB();
+    }
+
+    return db.get('deleting').value();
+}
+
+export const GetDeletedFiles = () => {
+    if(!db) {
+        InitDB();
+    }
+
+    return db.get('deleted').value();
 }
 
 export const AddFileToDownloads = (file_info) => {

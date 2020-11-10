@@ -10,7 +10,11 @@ import {
     CheckState,
 } from "@nodegui/nodegui";
 import path from "path";
+import DeleteFile from "../../dist/fsHandling/DeleteFile";
+import {compareLocalFileInfoWithOnlineFileInfo} from '../fsHandling/helpers';
+import {getOnlineVersions} from '../crypto/arweave-helpers';
 import {settings} from '../config';
+import { ConfirmDeletedFile, AddFileToDownloads, AddPendingFile, RemoveProposedFile } from "../db/helpers";
 
 export const USER_DATA_ROLE = 20;
 
@@ -42,7 +46,7 @@ export const refreshReviewSyncDialog = (path_infos, saveCallback, cancelCallback
   openReviewSyncDialog(path_infos, saveCallback, cancelCallback);
 }
 
-const openReviewSyncDialog = (path_infos, saveCallback, cancelCallback) => {
+export const openReviewSyncDialog = (path_infos, saveCallback, cancelCallback) => {
     const syncWin = new QMainWindow();
     main_win = syncWin;
 
@@ -219,5 +223,49 @@ const createFolderItems = (path_info, tree, window, root, parent) => {
         }
     }
 
-return parent;
+  return parent;
+}
+
+
+export const processToQueues = (path_infos) => {
+  path_infos.children.forEach(file_info => {
+    if(file_info.type == 'folder') {
+        configureWithPathsFromInfo(file_info);
+    } else {
+        if(file_info.checked) {
+            addToQueue(file_info);
+        }            
+    }
+  });
+}
+
+export const addToQueue = async (file_info) => {
+  switch(file_info.action) {
+    case "download":
+      AddFileToDownloads(file_info)
+      break;
+    case "delete":
+      ConfirmDeletedFile(file_info.tx_id);
+      break;
+    case "upload":
+      const online_versions = await getOnlineVersions(file_info);
+      if(online_versions.length == 0) {
+          AddPendingFile(null, file_info.path, file_info.version);
+      } else {
+          online_versions.sort((a, b) => a.modified - b.modified);
+
+          const online_version = online_versions[online_versions.length - 1];
+
+          if(file_info.version <= online_version.version) {
+            AddPendingFile(null, file_info.path, online_version.version + 1);
+          } else {
+            AddPendingFile(null, file_info.path, file_info.version);
+          }
+          
+      }
+
+      debugger;
+      RemoveProposedFile(file_info.path);
+      break;
+  }
 }

@@ -203,11 +203,11 @@ export const convertPathsToInfos = (sync_folder, file_paths, is_root) => {
     return folders;
 }
 
-export const convertProposedToInfos = (sync_folder, proposed_file_paths, is_root) => {
+export const convertDatabaseRecordToInfos = (sync_folder, database_file_paths, is_root) => {
     const folders = {'':{ index: -1, id: "root", type: "folder", name: '', children: []}, checked: true};
-    
-    for(let i in proposed_file_paths) {
-        const proposed_file = proposed_file_paths[i];
+
+    for(let i in database_file_paths) {
+        const proposed_file = database_file_paths[i];
         const path_type = 'file'; 
 
         try {
@@ -216,7 +216,14 @@ export const convertProposedToInfos = (sync_folder, proposed_file_paths, is_root
             }
         } catch(e) {}
 
-        const file_info = { path: path.normalize(proposed_file.path.replace(sync_folder, '')), children: [], type: path_type, checked: true };
+        const file_info = { 
+            path: path.normalize(proposed_file.path.replace(sync_folder, '')), 
+            tx_id: proposed_file.hasOwnProperty('tx_id') ? proposed_file.tx_id : null,
+            children: [], type: path_type, checked: true };
+
+        if(proposed_file.hasOwnProperty('action')) {
+            file_info['action'] = proposed_file.action;
+        }
 
         let path_parts = [];
         if(file_info.path.indexOf('\\') != -1) {
@@ -308,7 +315,7 @@ export const diffPathInfos = (a, b, root) => {
     }   
 }
 
-export const mergePathInfos = (from, to, root) => {
+export const mergePathInfos = (from, to, root=true) => {
     if(root) {
         const root_info = {'':{ index: -1, id: "root", type: "folder", name: '', children: []}};
 

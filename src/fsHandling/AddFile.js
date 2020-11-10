@@ -5,7 +5,9 @@ import {
     GetSyncedFileBy, 
     ConfirmSyncedFileFromTransaction,
     GetExclusions,
-    GetSyncedFileFromPathAndModified
+    GetSyncedFileFromPathAndModified,
+    GetDeletedFileFromPath, 
+    UndeleteSyncedFile
 } from '../db/helpers';
 import path from 'path';
 import regeneratorRuntime from "regenerator-runtime";
@@ -24,6 +26,13 @@ const fileAddedHandler = (file_path) => {
     }
 
     console.log(`File ${file_path} has been added`);
+
+    const deleted_file = GetDeletedFileFromPath(file_path);
+
+    if(deleted_file) {
+        UndeleteSyncedFile(deleted_file.tx_id);
+        return;
+    }
     
     getDownloadableFilesGQL().then(async downloadable_files => {
         const new_file_modified = getFileUpdatedDate(file_path);

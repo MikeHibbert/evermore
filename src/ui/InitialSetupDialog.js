@@ -18,6 +18,7 @@ import {
     AddSyncedFolder, 
     AddPendingFile
 } from '../db/helpers';
+import {getOnlineVersions} from '../crypto/arweave-helpers';
 import {InitFileWatcher} from '../fsHandling/Init';
 import {
     getOfflineFilesAndFoldersStructure,
@@ -361,8 +362,6 @@ export const selectFileCallback = (code, retVal, stderr) => {
 }
 
 export const configureWithPathsFromInfo = (path_info) => {
-    const paths = [];
-
     path_info.children.forEach(pi => {
         if(pi.type == 'folder') {
             configureWithPathsFromInfo(pi);
