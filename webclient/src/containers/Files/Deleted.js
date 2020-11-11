@@ -1,9 +1,9 @@
 import React, {Component} from 'react';
-import FileTableRow from '../../components/Files/FileTableRow';
 import FolderTableRow from '../../components/Files/FolderTableRow';
+import DeletedFileTableRow from '../../components/Files/DeletedFileTableRow';
 import settings from '../../app-config';
 import arweave from '../../arweave-config';
-import {SaveUploader, RemoveUploader} from './helpers';
+import {SaveUploader, RemoveUploader, convertPersistenceRecordsToDeletedFileInfos} from './helpers';
 
 
 const UploaderProgressBar = (props) => {
@@ -17,7 +17,7 @@ const UploaderProgressBar = (props) => {
 } 
 
 
-class FoldersView extends Component {
+class DeletedView extends Component {
     state = {
         folder_name: "",
         paths: null,
@@ -81,6 +81,7 @@ class FoldersView extends Component {
 
     createRows(file_info, file_rows, folder_rows) {
         if(this.state.folder_name == file_info.name) {
+            
             if(file_info.children.length > 0) {
                 for(let i in file_info.children) {
                     const path = file_info.children[i];
@@ -91,7 +92,7 @@ class FoldersView extends Component {
                         );
                     } else {
                         file_rows.push(
-                            <FileTableRow file_info={path} key={i} />
+                            <DeletedFileTableRow file_info={path} key={i} wallet_jwk={this.props.jwk}/>
                         );
                     }
                 }   
@@ -130,8 +131,10 @@ class FoldersView extends Component {
         const file_rows = [];
         const folder_rows = [];
 
-        if(this.props.files != null) {
-            this.createRows(this.props.files[""], file_rows, folder_rows);
+        if(this.props.persistence_records != null) {
+            const deleted_files = convertPersistenceRecordsToDeletedFileInfos(this.props.persistence_records);
+            
+            this.createRows(deleted_files[''], file_rows, folder_rows);
         }
 
         
@@ -153,7 +156,7 @@ class FoldersView extends Component {
 							<div className="portlet">
 
 								<div className="portlet-header border-bottom">
-									<span>Your Files</span>
+									<span>Deleted Files</span>
 								</div>
 
 								<div className="portlet-body">
@@ -222,4 +225,4 @@ class FoldersView extends Component {
     }
 }
 
-export default FoldersView;
+export default DeletedView;

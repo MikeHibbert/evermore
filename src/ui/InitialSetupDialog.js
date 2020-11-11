@@ -8,7 +8,7 @@ import {
     QLineEdit,
     FlexLayout,
     QApplication,
-    QClipboardMode,
+    QFileDialog,
     QLabel,
     QPixmap, QIcon
 } from "@nodegui/nodegui";
@@ -176,14 +176,26 @@ const doSetupStageTwo = (oldSystray) => {
     setupRootView.layout.addWidget(label);
 
     createSetupStageTwoActionsRow(setupRootView, oldSystray, function() {
-        dialog.fileselect(
-            "Please select a wallet file to begin saving your data.",
-            "Please select a wallet file to begin saving your data.", 
-            0, 
-            selectFileCallback
-        );   
-
         setupWin.hide();
+
+        const fileDialog = new QFileDialog();
+        fileDialog.setFileMode(0);
+        fileDialog.setNameFilter('Wallet File (*.json)');
+        fileDialog.exec();
+
+        const selectedFiles = fileDialog.selectedFiles(); 
+
+        selectFileCallback(selectedFiles[0]);
+
+        const folderDialog = new QFileDialog();
+        folderDialog.setFileMode(2);
+        folderDialog.exec();
+
+        const selectedFolders = folderDialog.selectedFiles(); 
+
+        debugger;
+
+        selectFolderCallback(selectedFolders[0]);  
         
     });
 
@@ -301,7 +313,7 @@ const createSetupStageThreeActionsRow = (win, setupRootView, oldSystray, nextCal
     setupRootView.layout.addWidget(actions);
 }
 
-export const selectFolderCallback = (code, retVal, stderr) => {
+export const selectFolderCallback = (retVal) => {
 
     if(retVal.length == 0) {
         setupWin.show();
@@ -341,7 +353,7 @@ const createDefaultEvermoreFolders = (sync_folder) => {
     }
 }
 
-export const selectFileCallback = (code, retVal, stderr) => {   
+export const selectFileCallback = (retVal) => {   
     if(retVal.length == 0) {
         setupWin.show();
         doSetupStageTwo(null);
@@ -350,25 +362,18 @@ export const selectFileCallback = (code, retVal, stderr) => {
     const path = retVal.replace('\r\n', '');
 
     setWalletFilePath(path);
-
-    dialog.folderselect(
-        "Please select the folder you would like to backup",
-        "Please select the folder you would like to backup", 
-        0, 
-        selectFolderCallback
-    );
-
-    // console.log("return value = <" + path + ">");
 }
 
 export const configureWithPathsFromInfo = (path_info) => {
-    path_info.children.forEach(pi => {
+    path_info.children.forEach(async pi => {
         if(pi.type == 'folder') {
             configureWithPathsFromInfo(pi);
         } else {
             if(pi.checked) {
-                const online_versions = getOnlineVersions(pi);
-                if(!online_versions) {
+                const online_versions = await getOnlineVersions(pi);
+
+                debugger;
+                if(online_versions.length == 0) {
                     AddPendingFile(null, pi.path, 1);
                 } else {
                     online_versions.sort((a, b) => a.modified - b.modified);

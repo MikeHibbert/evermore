@@ -48,24 +48,14 @@ export const getFiles = async (address) => {
         },
         expr2: {
             op: "equals",
-            expr1: "App",
+            expr1: "App-Name",
             expr2: settings.APP_NAME
         }
     });
 
-    const sw_tx_ids = await arweave.arql({
-        op: "equals",
-        expr1: "App-Name",
-        expr2: "SmartWeaveContract"
-    });
-    
-    const contracts = sw_tx_ids.slice(0, 20);
+    console.log(settings.APP_NAME);
 
-    // const txs = ['1TFZeEewEgUpqT5i2dsZSIRKJq3h1C7ZVi-gE8G-W6U']; 
-
-    debugger;
-
-    const tx_rows = await Promise.all(contracts.map(async (tx_id) => {
+    let tx_rows = await Promise.all(tx_ids.map(async (tx_id) => {
     
         let tx_row = {id: tx_id};
         
@@ -86,32 +76,39 @@ export const getFiles = async (address) => {
         return tx_row
     }));
 
-    debugger;
+    tx_rows = createRecentFilesCollection(tx_rows);
 
     const final_rows = [];
-    const folders = {};    
+    const folders = {"": {children:[]}};    
 
     for(let i in tx_rows) {
         const file_info = tx_rows[i];
-        const in_final_rows = final_rows.filter((row) => row.path === file_info.path);
+        const child_matches = folders[''].children.filter((row) => row.file === file_info.file);
 
-        let path_parts = [];
-        if(file_info.path.indexOf('\\') != -1) {
-            path_parts = file_info.path.split('\\')
-        } 
+        debugger;
 
-        if(file_info.path.indexOf('/') != -1) {
-            path_parts = file_info.path.split('/')
-        }
-        
-        if(path_parts.length > 1) {
-            if(folders.hasOwnProperty(path_parts[0])) {
-                addToFolderchildren(path_parts, 0, file_info, folders[path_parts[0]], 0);                
-            } else {
-                folders[path_parts[0]] = createRootFolder(path_parts, 0, file_info);
+        if(child_matches.length == 0) {
+            let path_parts = [];
+            if(file_info.path.indexOf('\\') != -1) {
+                path_parts = file_info.file.split('\\')
+            } 
+
+            if(file_info.path.indexOf('/') != -1) {
+                path_parts = file_info.file.split('/')
             }
             
-        }      
+            if(path_parts.length > 1) {
+                if(folders.hasOwnProperty(path_parts[0])) {
+                    addToFolderchildren(path_parts, 0, file_info, folders[path_parts[0]], 0);                
+                } else {
+                    folders[path_parts[0]] = createRootFolder(path_parts, 0, file_info);
+                }
+                
+            }  
+        } else {
+
+        }
+            
     }
 
     if(!folders.hasOwnProperty("")) {
@@ -119,6 +116,292 @@ export const getFiles = async (address) => {
     }
 
     return folders;
+}
+
+const createRecentFilesCollection = (tx_rows) => {
+    const collection = {};
+
+    tx_rows.forEach(tx_row => {
+        const in_collection = collection.hasOwnProperty(tx_row.file);
+
+        if(!in_collection) {
+            collection[tx_row.file] = tx_row;
+        } else {
+            const collect_version = collection[tx_row.file];
+            if(collect_version.modified < tx_row.modified) {
+                collection[tx_row.file] = tx_row;
+            }
+        }
+    })
+
+    const final_rows = [];
+    Object.keys(collection).forEach(key => {
+        final_rows.push(collection[key]);
+    });
+
+    return final_rows;
+}
+
+export const getDownloadableFilesGQL = async (address) => {
+    let hasNextPage = true;
+    let cursor = '';
+    let available_rows = [];
+
+    const folders = {"": {children:[]}}; 
+    folders[""] = {name: "", children: [], index: 0, type: "folder"};
+
+    while(hasNextPage) {
+        const query = `{
+            transactions(
+                first: 100
+                owners: ["${address}"]
+                tags: [
+                {
+                    name: "App-Name",
+                    values: ["${settings.APP_NAME}"]
+                }
+                ]
+                after: "${cursor}"
+                ) {
+                pageInfo {
+                    hasNextPage
+                }
+                edges {
+                    cursor
+                    node {
+                        id
+                        tags {
+                            name
+                            value
+                        }
+                    }
+                }
+                
+              }
+        }`;
+    
+        const response = await arweave.api.request().post(settings.GRAPHQL_ENDPOINT, {
+            operationName: null,
+            query: query,
+            variables: {}
+        });
+    
+        
+    
+        if(response.status == 200) {
+            for(let i in response.data.data.transactions.edges) {
+                const row = response.data.data.transactions.edges[i].node;
+    
+                row['action'] = 'download';
+    
+                for(let i in row.tags) {
+                    const tag = row.tags[i];
+    
+                    if(tag.name == 'version' || tag.name == 'modified') {
+                        row[tag.name] = parseInt(tag.value);
+                    } else {
+                        row[tag.name] = tag.value;
+                    }
+                }
+    
+                if(row['Content-Type'] == "PERSISTENCE") continue;
+    
+                let found = false;
+                for(let j in available_rows) {
+                    const final_row = available_rows[j];
+    
+                    if(final_row.path == row.path && row.modified > final_row.modified) {
+                        found = true;
+                        available_rows[j] = row;
+                    }
+                }
+    
+                if(!found) {
+                    available_rows.push(row);
+                }
+            }
+    
+        }
+
+        hasNextPage = response.data.data.transactions.pageInfo.hasNextPage;
+    }
+    
+    available_rows = createRecentFilesCollection(available_rows);
+
+    const persistence_records = await getPersistenceRecords(address);
+
+    available_rows.forEach(available_row => {
+        const persistence_matches = persistence_records.filter(pr => pr.action_tx_id == available_row.id);
+
+        let current_persistence_state = 'available';
+
+        persistence_matches.forEach(pm => {
+            if(pm.action == 'delete') {
+                current_persistence_state = 'deleted';
+            } else {
+                current_persistence_state = 'available';
+            }
+        });
+
+        if(current_persistence_state == 'available') {
+            let path_parts = [];
+            if(available_row.file.indexOf('\\') != -1) {
+                path_parts = available_row.file.split('\\')
+            } 
+
+            if(available_row.file.indexOf('/') != -1) {
+                path_parts = available_row.file.split('/')
+            }
+            
+            if(path_parts.length > 1) {
+                if(folders.hasOwnProperty(path_parts[0])) {
+                    addToFolderchildren(path_parts, 0, available_row, folders[path_parts[0]], 0);                
+                } else {
+                    folders[path_parts[0]] = createRootFolder(path_parts, 0, available_row);
+                }
+                
+            } 
+        }    
+    });
+
+    return folders;
+}
+
+export const convertPersistenceRecordsToDeletedFileInfos = (persistence_records) => {
+
+    const folders = {"": {children:[]}}; 
+    folders[""] = {name: "", children: [], index: 0, type: "folder"};
+
+    const current_file_states = {};
+    
+    persistence_records.forEach(pr => {
+        if(current_file_states.hasOwnProperty(pr.file)) {
+            const current_file = current_file_states[pr.file];
+            if(current_file.modified < pr.modified) {
+                current_file_states[pr.file] = pr;
+            }
+        } else {
+            current_file_states[pr.file] = pr;
+        }
+    })
+    
+    Object.keys(current_file_states).forEach(key => {
+        const available_row = current_file_states[key];
+
+        if(available_row.action == 'delete') {
+            let path_parts = [];
+            if(available_row.file.indexOf('\\') != -1) {
+                path_parts = available_row.file.split('\\')
+            } 
+
+            if(available_row.file.indexOf('/') != -1) {
+                path_parts = available_row.file.split('/')
+            }
+            
+            if(path_parts.length > 1) {
+                if(folders.hasOwnProperty(path_parts[0])) {
+                    addToFolderchildren(path_parts, 0, available_row, folders[path_parts[0]], 0);                
+                } else {
+                    folders[path_parts[0]] = createRootFolder(path_parts, 0, available_row);
+                }
+                
+            } 
+        }    
+    });
+
+    return folders;
+}
+
+export const createPersistenceRecord = async (synced_file, deleted, wallet_jwk) => {
+    const transaction = await arweave.createTransaction({data:'PERSISTENCE_RECORD'}, wallet_jwk);
+
+    transaction.addTag('App-Name', settings.APP_NAME);
+    transaction.addTag('Content-Type', 'PERSISTENCE');
+    transaction.addTag('file', synced_file.file.replace(/([^:])(\/\/+)/g, '$1/'));
+    transaction.addTag('path', synced_file.path.replace(/([^:])(\/\/+)/g, '$1/'));
+    transaction.addTag('modified', synced_file.modified);
+    transaction.addTag('hostname', synced_file.hostname);
+    transaction.addTag('version', synced_file.version);
+    transaction.addTag('action_tx_id', synced_file.action_tx_id);
+    
+    if(deleted) {
+        transaction.addTag('action', "DELETE");
+    } else {
+        transaction.addTag('action', "UNDELETE");
+    }
+
+    await arweave.transactions.sign(transaction, wallet_jwk);
+
+    const response = await arweave.transactions.post(transaction);
+
+    if(response.status == 200) {
+        return transaction.id;
+    }
+    
+    return null;
+} 
+
+export const getPersistenceRecords = async (address) => {
+    const query = `{
+        transactions(
+            first: 100
+            owners: ["${address}"],
+              tags: [
+              {
+                  name: "App-Name",
+                  values: ["${settings.APP_NAME}"]
+              },
+              {
+                name: "Content-Type",
+                values: ["PERSISTENCE"]
+              }
+              ]	) {
+              edges {
+                  node {
+                    id
+                    tags {
+                        name
+                        value
+                    }
+                  }
+              }
+          }
+    }`;
+
+    const response = await arweave.api.request().post(settings.GRAPHQL_ENDPOINT, {
+        operationName: null,
+        query: query,
+        variables: {}
+    });
+
+    if(response.status == 200) {
+        const final_rows = [];
+
+        for(let i in response.data.data.transactions.edges) {
+            const row = response.data.data.transactions.edges[i].node;
+
+            
+
+            for(let i in row.tags) {
+                const tag = row.tags[i];
+                if(tag.name == 'version' || tag.name == 'modified') {
+                    row[tag.name] = parseInt(tag.value);
+                } else {
+                    if(tag.name == 'tx_id') {
+                        row['action_tx_id'] = tag.value;
+                    }
+                    row[tag.name] = tag.value;
+                }
+                if(tag.name == 'action') {
+                    row['action'] = tag.value == 'DELETE' ? 'delete' : 'download';
+                }
+            }
+
+            final_rows.push(row);
+        }
+
+        return final_rows;
+    }
 }
 
 export const SaveUploader = (uploader) => {

@@ -1,9 +1,11 @@
 import React, {Component} from 'react';
 import Moment from 'react-moment';
 import { Link } from 'react-router-dom';
+import { createPersistenceRecord } from '../../containers/Files/helpers';
 import arweave from '../../arweave-config';
+import { toast } from 'react-toastify';
 
-class FileTableRow extends Component  {
+class DeletedFileTableRow extends Component  {
     state = {
         optionsDialogCss: "dropdown-menu dropdown-menu-clean dropdown-click-ignore max-w-220",
         optionsDialogStyles: null,
@@ -57,8 +59,10 @@ class FileTableRow extends Component  {
             });
     }
 
-    archiveTransaction() {
-        
+    async archiveTransaction() {
+        await createPersistenceRecord(this.props.file_info, false, this.props.wallet_jwk);
+
+        toast(`${this.props.file_info.file} is now being unarchived and will be available to download soon.`, { type: toast.TYPE.SUCCESS }); 
     }
 
     render() {
@@ -99,19 +103,11 @@ class FileTableRow extends Component  {
                         </a>
 
                         <div className={this.state.optionsDialogCss} style={this.state.optionsDialogStyles}>
-                            
-                            <div className="scrollable-vertical max-h-50vh">
-
-                                <a className="dropdown-item text-truncate" onClick={() => { this.downloadTransaction() }}>
-                                    <i className="fa fa-download"></i>
-                                    Download
-                                </a>
-                            </div>
                             <div className="scrollable-vertical max-h-50vh">
 
                                 <a className="dropdown-item text-truncate" onClick={() => { this.archiveTransaction() }}>
                                     <i className="fa fa-download"></i>
-                                    Archive
+                                    UnArchive
                                 </a>
                             </div>
 
@@ -126,4 +122,4 @@ class FileTableRow extends Component  {
     }
 } 
 
-export default FileTableRow;
+export default DeletedFileTableRow;

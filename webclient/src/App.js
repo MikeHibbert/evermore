@@ -7,14 +7,16 @@ import Login from './components/auth/Login';
 import Logout from './components/auth/Logout';
 import RecentActivity from './containers/Files/RecentActivity';
 import FoldersView from './containers/Files/Folders';
+import DeletedView from './containers/Files/Deleted';
 import SearchPage from './containers/Search/SearchPage';
 import HomePage from './containers/Home/Hompage';
 import Downloads from './containers/Home/Downloads';
-import {getFiles} from './containers/Files/helpers';
+import {getDownloadableFilesGQL} from './containers/Files/helpers';
 import {getName} from './components/Message/helpers';
 import arweave from './arweave-config';
 import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
+import { getPersistenceRecords } from './containers/Files/helpers';
 
 class App extends Component {
   state = {
@@ -26,6 +28,7 @@ class App extends Component {
     aside_classes: "aside-start aside-primary font-weight-light aside-hide-xs d-flex flex-column h-auto",
     aside_open: false,
     files: null,
+    persistence_records: null,
     sent_messages: [],
     pending_messages: [],
     new_email_count: 0
@@ -62,8 +65,6 @@ class App extends Component {
     }
 
     const that = this;
-    
-    debugger;
     
     // this.interval = setInterval(async function() {
     //   debugger;
@@ -113,7 +114,7 @@ class App extends Component {
             that.setState(state);
         }); 
 
-        const files = await getFiles(wallet_address);
+        const files = await getDownloadableFilesGQL(wallet_address);
         
         // if(files.children.length > this.state.files.length && this.state.files.length > 0) {
         //   const new_count = files.length - this.state.files.length;
@@ -123,7 +124,11 @@ class App extends Component {
        
         // const pending_files = getPendingFiles();
         
-        that.setState({files: files});             
+        that.setState({files: files});    
+        
+        const persistence_records = await getPersistenceRecords(wallet_address)
+
+        that.setState({persistence_records: persistence_records});
 
         getName(wallet_address).then((username) => {
           that.setState({username: username});
@@ -145,15 +150,6 @@ class App extends Component {
     }
 
     return new_messages;
-  }
-
-  getFiles() {
-    const that = this;
-
-    const pending_messages = getFiles().then(files => {
-      that.setState({files: files}); 
-    });
-     
   }
 
   setWalletAddress(wallet_address_files) {
@@ -262,6 +258,7 @@ class App extends Component {
     let routes = [
       <Route key='home' path="/" exact component={() => <RecentActivity files={this.state.files} wallet_address={this.state.wallet_address} jwk={this.state.jwk} />} />,
       <Route key='files' path="/files" exact component={() => <FoldersView files={this.state.files} wallet_address={this.state.wallet_address} jwk={this.state.jwk} />} />,
+      <Route key='deleted' path="/deleted" exact component={() => <DeletedView persistence_records={this.state.persistence_records} wallet_address={this.state.wallet_address} jwk={this.state.jwk} />} />,
       <Route key='search' path="/search" exact component={() => <SearchPage wallet_address={this.state.wallet_address} jwk={this.state.jwk} />} />,
       <Route key='logout' path="/logout" exact component={() => <Logout onLogout={this.disconnectWallet.bind(this)} addSuccessAlert={this.addSuccessAlert} expandContentArea={() => {this.expandContentArea()}} />} />
     ];
