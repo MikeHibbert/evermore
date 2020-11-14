@@ -203,45 +203,127 @@ export const convertPathsToInfos = (sync_folder, file_paths, is_root) => {
     return folders;
 }
 
+export function addToFolderChildrenOrUpdate(path_parts, index, file_info, path_obj) {
+    if(index == path_parts.length - 1) {
+        const matched = path_obj.children.filter(child => child.name == file_info.name);
+        if(matched.length == 0) {
+            return path_obj.children.push({...file_info, name: path_parts[index], index: index});
+        } else {
+            const match = matched[0];
+
+            if(match.type == 'folder') return;
+
+            if(match.modified <= file_info.modified) {
+                match.modified = file_info.modified;
+                match.tx_id = file_info.tx_id;
+            }
+        }
+        
+    } else {
+        const current_folder = path_parts[index];
+
+        if(current_folder == path_obj.name) {
+            addToFolderChildrenOrUpdate(path_parts, index + 1, file_info, path_obj);
+        } else {
+            const matched_folders = path_obj.children.filter((folder) => folder.name == current_folder);
+
+            if(matched_folders.length == 0) {
+                const folder = {...file_info, name: current_folder, index: index, type: "folder", children: []};
+                path_obj.children.push(folder);
+
+                addToFolderChildrenOrUpdate(path_parts, index + 1, file_info, folder);
+            } else {
+                for(let i in matched_folders) {
+                    const path = matched_folders[i];
+                    addToFolderChildrenOrUpdate(path_parts, index + 1, file_info, path);
+                }
+            }
+
+        }
+    }
+}
+
 export const convertDatabaseRecordToInfos = (sync_folder, database_file_paths, is_root) => {
     const folders = {'':{ index: -1, id: "root", type: "folder", name: '', children: []}, checked: true};
 
     for(let i in database_file_paths) {
-        const proposed_file = database_file_paths[i];
-        const path_type = 'file'; 
+        const proposed_file = database_file_paths[i];         
 
-        try {
-            if(fs.lstatSync(proposed_file.path).isDirectory()) {
-                path_type = 'folder'; 
+        const system_paths = createFileAndFolderPathsFromSingleFilePath(sync_folder, proposed_file.file);
+
+        for(let j in system_paths) {
+            const system_path = system_paths[j];
+            let path_type = 'file';
+
+            try {
+                if(fs.lstatSync(system_path).isDirectory()) {
+                    path_type = 'folder'; 
+                }
+            } catch(e) {}
+
+            let file_info = { path: system_path.replace(sync_folder, ''), children: [], type: path_type, checked: true };
+
+            if(proposed_file.path == system_path) {
+                const tx_id = proposed_file.hasOwnProperty('tx_id') ? proposed_file.tx_id : proposed_file.hasOwnProperty('id') ? proposed_file.id : null;
+                const key_size = proposed_file.hasOwnProperty('key_size') ? proposed_file.key_size : null;
+
+                file_info['tx_id'] = tx_id;
+                file_info['key_size'] = key_size;
+                file_info['modified'] = proposed_file.modified;
+
+                if(proposed_file.hasOwnProperty('action')) {
+                    file_info['action'] = proposed_file.action;
+                }
+            } 
+
+            let path_parts = [];
+            if(file_info.path.indexOf('\\') != -1) {
+                path_parts = file_info.path.split('\\')
+            } 
+
+            if(file_info.path.indexOf('/') != -1) {
+                path_parts = file_info.path.split('/')
             }
-        } catch(e) {}
+            
+            if(path_parts.length > 1) {
 
-        const file_info = { 
-            path: path.normalize(proposed_file.path.replace(sync_folder, '')), 
-            tx_id: proposed_file.hasOwnProperty('tx_id') ? proposed_file.tx_id : null,
-            children: [], type: path_type, checked: true };
-
-        if(proposed_file.hasOwnProperty('action')) {
-            file_info['action'] = proposed_file.action;
+                if(folders.hasOwnProperty(path_parts[0])) {
+                    file_info['name'] = path_parts[path_parts.length - 1];
+                    addToFolderChildrenOrUpdate(path_parts, 0, file_info, folders[path_parts[0]], 0);                
+                }           
+            }  
         }
-
-        let path_parts = [];
-        if(file_info.path.indexOf('\\') != -1) {
-            path_parts = file_info.path.split('\\')
-        } 
-
-        if(file_info.path.indexOf('/') != -1) {
-            path_parts = file_info.path.split('/')
-        }
-        
-        if(path_parts.length > 1) {
-            if(folders.hasOwnProperty(path_parts[0])) {
-                addToFolderChildren(path_parts, 0, file_info, folders[path_parts[0]], 0);                
-            }           
-        }  
     }
 
     return folders;
+}
+
+const createFileAndFolderPathsFromSingleFilePath = (sync_folder, file_path) => {
+    let path_parts = [];
+    if(file_path.indexOf('\\') != -1) {
+        path_parts = file_path.split('\\')
+    } 
+
+    if(file_path.indexOf('/') != -1) {
+        path_parts = file_path.split('/')
+    }
+
+    const path_joiner = process.platform == 'win32' ? "\\" : "/";
+
+    const paths = [];
+    let current_file_path = sync_folder;
+
+    for(let i in path_parts) {
+        if(i == 0) {
+            current_file_path = current_file_path + path_parts[i];
+        } else {
+            current_file_path = current_file_path + path_joiner + path_parts[i];
+        }
+
+        paths.push(current_file_path);
+    }
+
+    return paths;
 }
 
 export const comparePathInfos = (a, b) => {

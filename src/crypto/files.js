@@ -54,6 +54,7 @@ export const decryptFile = async (wallet, private_pem_key, start, file_path, des
         });
 
         readStream.on('end', () => {
+            writeableStream.close();
             return resolve({
                 file_path: dest_path
             });
@@ -74,7 +75,7 @@ export const getFileEncryptionKey = (file_path, transaction, wallet) => {
                 return reject(status);
             }
 
-            const buff = new Buffer.alloc(transaction.key_size);
+            const buff = new Buffer.alloc(parseInt(transaction.key_size));
 
             fs.read(fd, buff, 0, transaction.key_size, 0, (err, bytesRead, buffer) => {
                 return resolve(decryptDataWithWallet(buffer.toString('binary'), wallet).toString('utf8'));

@@ -10,11 +10,11 @@ import {
     CheckState,
 } from "@nodegui/nodegui";
 import path from "path";
-import DeleteFile from "../../dist/fsHandling/DeleteFile";
 import {compareLocalFileInfoWithOnlineFileInfo} from '../fsHandling/helpers';
 import {getOnlineVersions} from '../crypto/arweave-helpers';
+import {configureWithPathsFromInfo} from './InitialSetupDialog';
 import {settings} from '../config';
-import { ConfirmDeletedFile, AddFileToDownloads, AddPendingFile, RemoveProposedFile } from "../db/helpers";
+import { ConfirmDeletedFile, AddFileToDownloads, AddPendingFile, RemoveProposedFile, InDownloadQueue } from "../db/helpers";
 
 export const USER_DATA_ROLE = 20;
 
@@ -242,7 +242,7 @@ export const processToQueues = (path_infos) => {
 export const addToQueue = async (file_info) => {
   switch(file_info.action) {
     case "download":
-      AddFileToDownloads(file_info)
+      AddFileToDownloads(file_info);
       break;
     case "delete":
       ConfirmDeletedFile(file_info.tx_id);

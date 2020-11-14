@@ -23,7 +23,11 @@ import {
     RemoveProposedFile,
     GetDeletingFiles,
     UpdatePersistenceID,
-    RemovePersistenceRecord
+    RemovePersistenceRecord,
+    GetDeletedFiles, 
+    GetDownloads, 
+    walletFileSet,
+    InDownloadQueue
 } from '../db/helpers';
 import { 
     uploadFile, 
@@ -32,17 +36,18 @@ import {
     getDownloadableFilesGQL,
     transactionExistsOnTheBlockchain,
     fileExistsOnTheBlockchain,
-    getTransactionWithTags
+    getTransactionWithTags,
+    createPersistenceRecord, 
+    downloadFileFromTransaction, 
+    getPersistenceRecords
 } from '../crypto/arweave-helpers';
-import {convertDatabaseRecordToInfos, getSystemPath} from './helpers';
+import {convertDatabaseRecordToInfos, getSystemPath, mergePathInfos} from './helpers';
 import {openReviewSyncDialog, refreshReviewSyncDialog, processToQueues} from '../ui/ReviewSyncDialog';
 import { settings } from '../config';
 import { sendMessage } from '../integration/server';
 import { nextTick, report } from 'process';
-import { mergePathInfos } from '../../dist/fsHandling/helpers';
-import { GetDeletedFiles, GetDownloads, walletFileSet } from '../../dist/db/helpers';
-import { createPersistenceRecord, getPersistenceRecords } from '../../dist/crypto/arweave-helpers';
 import { resolve } from 'path';
+import { source } from 'lowdb/adapters/FileSync';
 
 export const OnFileWatcherReady = () => {
     console.log('Initial scan complete. Ready for changes');
@@ -241,9 +246,12 @@ const getAllSyncableFiles = async () => {
 
     let syncable_files = convertDatabaseRecordToInfos(sync_folder, proposed_files)
 
-    const downloadable_files = await getDownloadableFilesGQL();
+    let downloadable_files = await getDownloadableFilesGQL();
+
+    downloadable_files = downloadable_files.filter(downloadable_file => !InDownloadQueue(downloadable_file));
 
     if(downloadable_files.length > 0) {
+
         syncable_files = mergePathInfos(convertDatabaseRecordToInfos(sync_folder, downloadable_files)[''], syncable_files['']);
     }
 
@@ -376,13 +384,10 @@ const processAllDeleteActions = async (deleted_files) => {
 }
 
 const processAllDownloads = (downloads) => {
-    const wallet = walletFileSet();
-
-    if(wallet) {
-        downloads.forEach(download => {
-            debugger;
-        });
-    }    
+    downloads.forEach(download => {
+        downloadFileFromTransaction(download.tx_id);
+        
+    });
 }
 
 const processAllPendingTransactions = async (pending_files) => {

@@ -1,7 +1,7 @@
 import {
     AddProposedFile, 
     GetProposedFile, 
-    GetSyncedFile, 
+    GetDownloads, 
     GetSyncedFileBy, 
     ConfirmSyncedFileFromTransaction,
     GetExclusions,
@@ -24,6 +24,11 @@ const fileAddedHandler = (file_path) => {
     if(file_path.endsWith('.enc')) {
         return;
     }
+
+    const current_downloads = GetDownloads();
+    const current_download_matches = current_downloads.filter(cd => cd.path == file_path);
+    if(current_download_matches.length > 0) return;
+
 
     console.log(`File ${file_path} has been added`);
 

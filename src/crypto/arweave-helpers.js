@@ -5,35 +5,36 @@ const crypto = require('crypto');
 const axios = require('axios')
 const path = require('path');
 const notifier = require('node-notifier');
-const mime = require('mime-types')
+const mime = require('mime-types');
+import { https } from 'follow-redirects';
 import { readContract, selectWeightedPstHolder  } from 'smartweave';
 import { settings } from '../config';
 import regeneratorRuntime from "regenerator-runtime";
 import {
     walletFileSet, 
     UpdatePendingFileTransactionID, 
-    ConfirmSyncedFile, 
     SaveUploader, 
     RemoveUploader,
     RemovePendingFile,
-    GetSyncedFolders
+    GetSyncedFolders,
+    GetDeletedFiles, 
+    GetSyncedFileBy,
+    RemoveFileFromDownloads,
+    AddSyncedFileFromTransaction
 } from '../db/helpers';
 
 import {
-    createCRCFor, 
-    getFileUpdatedDate, 
-    createTempFolder, 
-    removeTempFolder,
-    getSystemPath,
-    systemHasEnoughDiskSpace
+    createCRCFor,
+    systemHasEnoughDiskSpace,
 } from '../fsHandling/helpers';
+
 
 import {
     encryptFile,
     decryptFile,
-    encryptDataWithRSAKey
+    encryptDataWithRSAKey,
+    getFileEncryptionKey
 } from './files';
-import { GetDeletedFiles, GetSyncedFileBy } from '../../dist/db/helpers';
 
 export const arweave = Arweave.init(settings.ARWEAVE_CONFIG);
 
@@ -172,7 +173,7 @@ export const uploadFile = async (file_info, encrypt_file) => {
 
                 if(encrypt_file) {
                     if(fs.existsSync(processed_file_path)) { 
-                        fs.unlinkSync(processed_file_path);
+                        fs.unlink(processed_file_path, (err) => {});
                     }
                 }
 
@@ -562,11 +563,42 @@ export const getTransactionWithTags = async (tx_id) => {
     return transaction;
 }
 
-export const downloadFileFromTransaction = async (wallet, tx_id) => {
-    const transaction = await arweave.transactions.get(tx_id).then(async (transaction) => {
+const downloadFile = function(url, dest, cb) {
+    var file = fs.createWriteStream(dest);
+    var request = https.get(url, function(response) {
+        response.pipe(file);
+        file.on('finish', function() {
+        file.close(cb);  // close() is async, call cb after close completes.
+        });
+    }).on('error', function(err) { // Handle errors
+        fs.unlink(dest); // Delete the file async. (But we don't check the result)
+        if (cb) cb(err.message);
+    });
+};
+
+export const downloadFileFromTransaction = async (tx_id) => {
+    const persistence_transaction = await arweave.transactions.get(tx_id).then(async (transaction) => {
         const tx_row = {id: transaction.id};
         
-        tx.get('tags').forEach(tag => {
+        transaction.get('tags').forEach(tag => {
+            let key = tag.get('name', { decode: true, string: true });
+            let value = tag.get('value', { decode: true, string: true });
+            
+            if(key == "modified" || key == "version" || key == "file_size") {
+                tx_row[key] = parseInt(value);
+            } else {
+                tx_row[key] = value;
+            }
+            
+        }); 
+
+        return tx_row;
+    });
+
+    const transaction = await arweave.transactions.get(persistence_transaction.action_tx_id).then(async (transaction) => {
+        const tx_row = {id: transaction.id};
+        
+        transaction.get('tags').forEach(tag => {
             let key = tag.get('name', { decode: true, string: true });
             let value = tag.get('value', { decode: true, string: true });
             
@@ -594,37 +626,56 @@ export const downloadFileFromTransaction = async (wallet, tx_id) => {
 
     // createTempFolder();
 
-    arweave.transactions.getData(transaction.id).then(data => {
-        const sync_folders = GetSyncedFolders();
 
-        const is_encrypted = transaction.path.indexOf('Public\\') == -1;
+    const sync_folders = GetSyncedFolders();
 
-        if(is_encrypted) {
-            const save_file_encrypted = path.join(sync_folders[0], `${transaction.path}.enc`);
+    const is_encrypted = transaction.path.indexOf('Public\\') == -1;
 
-            fs.writeFile(save_file_encrypted, data, async (err) => {
-                if (err) {
-                    console.error(err);
-                }
+    if(is_encrypted) {
+        const save_file_encrypted = path.join(sync_folders[0], `${transaction.file}.enc`);
 
-                const private_key = await getFileEncryptionKey(save_file_encrypted, transaction, wallet);
-                const save_file = path.join(sync_folders[0], `${transaction.path}`);
-                const result = await decryptFile(wallet, private_key, transaction.key_size, save_file_encrypted, save_file);
+        downloadFile(`https://arweave.net/${transaction.id}`, save_file_encrypted, async (err) => {
+            if (err) {
+                console.error(err);
+            }
 
-                fs.unlinkSync(save_file_encrypted);
-            });
-        } else {
-            const save_file = path.join(sync_folders[0], transaction.path);
+            const wallet_file = walletFileSet();
 
-            fs.writeFile(save_file, data, async (err) => {
-                if (err) {
-                    console.error(err);
-                }
-            });
-        }
-        
-    });
+            if(!wallet_file || wallet_file.length == 0) {
+                notifier.notify({
+                    title: 'Evermore Datastore',
+                    icon: settings.NOTIFY_ICON_PATH,
+                    message: `Unable to download encrypted file ${save_file_encrypted} your wallet file is not set.`,
+                    timeout: 2
+                });
 
+                fs.unlink(save_file_encrypted, (err) => {});
+            }
+            const jwk = getJwkFromWalletFile(wallet_file);
+
+            const private_key = await getFileEncryptionKey(save_file_encrypted, transaction, jwk);
+            const save_file = path.join(sync_folders[0], `${transaction.file}`);
+            const result = await decryptFile(jwk, private_key, parseInt(transaction.key_size), save_file_encrypted, save_file);
+
+            fs.unlink(save_file_encrypted, (err) => {});
+        });
+    } else {
+        const save_file = path.join(sync_folders[0], transaction.file);
+
+        downloadFile(`https://arweave.net/${transaction.id}`, save_file, data, (err) => {
+            if (err) {
+                console.error(err);
+            }
+        });
+    }
+
+    debugger;
+
+    AddSyncedFileFromTransaction(transaction);
+
+    RemoveFileFromDownloads(transaction.file);
+
+    
     
 
     // removeTempFolder();

@@ -1,13 +1,16 @@
-import {AddProposedFile, GetProposedFile, GetSyncedFileFromPath } from '../db/helpers';
+import {AddProposedFile, GetDownloads, GetProposedFile, GetSyncedFileFromPath, RemoveProposedFile } from '../db/helpers';
 import {sendMessage} from '../integration/server';
 import {getFileUpdatedDate, getRalativePath} from '../fsHandling/helpers';
 import {getDownloadableFiles} from '../crypto/arweave-helpers';
-import { RemoveProposedFile } from '../../dist/db/helpers';
 
 const fileChangedHandler = (file_path) => {
     console.log(`File ${file_path} has been changed`);
     
     if(file_path.endsWith('.enc')) return;
+
+    const current_downloads = GetDownloads();
+    const current_download_matches = current_downloads.filter(cd => cd.path == file_path);
+    if(current_download_matches.length > 0) return;
 
     const downloadable_files = getDownloadableFiles();
 

@@ -212,9 +212,9 @@ export const GetNewPendingFiles = () => {
         InitDB();
     }
 
-    return db.get('pending')
-        .value()
-        .filter((file_info) => file_info.tx_id == null);
+    const pending = db.get('pending').value();
+
+    return pending.filter((file_info) => file_info.tx_id == null);
 }
 
 export const GetPendingFilesWithTransactionIDs = () => {
@@ -385,6 +385,16 @@ export const UpdateSyncedFile = (file, tx_id, version, modified) => {
         .write();
 }
 
+export const AddSyncedFileFromTransaction = (transaction) => {
+    if(!db) {
+        InitDB();
+    }
+
+    db.get('synced_files')
+        .push(transaction)
+        .write();
+}
+
 export const ConfirmSyncedFileFromTransaction = (file_path, transaction) => {
     if(!db) {
         InitDB();
@@ -405,7 +415,7 @@ export const ConfirmSyncedFileFromTransaction = (file_path, transaction) => {
                     version: transaction.version,
                     modified: transaction.modified,
                     hostname: transaction.hostname,
-                    crc: transaction.crc
+                    crc: transaction.CRC
                 })
                 .write();
         }  
@@ -553,14 +563,13 @@ export const AddFileToDownloads = (file_info) => {
         .push(file_info).write();
 }
 
-export const RemoveFileFromDownloads  = (name, path) => {
+export const RemoveFileFromDownloads  = (path) => {
     if(!db) {
         InitDB();
     }
 
     db.get('downloads')
         .remove({
-            name: name,
             path: path
         }).write();
 }
@@ -571,6 +580,13 @@ export const GetDownloads = () => {
     }
 
     return db.get('downloads').value();
+}
+
+export const InDownloadQueue = (file_info) => {
+    const download = db.get('downloads')
+    .find({file: file_info.file, tx_id: file_info.tx_id}).value();
+
+    return download != undefined;
 }
 
 export const UpdateExclusions = (exclusions_file_infos) => {
@@ -663,7 +679,11 @@ export const GetSyncedFolders = () => {
         InitDB();
     }
 
-    return db.get('sync_folders').map('path').value();
+    const sync_folders = db.get('sync_folders').map('path').value().map(sync_folder => { 
+        return process.platform == "win32" ? sync_folder.split('/').join('\\') : sync_folder;
+    });
+
+    return sync_folders;
 }
 
 export const GetSyncedFolder = (tx_id) => {

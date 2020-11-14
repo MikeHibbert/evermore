@@ -371,8 +371,7 @@ export const configureWithPathsFromInfo = (path_info) => {
         } else {
             if(pi.checked) {
                 const online_versions = await getOnlineVersions(pi);
-
-                debugger;
+                
                 if(online_versions.length == 0) {
                     AddPendingFile(null, pi.path, 1);
                 } else {
