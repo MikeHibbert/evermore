@@ -2,8 +2,9 @@ import {AddProposedFile, GetDownloads, GetProposedFile, GetSyncedFileFromPath, R
 import {sendMessage} from '../integration/server';
 import {getFileUpdatedDate, getRalativePath} from '../fsHandling/helpers';
 import {getDownloadableFiles} from '../crypto/arweave-helpers';
+import { GetPendingFile } from '../../dist/db/helpers';
 
-const fileChangedHandler = (file_path) => {
+const fileChangedHandler = async (file_path) => {
     console.log(`File ${file_path} has been changed`);
     
     if(file_path.endsWith('.enc')) return;
@@ -12,7 +13,7 @@ const fileChangedHandler = (file_path) => {
     const current_download_matches = current_downloads.filter(cd => cd.path == file_path);
     if(current_download_matches.length > 0) return;
 
-    const downloadable_files = getDownloadableFiles();
+    const downloadable_files = await getDownloadableFiles();
 
     const new_file_modified = getFileUpdatedDate(file_path);
     const relative_path = getRalativePath(file_path);
@@ -36,14 +37,22 @@ const fileChangedHandler = (file_path) => {
             }
         }
     } else {
-        if(!GetProposedFile(file_path)) { // if its not in Proposed files it should have been put in the sync files 
-          const synced_file = GetSyncedFileFromPath(file_path);
+      const pending = GetPendingFile(file_path);
 
-          RemoveProposedFile(file_path);
-          
+      if(!GetProposedFile(file_path)) { // if its not in Proposed files it should have been put in the sync files 
+        if(pending) {
+          if(pending.modified < new_file_modified) {        
+            AddProposedFile(null, file_path, parseInt(pending.version + 1), true); // this the newest version so add it to pending for another upload
+            sendMessage(`STATUS:SYNC:${file_path}\n`);
+          }
+        } else {
+          const synced_file = GetSyncedFileFromPath(file_path);
+        
           AddProposedFile(null, file_path, parseInt(synced_file.version + 1), true); // this the newest version so add it to pending for another upload
           sendMessage(`STATUS:SYNC:${file_path}\n`);
         }
+        
+      }
     }
 }
 

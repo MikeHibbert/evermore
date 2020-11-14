@@ -252,7 +252,7 @@ const getAllSyncableFiles = async () => {
 
     if(downloadable_files.length > 0) {
 
-        syncable_files = mergePathInfos(convertDatabaseRecordToInfos(sync_folder, downloadable_files)[''], syncable_files['']);
+        syncable_files = mergePathInfos(syncable_files[''], convertDatabaseRecordToInfos(sync_folder, downloadable_files)['']);
     }
 
     const deleting_files = GetDeletingFiles();
@@ -261,7 +261,7 @@ const getAllSyncableFiles = async () => {
         deleting_files.forEach(pf => {
             pf['action'] = 'delete';
         });
-        syncable_files = mergePathInfos(convertDatabaseRecordToInfos(sync_folder, deleting_files)[''], syncable_files['']);
+        syncable_files = mergePathInfos(syncable_files[''], convertDatabaseRecordToInfos(sync_folder, deleting_files)['']);
     }
 
     return syncable_files;
@@ -385,8 +385,7 @@ const processAllDeleteActions = async (deleted_files) => {
 
 const processAllDownloads = (downloads) => {
     downloads.forEach(download => {
-        downloadFileFromTransaction(download.tx_id);
-        
+        downloadFileFromTransaction(download.tx_id);        
     });
 }
 

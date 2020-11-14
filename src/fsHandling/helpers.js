@@ -427,7 +427,15 @@ export const mergePathInfos = (from, to, root=true) => {
                 
                 if(to_items.length == 0) {
                     path_infos.push(a);
-                }            
+                } else {
+                    const to_item = to_items[0];
+
+                    if(to_item.modified < a.modified) {
+                        to_item.action = a.action;
+                        to_item.modified = a.modified;
+                        to_item.tx_id = a.tx_id;
+                    }
+                }        
             }
         });
         

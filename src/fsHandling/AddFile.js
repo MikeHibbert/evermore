@@ -19,6 +19,7 @@ import {
     pathExcluded
 } from '../fsHandling/helpers';
 import {getDownloadableFiles, getDownloadableFilesGQL} from '../crypto/arweave-helpers';
+import { GetPendingFile } from '../../dist/db/helpers';
 
 const fileAddedHandler = (file_path) => {
     if(file_path.endsWith('.enc')) {
@@ -79,12 +80,25 @@ const fileAddedHandler = (file_path) => {
             }
         } 
         if(!found_in_downloadables && !confirmed_in_blockchain) {
-            if(!GetProposedFile(file_path) && !GetSyncedFileFromPathAndModified(file_path, new_file_modified)) {
-                if(!pathExcluded(file_path)) {
-                    AddProposedFile(null, file_path, 1);
-                    sendMessage(`REGISTER_PATH:${file_path}\n`);
+            const pending = GetPendingFile(file_path);
+            const synced = GetSyncedFileFromPathAndModified(file_path, new_file_modified);
+
+            debugger;
+
+            if(!GetProposedFile(file_path) && !synced) {
+                if(pending) {
+                    if(pending.modified < new_file_modified) {                
+                        AddProposedFile(null, file_path, parseInt(pending.version + 1), true); // this the newest version so add it to pending for another upload
+                        sendMessage(`REGISTER_PATH:${file_path}\n`);
+                    }
+                } else {
+                    if(!pathExcluded(file_path)) {
+                        AddProposedFile(null, file_path, 1);
+                        sendMessage(`REGISTER_PATH:${file_path}\n`);
+                    }
                 }
             }
+                
         }
     });    
 }

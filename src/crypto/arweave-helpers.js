@@ -578,7 +578,7 @@ const downloadFile = function(url, dest, cb) {
 
 export const downloadFileFromTransaction = async (tx_id) => {
     const persistence_transaction = await arweave.transactions.get(tx_id).then(async (transaction) => {
-        const tx_row = {id: transaction.id};
+        const tx_row = {id: transaction.id, tx_id: transaction.id};
         
         transaction.get('tags').forEach(tag => {
             let key = tag.get('name', { decode: true, string: true });
@@ -596,7 +596,7 @@ export const downloadFileFromTransaction = async (tx_id) => {
     });
 
     const transaction = await arweave.transactions.get(persistence_transaction.action_tx_id).then(async (transaction) => {
-        const tx_row = {id: transaction.id};
+        const tx_row = {id: transaction.id, tx_id: transaction.id};
         
         transaction.get('tags').forEach(tag => {
             let key = tag.get('name', { decode: true, string: true });

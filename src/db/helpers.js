@@ -464,7 +464,10 @@ export const GetSyncedFileFromPathAndModified = (file_path, modified) => {
         InitDB();
     }
 
-    return db.get('synced_files').find({path: file_path, modified: modified}).value();
+    const results = db.get('synced_files').find({path: file_path, modified: modified}).value();
+
+    debugger;
+    return results;
 }
 
 export const DeleteSyncedFile = (tx_id) => {
