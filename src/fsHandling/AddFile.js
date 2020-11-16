@@ -7,7 +7,8 @@ import {
     GetExclusions,
     GetSyncedFileFromPathAndModified,
     GetDeletedFileFromPath, 
-    UndeleteSyncedFile
+    UndeleteSyncedFile,
+    AddSyncedFileFromTransaction
 } from '../db/helpers';
 import path from 'path';
 import regeneratorRuntime from "regenerator-runtime";
@@ -70,8 +71,16 @@ const fileAddedHandler = (file_path) => {
                     } else {
                         const sync_file = GetSyncedFileBy({file: downloadable_file.file});
                         if(sync_file) {
-                            ConfirmSyncedFileFromTransaction(file_path, downloadable_file);
-                            sendMessage(`REGISTER_PATH:${file_path}\n`);
+                            if(downloadable_file.modified == new_file_modified) {
+                                sendMessage(`UNREGISTER_PATH:${file_path}\n`);
+                                confirmed_in_blockchain = true;
+                                continue;
+                            }
+                        }
+
+                        if(downloadable_file.modified == new_file_modified) {
+                            AddSyncedFileFromTransaction(downloadable_file);
+                            sendMessage(`UNREGISTER_PATH:${file_path}\n`);
                             confirmed_in_blockchain = true;
                         }
                     }          
@@ -82,8 +91,6 @@ const fileAddedHandler = (file_path) => {
         if(!found_in_downloadables && !confirmed_in_blockchain) {
             const pending = GetPendingFile(file_path);
             const synced = GetSyncedFileFromPathAndModified(file_path, new_file_modified);
-
-            debugger;
 
             if(!GetProposedFile(file_path) && !synced) {
                 if(pending) {

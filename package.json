@@ -29,7 +29,7 @@
     "@babel/cli": "^7.10.4",
     "@babel/core": "^7.10.4",
     "@babel/preset-env": "^7.10.4",
-    "@nodegui/nodegui": "git+https://github.com/nodegui/nodegui.git",
+    "@nodegui/nodegui": "^0.26.0",
     "@sentry/node": "^5.27.3",
     "@sentry/tracing": "^5.27.3",
     "arweave": "^1.9.1",
@@ -65,7 +65,8 @@
     "smartweave": "https://arweave.net/AM-u4X2po-3Tx7fma3lRonCfLwrjI42IALwDL_YFXBs",
     "systray": "^1.0.5",
     "taskkill": "^3.1.0",
-    "tasklist": "^4.0.1"
+    "tasklist": "^4.0.1",
+    "utimes": "^4.0.2"
   },
   "devDependencies": {
     "@nodegui/packer": "^1.4.1",

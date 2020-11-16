@@ -48,6 +48,7 @@ import { sendMessage } from '../integration/server';
 import { nextTick, report } from 'process';
 import { resolve } from 'path';
 import { source } from 'lowdb/adapters/FileSync';
+import { GetSyncedFileBy } from '../../dist/db/helpers';
 
 export const OnFileWatcherReady = () => {
     console.log('Initial scan complete. Ready for changes');
@@ -117,8 +118,12 @@ const processAll = () => {
 }
 
 let sync_processing_interval = null;
+let initial_sync_inteval = null; // used to make a small delay at start up
 export const startSyncProcessing = () => {
-    processAll();
+    initial_sync_inteval = setInterval(() => {
+        processAll();
+        clearInterval(initial_sync_inteval);
+    }, 1 * 1000); // 10 second delay on first time to allow for file monitoring to catch up
 
     sync_processing_interval = setInterval(() => {
         processAll();
@@ -208,6 +213,8 @@ const processAllOutstandingUploadsAndActions = async () => {
     //         message: `${uploaders.length} resumed file uploads have been complete.`
     //     });
     // }
+
+
     
     const syncable_files = await getAllSyncableFiles();
 
@@ -248,7 +255,18 @@ const getAllSyncableFiles = async () => {
 
     let downloadable_files = await getDownloadableFilesGQL();
 
-    downloadable_files = downloadable_files.filter(downloadable_file => !InDownloadQueue(downloadable_file));
+    downloadable_files = downloadable_files.filter(downloadable_file => {
+        const in_downloads = InDownloadQueue(downloadable_file);
+        const synced_file_matches = GetSyncedFileBy({file: downloadable_file.file});
+
+        if(synced_file_matches) {
+            const older_synced_files = synced_file_matches.filter(sf => sf.modified < downloadable_file.modified);
+
+            return !in_downloads && older_synced_files.length > 0;
+        } 
+
+        return !in_downloads && synced_file_matches == undefined;
+    });
 
     if(downloadable_files.length > 0) {
 
@@ -297,8 +315,6 @@ const prepareSyncDialogResponse = (path_infos) => {
     } else {
         sync_settings_dialog_open = true;
         openReviewSyncDialog(path_infos[''], (path_infos_to_be_synced) => {
-            debugger;
-
             processToQueues(path_infos_to_be_synced);
 
             const deleted_file_actions = GetDeletedFiles();

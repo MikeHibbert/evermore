@@ -264,7 +264,6 @@ export const addToQueue = async (file_info) => {
           
       }
 
-      debugger;
       RemoveProposedFile(file_info.path);
       break;
   }

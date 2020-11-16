@@ -22,19 +22,17 @@ import {
     RemoveFileFromDownloads,
     AddSyncedFileFromTransaction
 } from '../db/helpers';
-
 import {
     createCRCFor,
     systemHasEnoughDiskSpace,
 } from '../fsHandling/helpers';
-
-
 import {
     encryptFile,
     decryptFile,
     encryptDataWithRSAKey,
     getFileEncryptionKey
 } from './files';
+// import { utimes } from 'utimes';
 
 export const arweave = Arweave.init(settings.ARWEAVE_CONFIG);
 
@@ -142,6 +140,9 @@ export const uploadFile = async (file_info, encrypt_file) => {
                 transaction.addTag('path', file_info.path.replace(/([^:])(\/\/+)/g, '$1/'));
                 transaction.addTag('modified', file_info.modified);
                 transaction.addTag('hostname', file_info.hostname);
+
+                const created = new Date(stats['birthtime']).getTime();
+                transaction.addTag('created', created);
                 transaction.addTag('version', file_info.version);
                 transaction.addTag('CRC', crc_for_data);
                 transaction.addTag('file_size', stats["size"]);
@@ -172,9 +173,12 @@ export const uploadFile = async (file_info, encrypt_file) => {
                 RemoveUploader(uploader_record);
 
                 if(encrypt_file) {
-                    if(fs.existsSync(processed_file_path)) { 
-                        fs.unlink(processed_file_path, (err) => {});
-                    }
+                    const now = new Date().getTime();
+
+                    if(fs.existsSync(processed_file_path))
+                        fs.renameSync(processed_file_path, `${now}.del`);  // It's not going to affect the current open handles
+                    if(fs.existsSync(`${now}.del`))
+                        fs.unlinkSync(`${now}.del`);
                 }
 
                 console.log(`${file_info.path} uploaded`);
@@ -514,6 +518,15 @@ export const finishUpload = async (resumeObject) => {
                     await uploader.uploadChunk();
                     console.log(`${uploader.pctComplete}% complete, ${uploader.uploadedChunks}/${uploader.totalChunks}`);
                 }
+
+                const now = new Date().getTime();
+
+                if(encrypt_file) {
+                    if(fs.existsSync(processed_file_path))
+                        fs.renameSync(processed_file_path, `${now}.del`);  // It's not going to affect the current open handles
+                    if(fs.existsSync(`${now}.del`))
+                        fs.unlinkSync(`${now}.del`);
+                }
             }
         });
     })
@@ -564,7 +577,7 @@ export const getTransactionWithTags = async (tx_id) => {
 }
 
 const downloadFile = function(url, dest, cb) {
-    var file = fs.createWriteStream(dest);
+    var file = fs.createWriteStream(dest, {emitClose : true});
     var request = https.get(url, function(response) {
         response.pipe(file);
         file.on('finish', function() {
@@ -632,7 +645,7 @@ export const downloadFileFromTransaction = async (tx_id) => {
     const is_encrypted = transaction.path.indexOf('Public\\') == -1;
 
     if(is_encrypted) {
-        const save_file_encrypted = path.join(sync_folders[0], `${transaction.file}.enc`);
+        const save_file_encrypted = path.join(sync_folders[0], `${transaction.file.split(' ').join('_')}.enc`);
 
         downloadFile(`https://arweave.net/${transaction.id}`, save_file_encrypted, async (err) => {
             if (err) {
@@ -657,7 +670,21 @@ export const downloadFileFromTransaction = async (tx_id) => {
             const save_file = path.join(sync_folders[0], `${transaction.file}`);
             const result = await decryptFile(jwk, private_key, parseInt(transaction.key_size), save_file_encrypted, save_file);
 
-            fs.unlink(save_file_encrypted, (err) => {});
+            setFileTimestamps(save_file, transaction);
+
+            // debugger;
+
+            // fs.unlink(save_file_encrypted, (err) => {
+            //     if (err) throw err;
+            //     console.log(`${save_file} was deleted`);
+            // });
+
+            const now = new Date().getTime();
+
+            if(fs.existsSync(save_file_encrypted))
+                fs.renameSync(save_file_encrypted, `${now}.del`);  // It's not going to affect the current open handles
+            if(fs.existsSync(`${now}.del`))
+                fs.unlinkSync(`${now}.del`);
         });
     } else {
         const save_file = path.join(sync_folders[0], transaction.file);
@@ -666,10 +693,10 @@ export const downloadFileFromTransaction = async (tx_id) => {
             if (err) {
                 console.error(err);
             }
+
+            setFileTimestamps(save_file, transaction);
         });
     }
-
-    debugger;
 
     AddSyncedFileFromTransaction(transaction);
 
@@ -680,6 +707,28 @@ export const downloadFileFromTransaction = async (tx_id) => {
 
     // removeTempFolder();
 }
+
+const setFileTimestamps = (file_path, file_info) => {
+    const modified = file_info.modified;
+    let created = modified;
+
+    if(file_info.hasOwnProperty('created')) {
+        created = file_info.created;
+    }
+
+    utimes(file_path, {
+        btime: created,
+        atime: file_info.modified,
+        mtime: file_info.modified
+    });
+}
+
+// const setFileTimestamps = (file_path, file_info) => {
+//     const modified = new Date(file_info.modified);
+
+
+//     fs.utimesSync(file_path, modified, modified);
+// }
 
 export const transactionExistsOnTheBlockchain = async (tx_id) => {
     const response = await arweave.transactions.getStatus(tx_id);

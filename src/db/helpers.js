@@ -343,7 +343,7 @@ export const RemoveProposedFile = (file_path) => {
 
     db.get('proposed')
         .remove({
-            path: file_path
+            file: file_path
         }).write();
 }
 
@@ -388,6 +388,10 @@ export const UpdateSyncedFile = (file, tx_id, version, modified) => {
 export const AddSyncedFileFromTransaction = (transaction) => {
     if(!db) {
         InitDB();
+    }
+
+    if(transaction.hasOwnProperty('tags')) {
+        delete transaction.tags;
     }
 
     db.get('synced_files')
@@ -465,8 +469,7 @@ export const GetSyncedFileFromPathAndModified = (file_path, modified) => {
     }
 
     const results = db.get('synced_files').find({path: file_path, modified: modified}).value();
-
-    debugger;
+;
     return results;
 }
 
