@@ -20,7 +20,8 @@ import {
     GetDeletedFiles, 
     GetSyncedFileBy,
     RemoveFileFromDownloads,
-    AddSyncedFileFromTransaction
+    AddSyncedFileFromTransaction,
+    RemoveProposedFileBy
 } from '../db/helpers';
 import {
     createCRCFor,
@@ -32,7 +33,7 @@ import {
     encryptDataWithRSAKey,
     getFileEncryptionKey
 } from './files';
-// import { utimes } from 'utimes';
+import { utimes } from 'utimes';
 
 export const arweave = Arweave.init(settings.ARWEAVE_CONFIG);
 
@@ -402,11 +403,12 @@ export const getDownloadableFilesGQL = async () => {
             const row = response.data.data.transactions.edges[i].node;
 
             row['action'] = 'download';
+            row['tx_id'] = row.id;
 
             for(let i in row.tags) {
                 const tag = row.tags[i];
 
-                if(tag.name == 'version' || tag.name == 'modified') {
+                if(tag.name == 'version' || tag.name == 'modified' || tag.name == 'created') {
                     row[tag.name] = parseInt(tag.value);
                 } else {
                     row[tag.name] = tag.value;
@@ -541,7 +543,6 @@ export const getTransactionStatus = async (tx_id) => {
 
 export const confirmTransaction = async (tx_id) => {
     const response = await getTransactionStatus(tx_id);
-    console.log(JSON.stringify(status));
 
     if(response.status == 200) {
         if(response.hasOwnProperty('confirmed')) {
@@ -555,25 +556,29 @@ export const confirmTransaction = async (tx_id) => {
 }
 
 export const getTransactionWithTags = async (tx_id) => {
-    const transaction = await arweave.transactions.get(tx_id).then(async (transaction) => {
-        const tx_row = {id: transaction.id};
-        
-        transaction.get('tags').forEach(tag => {
-            let key = tag.get('name', { decode: true, string: true });
-            let value = tag.get('value', { decode: true, string: true });
+    try {
+        const transaction = await arweave.transactions.get(tx_id).then(async (transaction) => {
+            const tx_row = {id: transaction.id};
             
-            if(key == "modified" || key == "version" || key == "file_size") {
-                tx_row[key] = parseInt(value);
-            } else {
-                tx_row[key] = value;
-            }
-            
-        }); 
-
-        return tx_row;
-    });
-
-    return transaction;
+            transaction.get('tags').forEach(tag => {
+                let key = tag.get('name', { decode: true, string: true });
+                let value = tag.get('value', { decode: true, string: true });
+                
+                if(key == "modified" || key == "version" || key == "file_size") {
+                    tx_row[key] = parseInt(value);
+                } else {
+                    tx_row[key] = value;
+                }
+                
+            }); 
+    
+            return tx_row;
+        });
+    
+        return transaction;
+    } catch(e) {
+        return null;
+    }    
 }
 
 const downloadFile = function(url, dest, cb) {
@@ -597,7 +602,7 @@ export const downloadFileFromTransaction = async (tx_id) => {
             let key = tag.get('name', { decode: true, string: true });
             let value = tag.get('value', { decode: true, string: true });
             
-            if(key == "modified" || key == "version" || key == "file_size") {
+            if(key == "modified" || key == "version" || key == "file_size" || key == "created") {
                 tx_row[key] = parseInt(value);
             } else {
                 tx_row[key] = value;
@@ -608,23 +613,27 @@ export const downloadFileFromTransaction = async (tx_id) => {
         return tx_row;
     });
 
-    const transaction = await arweave.transactions.get(persistence_transaction.action_tx_id).then(async (transaction) => {
-        const tx_row = {id: transaction.id, tx_id: transaction.id};
-        
-        transaction.get('tags').forEach(tag => {
-            let key = tag.get('name', { decode: true, string: true });
-            let value = tag.get('value', { decode: true, string: true });
-            
-            if(key == "modified" || key == "version" || key == "file_size") {
-                tx_row[key] = parseInt(value);
-            } else {
-                tx_row[key] = value;
-            }
-            
-        }); 
+    let transaction = persistence_transaction;
 
-        return tx_row;
-    });
+    if(persistence_transaction.hasOwnProperty('action_tx_id')) {
+        transaction = await arweave.transactions.get(persistence_transaction.action_tx_id).then(async (transaction) => {
+            const tx_row = {id: transaction.id, tx_id: transaction.id};
+            
+            transaction.get('tags').forEach(tag => {
+                let key = tag.get('name', { decode: true, string: true });
+                let value = tag.get('value', { decode: true, string: true });
+                
+                if(key == "modified" || key == "version" || key == "file_size" || key == "created") {
+                    tx_row[key] = parseInt(value);
+                } else {
+                    tx_row[key] = value;
+                }
+                
+            }); 
+    
+            return tx_row;
+        });
+    }  
 
     if(!systemHasEnoughDiskSpace(Math.ceil(transaction.file_size * 2))) {
         notifier.notify({
@@ -672,13 +681,6 @@ export const downloadFileFromTransaction = async (tx_id) => {
 
             setFileTimestamps(save_file, transaction);
 
-            // debugger;
-
-            // fs.unlink(save_file_encrypted, (err) => {
-            //     if (err) throw err;
-            //     console.log(`${save_file} was deleted`);
-            // });
-
             const now = new Date().getTime();
 
             if(fs.existsSync(save_file_encrypted))
@@ -702,7 +704,7 @@ export const downloadFileFromTransaction = async (tx_id) => {
 
     RemoveFileFromDownloads(transaction.file);
 
-    
+    RemoveProposedFileBy({file: transaction.file});   
     
 
     // removeTempFolder();
@@ -722,13 +724,6 @@ const setFileTimestamps = (file_path, file_info) => {
         mtime: file_info.modified
     });
 }
-
-// const setFileTimestamps = (file_path, file_info) => {
-//     const modified = new Date(file_info.modified);
-
-
-//     fs.utimesSync(file_path, modified, modified);
-// }
 
 export const transactionExistsOnTheBlockchain = async (tx_id) => {
     const response = await arweave.transactions.getStatus(tx_id);

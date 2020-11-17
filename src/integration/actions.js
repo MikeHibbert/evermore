@@ -1,8 +1,9 @@
 const clipboardy = require('clipboardy');
 const notifier = require('node-notifier');
 import { 
-    GetNewOrPendingFile, 
     GetAllPendingFiles,
+    GetPendingFile,
+    GetProposedFile,
     GetSyncedFileFromPath, 
     GetSyncedFolders 
 } from '../db/helpers';
@@ -92,11 +93,7 @@ const getFileStatus = (file_path) => {
     }
 
     if(!pathExcluded(file_path) && !file_path.endsWith('.enc')) {
-        let file_info = GetSyncedFileFromPath(path.normalize(file_path));
-
-        if(file_info) return `STATUS:OK:${file_path}\n`;
-
-        file_info = GetNewOrPendingFile(path.normalize(file_path));
+        let file_info = GetPendingFile(path.normalize(file_path));
         
         if(file_info) {
             if(file_info.tx_id == null) {
@@ -105,6 +102,16 @@ const getFileStatus = (file_path) => {
                 return `STATUS:SYNC:${file_path}\n`;
             }
         }
+
+        file_info = GetProposedFile(file_path);
+
+        if(file_info) {
+            return `STATUS:SYNC:${file_path}\n`;
+        }
+
+        file_info = GetSyncedFileFromPath(path.normalize(file_path));
+
+        if(file_info) return `STATUS:OK:${file_path}\n`;
     }    
 
     return `STATUS:NOP:${file_path}\n`;

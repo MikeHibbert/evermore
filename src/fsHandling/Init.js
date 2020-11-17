@@ -7,7 +7,7 @@ import fileDeletedHandler from './DeleteFile';
 import dirAddedHandler from './AddDir';
 import dirDeletedHandler from './DeleteDir';
 import { 
-    GetNewPendingFiles, 
+    GetAllPendingFiles, 
     GetPendingFilesWithTransactionIDs, 
     GetUploaders, 
     RemoveUploader,
@@ -27,7 +27,8 @@ import {
     GetDeletedFiles, 
     GetDownloads, 
     walletFileSet,
-    InDownloadQueue
+    InDownloadQueue,
+    GetSyncedFileBy
 } from '../db/helpers';
 import { 
     uploadFile, 
@@ -35,11 +36,10 @@ import {
     getTransactionStatus, 
     getDownloadableFilesGQL,
     transactionExistsOnTheBlockchain,
-    fileExistsOnTheBlockchain,
     getTransactionWithTags,
     createPersistenceRecord, 
     downloadFileFromTransaction, 
-    getPersistenceRecords
+    confirmTransaction
 } from '../crypto/arweave-helpers';
 import {convertDatabaseRecordToInfos, getSystemPath, mergePathInfos} from './helpers';
 import {openReviewSyncDialog, refreshReviewSyncDialog, processToQueues} from '../ui/ReviewSyncDialog';
@@ -48,7 +48,6 @@ import { sendMessage } from '../integration/server';
 import { nextTick, report } from 'process';
 import { resolve } from 'path';
 import { source } from 'lowdb/adapters/FileSync';
-import { GetSyncedFileBy } from '../../dist/db/helpers';
 
 export const OnFileWatcherReady = () => {
     console.log('Initial scan complete. Ready for changes');
@@ -64,7 +63,7 @@ export const OnFileWatcherReady = () => {
 
 let pending_transaction_confirmation_checking_interval = null
 const startPendingTrasactionConfirmation = async () => {
-    const pending_files = GetNewPendingFiles();
+    const pending_files = GetAllPendingFiles();
 
     if(pending_files.length > 0) {
         processAllPendingTransactions(pending_files);
@@ -108,7 +107,7 @@ const processAll = () => {
 
     processAllDeleteActions(deleted_file_actions);
 
-    const pending_files = GetNewPendingFiles();
+    const pending_files = GetAllPendingFiles();
 
     processAllPendingFiles(pending_files);
 
@@ -158,14 +157,16 @@ const checkPendingFilesStatus = () => {
     for(let i in pending_files) {
         const file_info = pending_files[i];
 
-        getTransactionStatus(file_info.tx_id).then((response) => {
+        getTransactionStatus(file_info.tx_id).then(async (response) => {
             if(response.status == 404) {
                 console.log(`resetting pending file ${file_info.file} as it was not found on the blockchain`);
                 ResetPendingFile(file_info.file, file_info.modified);
             }
 
             if(response.status == 200) {
-                ConfirmSyncedFileFromTransaction(file_info.file, file_info.tx_id);
+                const transaction = await getTransactionWithTags(file_info.tx_id)
+                ConfirmSyncedFileFromTransaction(file_info.file, transaction);
+                sendMessage(`STATUS:OK:${file_info.path}\n`);
                 confirmed_count++;
             }
         });
@@ -236,7 +237,7 @@ const processAllOutstandingUploadsAndActions = async () => {
         });
     }
 
-    const pending_files = GetNewPendingFiles();
+    const pending_files = GetAllPendingFiles();
 
     if(pending_files.length > 0) {
         processAllPendingFiles(pending_files);
@@ -257,12 +258,22 @@ const getAllSyncableFiles = async () => {
 
     downloadable_files = downloadable_files.filter(downloadable_file => {
         const in_downloads = InDownloadQueue(downloadable_file);
+        const pending_file = GetSyncedFileBy({file: downloadable_file.file});
+
+        if(pending_file) {
+            return false;
+        }
+
         const synced_file_matches = GetSyncedFileBy({file: downloadable_file.file});
 
         if(synced_file_matches) {
-            const older_synced_files = synced_file_matches.filter(sf => sf.modified < downloadable_file.modified);
+            if(Array.isArray(synced_file_matches)) {
+                const older_synced_files = synced_file_matches.filter(sf => sf.modified < downloadable_file.modified);
 
-            return !in_downloads && older_synced_files.length > 0;
+                return !in_downloads && older_synced_files.length > 0;
+            } else {
+                return !in_downloads && synced_file_matches.modified < downloadable_file.modified;
+            }            
         } 
 
         return !in_downloads && synced_file_matches == undefined;
@@ -297,7 +308,7 @@ const prepareSyncDialogResponse = (path_infos) => {
 
             processAllDeleteActions(deleted_file_actions);
 
-            const pending_files = GetNewPendingFiles();
+            const pending_files = GetAllPendingFiles();
 
             processAllPendingFiles(pending_files);
 
@@ -321,7 +332,7 @@ const prepareSyncDialogResponse = (path_infos) => {
 
             processAllDeleteActions(deleted_file_actions);
 
-            const pending_files = GetNewPendingFiles();
+            const pending_files = GetAllPendingFiles();
 
             processAllPendingFiles(pending_files);
 
@@ -365,19 +376,28 @@ const processAllPendingFiles = async (pending_files) => {
     const public_sync_folder = path.join(getSystemPath(), 'Public');
 
     for(let i in pending_files) {
-        const txs = await fileExistsOnTheBlockchain(pending_files[i]);
-
-        if(txs.length == 0) {
-            const encrypt_file = pending_files[i].path.indexOf(public_sync_folder) == -1;
+        const pending_file = pending_files[i];
+        if(pending_file.tx_id == null) {            
+            const encrypt_file = pending_file.path.indexOf(public_sync_folder) == -1;
 
             pauseSyncProcessing()
 
-            uploadFile(pending_files[i], encrypt_file);
+            uploadFile(pending_file, encrypt_file);
 
             unpauseSyncProcessing();
 
             uploaded_count++;
-        }       
+        } else {
+            const confirmed = await confirmTransaction(pending_file.tx_id);
+            const transaction = getTransactionWithTags(pending_file.tx_id);
+
+            if(confirmed && transaction) {
+                transaction['is_update'] = pending_file.is_update;
+                ConfirmSyncedFileFromTransaction(pending_file.path, transaction);
+                sendMessage(`STATUS:OK:${pending_file.path}\n`);
+            }
+        }
+            
     }
 
     if(uploaded_count > 0) {
@@ -413,14 +433,15 @@ const processAllPendingTransactions = async (pending_files) => {
     for(let i in pending_files) {
         if(!pending_files[i].tx_id) continue;
 
-        const exists_on_the_blockchain = await transactionExistsOnTheBlockchain(pending_files[i].tx_id);
+        const exists_on_the_blockchain = await confirmTransaction(pending_files[i].tx_id);
 
         if(exists_on_the_blockchain) {
             const transaction = await getTransactionWithTags(pending_files[i].tx_id);
+            const file_path = pending_files[i].path;
             
-            ConfirmSyncedFileFromTransaction(pending_files[i].path, transaction);
+            ConfirmSyncedFileFromTransaction(file_path, transaction);
             
-            sendMessage(`UNREGISTER_PATH:${pending_files[i].path}\n`);
+            sendMessage(`UNREGISTER_PATH:${file_path}\n`);
 
             confirmed_count++;
         }       

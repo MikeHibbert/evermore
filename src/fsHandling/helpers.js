@@ -270,6 +270,7 @@ export const convertDatabaseRecordToInfos = (sync_folder, database_file_paths, i
                 file_info['tx_id'] = tx_id;
                 file_info['key_size'] = key_size;
                 file_info['modified'] = proposed_file.modified;
+                file_info['is_update'] = proposed_file.is_update;
 
                 if(proposed_file.hasOwnProperty('action')) {
                     file_info['action'] = proposed_file.action;

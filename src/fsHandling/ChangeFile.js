@@ -1,59 +1,51 @@
-import {AddProposedFile, GetDownloads, GetProposedFile, GetSyncedFileFromPath, RemoveProposedFile } from '../db/helpers';
+import {
+  AddProposedFile, 
+  GetDownloads, 
+  GetProposedFile, 
+  GetSyncedFileFromPath, 
+  GetPendingFile, 
+  ResetPendingFile,
+  ResetProposedFile
+} from '../db/helpers';
 import {sendMessage} from '../integration/server';
 import {getFileUpdatedDate, getRalativePath} from '../fsHandling/helpers';
-import {getDownloadableFiles} from '../crypto/arweave-helpers';
-import { GetPendingFile } from '../../dist/db/helpers';
 
 const fileChangedHandler = async (file_path) => {
-    console.log(`File ${file_path} has been changed`);
-    
-    if(file_path.endsWith('.enc')) return;
+  console.log(`File ${file_path} has been changed`);
+  
+  if(file_path.endsWith('.enc')) return;
 
-    const current_downloads = GetDownloads();
-    const current_download_matches = current_downloads.filter(cd => cd.path == file_path);
-    if(current_download_matches.length > 0) return;
+  const current_downloads = GetDownloads();
+  const current_download_matches = current_downloads.filter(cd => cd.path == file_path);
+  if(current_download_matches.length > 0) return;
 
-    const downloadable_files = await getDownloadableFiles();
+  const relative_path = getRalativePath(file_path);
+  const new_file_modified = getFileUpdatedDate(file_path);
 
-    const new_file_modified = getFileUpdatedDate(file_path);
-    const relative_path = getRalativePath(file_path);
-
-    if(downloadable_files.length > 0) {
-        for(let i in downloadable_files) {
-            const downloadable_file = downloadable_files[i];
-    
-            if(downloadable_file.file === relative_path && new_file_modified > downloadable_file.modified) {
-              const proposed_file = GetProposedFile(file_path);
-              if(!proposed_file) {
-                  AddProposedFile(null, file_path);
-                  sendMessage(`STATUS:SYNC:${file_path}\n`);
-              } else {
-                if(new_file_modified > proposed_file.modified) { 
-                  // there have been changes made before the uploader has uploaded the last modified changes so queue it 
-                  // up again to make the extra
-                  AddProposedFile(null, file_path, parseInt(proposed_file.version) + 1);
-                }
-              }
-            }
-        }
-    } else {
-      const pending = GetPendingFile(file_path);
-
-      if(!GetProposedFile(file_path)) { // if its not in Proposed files it should have been put in the sync files 
-        if(pending) {
-          if(pending.modified < new_file_modified) {        
-            AddProposedFile(null, file_path, parseInt(pending.version + 1), true); // this the newest version so add it to pending for another upload
-            sendMessage(`STATUS:SYNC:${file_path}\n`);
-          }
-        } else {
-          const synced_file = GetSyncedFileFromPath(file_path);
+  if(!GetProposedFile(file_path)) { 
+    const pending = GetPendingFile(file_path);
+    if(pending) {
+      if(pending.modified < new_file_modified && pending.tx_id == null) {   
+        // this the newest version so add it to pending for another upload     
+        AddProposedFile(null, file_path, parseInt(pending.version + 1), true); 
         
-          AddProposedFile(null, file_path, parseInt(synced_file.version + 1), true); // this the newest version so add it to pending for another upload
-          sendMessage(`STATUS:SYNC:${file_path}\n`);
-        }
-        
+      } else {
+        ResetPendingFile(file_path, new_file_modified);
       }
-    }
+      sendMessage(`UNREGISTER_PATH:${file_path}\n`);
+    } else {
+      // if its not in Proposed or pending files it should have been put in the sync files 
+      const synced_file = GetSyncedFileFromPath(file_path);
+
+      if(synced_file) {
+        // this the newest version so add it to pending for another upload
+        AddProposedFile(null, file_path, parseInt(synced_file.version + 1), true); 
+      } 
+      sendMessage(`UNREGISTER_PATH:${file_path}\n`);
+    }    
+  }
+
+  sendMessage(`UNREGISTER_PATH:${file_path}\n`);
 }
 
 export default fileChangedHandler;

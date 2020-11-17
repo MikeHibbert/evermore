@@ -145,6 +145,8 @@ export const AddPendingFile = (tx_id, file, version, is_update=false) => {
 
     const sync_folders = GetSyncedFolders();
 
+    
+
     let relative_path = file;
 
     for(let i in sync_folders) {
@@ -252,24 +254,24 @@ export const GetPendingFile = (file_path) => {
 
     const file = db.get('pending').find({path: file_path}).value();
 
-    if(file) {
-        const modified = getFileUpdatedDate(file.file_path);
-        if(modified > file.modified) {
-            return ResetPendingFile(file.file, modified);
-        }
-    }
+    // if(file) {
+    //     const modified = getFileUpdatedDate(file_path);
+    //     if(modified > file.modified && file.tx_id == null) {
+    //         return ResetPendingFile(file.file, modified);
+    //     }
+    // }
     return file;
 }
 
-export const AddProposedFile = (tx_id, file, version, is_update) => {
+export const AddProposedFile = (tx_id, file_path, version, is_update) => {
     const sync_folders = GetSyncedFolders();
 
-    let relative_path = file;
+    let relative_path = file_path;
 
     for(let i in sync_folders) {
         const sync_folder = sync_folders[i];
-        if(file.indexOf(sync_folder) != -1) {
-            relative_path = file.replace(sync_folder, '');
+        if(file_path.indexOf(sync_folder) != -1) {
+            relative_path = file_path.replace(sync_folder, '');
         }
     }
 
@@ -283,9 +285,9 @@ export const AddProposedFile = (tx_id, file, version, is_update) => {
         .push({
             tx_id: tx_id,
             file: relative_path,
-            path: file,
+            path: file_path,
             version: version,
-            modified: getFileUpdatedDate(file),
+            modified: getFileUpdatedDate(file_path),
             hostname: os.hostname(),
             is_update: is_update
         }).write();
@@ -314,16 +316,16 @@ export const GetProposedFileBy = (query) => {
 
     const file = db.get('proposed').find(query).value();
 
-    if(file) {
-        const modified = getFileUpdatedDate(file.path);
-        if(modified > file.modified) {
-            return ResetProposedFile(file.file, modified);
-        }
-    }
+    // if(file) {
+    //     const modified = getFileUpdatedDate(file.path);
+    //     if(modified > file.modified) {
+    //         return ResetProposedFile(file.file, modified);
+    //     }
+    // }
     return file;
 }
 
-export const ResetProposedFile = (file, modified) => {
+export const ResetProposedFile = (file_path, modified) => {
     if(!db) {
         InitDB();
     }
@@ -347,13 +349,33 @@ export const RemoveProposedFile = (file_path) => {
         }).write();
 }
 
+export const RemoveProposedFileBy = (query) => {
+    if(!db) {
+        InitDB();
+    }
+
+    db.get('proposed')
+        .remove(query).write();
+}
+
 export const GetAllProposedFiles = () => {
     if(!db) {
         InitDB();
     }
 
-    return db.get('proposed')
-        .value();
+    let proposed = db.get('proposed').value();
+
+    proposed.forEach(pf => { // sanity check them as the downloader may have triggered the AddFile system
+        const synced_file = GetSyncedFileBy({file: pf.file});
+
+        if(synced_file) {
+            if(synced_file.modified == pf.modified) {
+                RemoveProposedFile(pf.file);
+            }
+        }
+    });
+
+    return db.get('proposed').value(); // get them again now they have been cleaned up
 }
 
 export const ConfirmSyncedFile = (tx_id) => {
@@ -362,6 +384,7 @@ export const ConfirmSyncedFile = (tx_id) => {
     }
 
     const pending = db.get('pending').find({tx_id: tx_id}).value();
+
 
     if(pending.is_update) {
         UpdateSyncedFile(pending.file, pending.tx_id, pending.version, pending.modified)
@@ -406,6 +429,7 @@ export const ConfirmSyncedFileFromTransaction = (file_path, transaction) => {
 
     const pending = db.get('pending').find({tx_id: transaction.id}).value();
 
+    
     
     if(pending) {
         if(pending.is_update) {
@@ -493,6 +517,8 @@ export const UndeleteSyncedFile = (tx_id) => {
     }
 
     const synced_file = db.get('deleting').find({tx_id: tx_id}).value();
+
+    
 
     db.get('synced_files')
             .push(synced_file)

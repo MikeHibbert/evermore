@@ -11,6 +11,8 @@ let pipe_stream = null;
 let clients = [];
 
 export const sendMessage = (message, send_update_message=false) => {
+    const sync_folders = GetSyncedFolders();
+    const sync_folder = sync_folders[0];
     for(let i in clients) {
         try {
             if(send_update_message == true) {
@@ -18,6 +20,8 @@ export const sendMessage = (message, send_update_message=false) => {
                 clients[i].write("UPDATE_VIEW\n");
             }  else {
                 clients[i].write(message);
+                clients[i].write(`UNREGISTER_PATH:${sync_folder}\n`);
+                clients[i].write(`REGISTER_PATH:${sync_folder}\n`);
             }
             
         } catch (e) {

@@ -250,7 +250,7 @@ export const addToQueue = async (file_info) => {
     case "upload":
       const online_versions = await getOnlineVersions(file_info);
       if(online_versions.length == 0) {
-          AddPendingFile(null, file_info.path, file_info.version);
+          AddPendingFile(null, file_info.path, file_info.version, file_info.is_update);
       } else {
           online_versions.sort((a, b) => a.modified - b.modified);
 
