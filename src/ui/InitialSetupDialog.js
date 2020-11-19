@@ -185,17 +185,18 @@ const doSetupStageTwo = (oldSystray) => {
 
         const selectedFiles = fileDialog.selectedFiles(); 
 
-        selectFileCallback(selectedFiles[0]);
+        fileDialog.close();
+
+        if(!selectFileCallback(selectedFiles[0])) return; // path not accepted so go back to setup dialog
 
         const folderDialog = new QFileDialog();
         folderDialog.setFileMode(2);
         folderDialog.exec();
 
         const selectedFolders = folderDialog.selectedFiles(); 
+        folderDialog.close();
 
-        debugger;
-
-        selectFolderCallback(selectedFolders[0]);  
+        if(!selectFolderCallback(selectedFolders[0])) return; // folder not accepted to go back 
         
     });
 
@@ -319,6 +320,8 @@ export const selectFolderCallback = (retVal) => {
         setupWin.show();
         resetWalletFilePath();
         doSetupStageTwo(null);
+
+        return false;
     }
 
     AddSyncedFolder(retVal.replace('\r\n', ''));
@@ -339,6 +342,8 @@ export const selectFolderCallback = (retVal) => {
     InitFileWatcher(retVal.replace('\r\n', ''));
 
     createLoggedInSystray();
+
+    return true;
 }
 
 const createDefaultEvermoreFolders = (sync_folder) => {
@@ -354,14 +359,19 @@ const createDefaultEvermoreFolders = (sync_folder) => {
 }
 
 export const selectFileCallback = (retVal) => {   
-    if(retVal.length == 0) {
+    debugger;
+    if(retVal.length == 0 || fs.lstatSync(retVal).isDirectory()) {
         setupWin.show();
         doSetupStageTwo(null);
+
+        return false;
     }
 
     const path = retVal.replace('\r\n', '');
 
     setWalletFilePath(path);
+
+    return true;
 }
 
 export const configureWithPathsFromInfo = (path_info) => {

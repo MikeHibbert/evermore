@@ -20,12 +20,24 @@ export const win = new QMainWindow();
 win.setWindowTitle("Evermore Settings");
 win.setWindowIcon(new QIcon(settings.NOTIFY_ICON_PATH));
 
-const trayIcon = new QIcon(
-    path.join(
+let trayIcon = null;
+
+if(process.platform == 'win32') {
+    trayIcon = new QIcon(
+        path.resolve(__dirname, '../assets/images/tray-logo32x32.png')
+    );
+}
+if(process.platform == 'darwin') {
+    const icon_path = path.join(
         process.cwd(), 
-        `assets/images/${process.platform === 'win32' ? 'tray-logo16x16.ico' : 'tray-logo32x32.png'}`
-    )
-);
+        'assets/images/tray-logo32x32-macos.png'
+    );
+    trayIcon = new QIcon(
+        icon_path
+    );
+}
+
+
 const tray = new QSystemTrayIcon();
 tray.setIcon(trayIcon);
 tray.show();
@@ -169,7 +181,6 @@ const initSystemTray = () => {
     tray.setContextMenu(menu);
 
     const wallet_path = walletFileSet();
-    
 
     if(wallet_path.length == 0) {
         createLoggedOutSystray(menu);

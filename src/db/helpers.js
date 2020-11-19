@@ -20,7 +20,7 @@ export function InitDB() {
 
     const sync_status = db.has('sync_status').value();
     if(sync_status === false) {
-        db.set('sync_status', false).write();
+        db.set('sync_status', true).write();
     }
 
     const sync_frequency = db.has('sync_frequency').value();
