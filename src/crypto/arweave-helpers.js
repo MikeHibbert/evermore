@@ -581,7 +581,7 @@ export const getTransactionWithTags = async (tx_id) => {
     }    
 }
 
-const downloadFile = function(url, dest, cb) {
+export const downloadFile = function(url, dest, cb) {
     var file = fs.createWriteStream(dest, {emitClose : true});
     var request = https.get(url, function(response) {
         response.pipe(file);

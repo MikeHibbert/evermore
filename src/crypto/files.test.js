@@ -10,11 +10,13 @@ const {
     decryptDataWithRSAKey,
     decryptDataWithWallet,
     getFileEncryptionKey,
+    getOnlineDataEncryptionKey,
     encryptFile,
     decryptFile,
     zipKey,
     unzipKey
 } = require('./files');
+import {downloadFile} from './arweave-helpers';
 
 const { InitDB, setWalletFilePath, AddSyncedFolder, GetSyncedFolders } = require('../db/helpers'); 
 
@@ -132,6 +134,10 @@ describe("Encypted File Ops", () => {
 
         return;
     });
+
+    // test("getOnlineDataEncryptionKey should get the same key as getFileEncryptionKey but without downloading the full file", async () => {
+
+    // });
 
     test("zipKey should generate a smaller string than the private key supplied", async () => {
         const aw = Arweave.init(settings.ARWEAVE_CONFIG);

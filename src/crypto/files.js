@@ -1,8 +1,13 @@
 const fs = require('fs');
+const stream = require('stream');
+const util = require('util');
 const NodeRSA = require('node-rsa');
 const NodeJWK = require('node-jwk');
 const zlib = require('zlib');
+import { https } from 'follow-redirects';
 import regeneratorRuntime from "regenerator-runtime";
+
+const pipeline = util.promisify(stream.pipeline); // for pipelining downloads
 
 export const encryptFile = async (wallet, jwk, file_path, dest_path) => {
     return new Promise((resolve, reject) => {
@@ -81,6 +86,28 @@ export const getFileEncryptionKey = (file_path, transaction, wallet) => {
                 return resolve(decryptDataWithWallet(buffer.toString('binary'), wallet).toString('utf8'));
             })
         });
+    });
+}
+
+export const getOnlineDataEncryptionKey = async (transaction, callback, error_callback) => {
+    const url = `https://arweave.net/${transaction.tx_id}`;
+    const buff = [];
+    const bytes_count = 0;
+
+    var request = https.get(url, function(response) {
+        response.on('data', data => {
+            bytes_count += data.byteLength;
+
+            if(bytes_count >= transaction.key_size) {
+                response.close();
+                const remainder_bytes = data.slice(0, bytes_count - transaction.key_size - 1);
+            } else {
+                buff.push(data);
+            }
+        });
+    }).on('error', function(err) { // Handle errors
+        fs.unlink(dest); // Delete the file async. (But we don't check the result)
+        if (error_callback) error_callback(err.message);
     });
 }
 
