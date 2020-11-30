@@ -30,7 +30,7 @@ if(process.platform == 'win32') {
 if(process.platform == 'darwin') {
     const icon_path = path.join(
         process.cwd(), 
-        'assets/images/tray-logo32x32-macos.png'
+        'assets/images/tray-logo32x32.png'
     );
     trayIcon = new QIcon(
         icon_path

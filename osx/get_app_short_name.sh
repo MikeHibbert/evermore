@@ -1,0 +1,1 @@
+xcrun iTMSTransporter -m provider -u <Apple ID goes here> -p <App specific password here>
