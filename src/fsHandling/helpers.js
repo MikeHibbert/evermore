@@ -261,9 +261,10 @@ export const convertDatabaseRecordToInfos = (sync_folder, database_file_paths, i
                 }
             } catch(e) {}
 
-            let file_info = { path: system_path.replace(sync_folder, ''), children: [], type: path_type, checked: true };
+            let file_info = { path: system_path.replace(sync_folder, ''), children: [], type: path_type, checked: true, action: proposed_file.action };
+            const proposed_file_path = path.join(sync_folder, process.platform == 'win32' ? proposed_file.file : proposed_file.file.replace('\\', '/'));
 
-            if(proposed_file.path == system_path) {
+            if(proposed_file_path == system_path) {
                 const tx_id = proposed_file.hasOwnProperty('tx_id') ? proposed_file.tx_id : proposed_file.hasOwnProperty('id') ? proposed_file.id : null;
                 const key_size = proposed_file.hasOwnProperty('key_size') ? proposed_file.key_size : null;
 
@@ -415,7 +416,7 @@ export const mergePathInfos = (from, to, root=true) => {
 
                 if(to_items.length == 0) {
                     const b = to_items[0];
-                    const folder_info = {name: a.name, type: 'folder', path: a.path, children: [], checked: a.checked }
+                    const folder_info = {name: a.name, type: 'folder', path: a.path, children: [], checked: a.checked, action: a.action }
 
                     if(b != undefined) {
                         folder_info.children = mergePathInfos(a, b, false);

@@ -230,11 +230,11 @@ const createFolderItems = (path_info, tree, window, root, parent) => {
 export const processToQueues = (path_infos) => {
   path_infos.children.forEach(file_info => {
     if(file_info.type == 'folder') {
-        configureWithPathsFromInfo(file_info);
+      processToQueues(file_info);
     } else {
-        if(file_info.checked) {
-            addToQueue(file_info);
-        }            
+      if(file_info.checked) {
+          addToQueue(file_info);
+      }            
     }
   });
 }

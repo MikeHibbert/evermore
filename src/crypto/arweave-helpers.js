@@ -365,126 +365,149 @@ export const getDownloadableFilesGQL = async () => {
 
     const jwk = getJwkFromWalletFile(wallet_file);
 
-    const windows = settings.PLATFORM === "win32";
-
     const address = await arweave.wallets.jwkToAddress(jwk);
 
-    const query = `{
-        transactions(
-            owners: ["${address}"],
-              tags: [
-              {
-                  name: "App-Name",
-                  values: ["${settings.APP_NAME}"]
-              },
-              ]	) {
-              edges {
-                  node {
-                    id
-                    tags {
-                        name
-                        value
+    let cursor = '';
+    let hasNextPage = true;
+    const transactions = {};
+
+    while(hasNextPage) {
+        const query = `{
+            transactions(
+                owners: ["${address}"],
+                tags: [
+                {
+                    name: "App-Name",
+                    values: ["${settings.APP_NAME}"]
+                },
+                ]
+                after: "${cursor}"
+                first: 100	) {
+                pageInfo {
+                    hasNextPage
+                }
+                edges {
+                    cursor
+                    node {
+                        id
+                        tags {
+                            name
+                            value
+                        }
+                        block {
+                            timestamp
+                            height
+                        }
                     }
-                  }
-              }
-          }
-    }`;
-
-    const response = await axios.post(settings.GRAPHQL_ENDPOINT, {
-        operationName: null,
-        query: query,
-        variables: {}
-    });
-
-    if(response.status == 200) {
-        const available_rows = [];
-
-        for(let i in response.data.data.transactions.edges) {
-            const row = response.data.data.transactions.edges[i].node;
-
-            row['action'] = 'download';
-            row['tx_id'] = row.id;
-
-            for(let i in row.tags) {
-                const tag = row.tags[i];
-
-                if(tag.name == 'version' || tag.name == 'modified' || tag.name == 'created') {
-                    row[tag.name] = parseInt(tag.value);
-                } else {
-                    row[tag.name] = tag.value;
                 }
             }
+        }`;
 
-            let found = false;
-            for(let j in available_rows) {
-                const final_row = available_rows[j];
-
-                if(final_row.path == row.path && row.modified > final_row.modified) {
-                    found = true;
-                    available_rows[j] = row;
-                }
-            }
-
-            if(!found) {
-                available_rows.push(row);
-            }
-        }
-
-        const final_rows = [];
-
-        const persistence_records = await getPersistenceRecords();
-        const deleted_files = GetDeletedFiles();
-
-        available_rows.forEach(available_row => {
-            available_row['action'] = 'download';
-
-            const synced_file = GetSyncedFileBy({file: available_row.file});
-            if(synced_file) {
-                if(available_row.modified > parseInt(synced_file.modified)) {
-                    if(available_row.CRC != synced_file.CRC) {
-                        const deleted_matches = deleted_files.filter(df => df.action_tx_id == available_row.id);
-                        const persistence_matches = persistence_records.filter(pr => pr.id == available_row.id);
-
-                        let current_persistence_state = 'available';
-
-                        persistence_matches.forEach(pm => {
-                            if(pm.action == 'delete') {
-                                current_persistence_state = 'deleted';
-                            } else {
-                                current_persistence_state = 'available';
-                            }
-                        });
-
-                        if(deleted_matches.length == 0 && current_persistence_state == 'available') {
-                            final_rows.push(available_row);
-                        }                        
-                    } 
-                }
-            } else {
-                const deleted_matches = deleted_files.filter(df => df.action_tx_id == available_row.id);
-                const persistence_matches = persistence_records.filter(pr => pr.id == available_row.id);
-
-                let current_persistence_state = 'available';
-
-                persistence_matches.forEach(pm => {
-                    if(pm.action == 'delete') {
-                        current_persistence_state = 'deleted';
-                    } else {
-                        current_persistence_state = 'available';
-                    }
-                });
-
-                if(deleted_matches.length == 0 && current_persistence_state == 'available') {
-                    final_rows.push(available_row);
-                }      
-            }
-            
+        const response = await axios.post(settings.GRAPHQL_ENDPOINT, {
+            operationName: null,
+            query: query,
+            variables: {}
         });
 
-        return final_rows;
+        if(response.status == 200) {
+            const data = response.data.data;
+
+            for(let i in data.transactions.edges) {
+                const row = data.transactions.edges[i].node;
+
+                row['action'] = 'download';
+                row['tx_id'] = row.id;
+
+                for(let i in row.tags) {
+                    const tag = row.tags[i];
+
+                    if(tag.name == 'version' || tag.name == 'modified' || tag.name == 'created') {
+                        row[tag.name] = parseInt(tag.value);
+                    } else {
+                        row[tag.name] = tag.value;
+                    }
+                }
+
+                if(row.file.indexOf('\\') != -1) {
+                    if(process.platform != 'win32') {
+                        row.file = row.file.split('\\').join('/');
+                        row.path = row.path.split('\\').join('/');
+                    }
+                }
+
+                if(transactions.hasOwnProperty(row['file'])) {
+                    const existing_tx = transactions[row['file']];
+                    if(existing_tx.modified < row.modified) {
+                        transactions[row['file']] = row;
+                    }
+                } else {
+                    transactions[row['file']] = row;
+                }
+            }
+
+            hasNextPage = data.transactions.pageInfo.hasNextPage;
+
+            if(hasNextPage) {
+                cursor = data.transactions.edges[data.data.transactions.edges.length - 1].cursor;
+            }
+        } else {
+            hasNextPage = false;
+        }
     }
-    
-    return null; // if nothing is returned 
+
+    const final_rows = [];
+
+    const persistence_records = await getPersistenceRecords();
+    const deleted_files = GetDeletedFiles();
+
+    Object.keys(transactions).forEach(file_name => {
+        const available_row = transactions[file_name];
+        available_row['action'] = 'download';
+
+        const synced_file = GetSyncedFileBy({file: available_row.file});
+        if(synced_file) {
+            if(available_row.modified > parseInt(synced_file.modified)) {
+                // if(available_row.CRC != synced_file.CRC) {
+                    const deleted_matches = deleted_files.filter(df => df.action_tx_id == available_row.id);
+                    const persistence_matches = persistence_records.filter(pr => pr.id == available_row.id);
+
+                    let current_persistence_state = 'available';
+
+                    persistence_matches.forEach(pm => {
+                        if(pm.action == 'delete') {
+                            current_persistence_state = 'deleted';
+                        } else {
+                            current_persistence_state = 'available';
+                        }
+                    });
+
+                    if(deleted_matches.length == 0 && current_persistence_state == 'available') {
+                        final_rows.push(available_row);
+                    }                        
+                // } 
+            }
+        } else {
+            const deleted_matches = deleted_files.filter(df => df.action_tx_id == available_row.id);
+            const persistence_matches = persistence_records.filter(pr => pr.id == available_row.id);
+
+            let current_persistence_state = 'available';
+
+            persistence_matches.forEach(pm => {
+                if(pm.action == 'delete') {
+                    current_persistence_state = 'deleted';
+                } else {
+                    current_persistence_state = 'available';
+                }
+            });
+
+            if(deleted_matches.length == 0 && current_persistence_state == 'available') {
+                final_rows.push(available_row);
+            }      
+        }
+        
+    });
+
+    return final_rows == [] ? null : final_rows;
 }
 
 export const finishUpload = async (resumeObject) => {
@@ -607,7 +630,6 @@ export const downloadFileFromTransaction = async (tx_id) => {
             } else {
                 tx_row[key] = value;
             }
-            
         }); 
 
         return tx_row;
@@ -651,7 +673,12 @@ export const downloadFileFromTransaction = async (tx_id) => {
 
     const sync_folders = GetSyncedFolders();
 
-    const is_encrypted = transaction.path.indexOf('Public\\') == -1;
+    const is_encrypted = transaction.path.indexOf('Public') == -1;
+
+    if(process.platform != 'win32') {
+        transaction.file = transaction.file.split('\\').join('/');
+        transaction.path = transaction.path.split('\\').join('/');
+    }
 
     if(is_encrypted) {
         const save_file_encrypted = path.join(sync_folders[0], `${transaction.file.split(' ').join('_')}.enc`);
@@ -691,7 +718,9 @@ export const downloadFileFromTransaction = async (tx_id) => {
     } else {
         const save_file = path.join(sync_folders[0], transaction.file);
 
-        downloadFile(`https://arweave.net/${transaction.id}`, save_file, data, (err) => {
+        debugger;
+
+        downloadFile(`https://arweave.net/${transaction.id}`, save_file, (err) => {
             if (err) {
                 console.error(err);
             }
@@ -897,62 +926,94 @@ export const getPersistenceRecords = async () => {
 
     const address = await arweave.wallets.jwkToAddress(jwk);
 
-    const query = `{
-        transactions(
-            owners: ["${address}"],
-              tags: [
-              {
-                  name: "App-Name",
-                  values: ["${settings.APP_NAME}"]
-              },
-              {
-                name: "Content-Type",
-                values: ["PERSISTENCE"]
-              }
-              ]	) {
-              edges {
-                  node {
-                    id
-                    tags {
-                        name
-                        value
-                    }
-                  }
-              }
-          }
-    }`;
+    let cursor = '';
+    let hasNextPage = true;
+    const persistence_records = {};
 
-    const response = await axios.post(settings.GRAPHQL_ENDPOINT, {
-        operationName: null,
-        query: query,
-        variables: {}
-    });
-
-    if(response.status == 200) {
-        const final_rows = [];
-
-        for(let i in response.data.data.transactions.edges) {
-            const row = response.data.data.transactions.edges[i].node;
-
-            
-
-            for(let i in row.tags) {
-                const tag = row.tags[i];
-                if(tag.name == 'version' || tag.name == 'modified') {
-                    row[tag.name] = parseInt(tag.value);
-                } else {
-                    row[tag.name] = tag.value;
+    while(hasNextPage) {
+        const query = `{
+            transactions(
+                owners: ["${address}"],
+                tags: [
+                {
+                    name: "App-Name",
+                    values: ["${settings.APP_NAME}"]
+                },
+                {
+                    name: "Content-Type",
+                    values: ["PERSISTENCE"]
                 }
-                if(tag.name == 'action') {
-                    row['action'] = tag.value == 'DELETE' ? 'delete' : 'download';
+                ]
+                after: "${cursor}"
+                first: 100	) {
+                    pageInfo {
+                        hasNextPage
+                    }
+                    edges {
+                        node {
+                            id
+                            tags {
+                                name
+                                value
+                            }
+                            block {
+                                timestamp
+                                height
+                            }
+                        }
+                    }
+                }
+            }`;
+
+        const response = await axios.post(settings.GRAPHQL_ENDPOINT, {
+            operationName: null,
+            query: query,
+            variables: {}
+        });
+
+        const data = response.data.data;
+
+        if(response.status == 200) {
+            for(let i in data.transactions.edges) {
+                const row = data.transactions.edges[i].node;
+
+                for(let i in row.tags) {
+                    const tag = row.tags[i];
+                    if(tag.name == 'version' || tag.name == 'modified') {
+                        row[tag.name] = parseInt(tag.value);
+                    } else {
+                        row[tag.name] = tag.value;
+                    }
+                    if(tag.name == 'action') {
+                        row['action'] = tag.value == 'DELETE' ? 'delete' : 'download';
+                    }
+                }
+
+                if(persistence_records.hasOwnProperty(row.file)) {
+                    const current_record = persistence_records[row.file];
+                    if(current_record.modified < row.modified) {
+                        persistence_records[row.file] = row;
+                    }
+                } else {
+                    persistence_records[row.file] = row;
                 }
             }
 
-            final_rows.push(row);
+            hasNextPage = data.transactions.pageInfo.hasNextPage;
+        } else {
+            hasNextPage = false;
         }
 
-        return final_rows;
+        
+
+        if(hasNextPage) {
+            cursor = data.transactions.edges[data.data.transactions.edges.length - 1].cursor;
+        }
     }
+
+    const final_rows = Object.keys(persistence_records).map(file_name => persistence_records[file_name]);
+
+    return final_rows;
 }
 
 export const getPersistenceRecordsFor = async (file_path) => {

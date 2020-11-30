@@ -13,7 +13,7 @@ import {getFileUpdatedDate, getRalativePath} from '../fsHandling/helpers';
 const fileChangedHandler = async (file_path) => {
   console.log(`File ${file_path} has been changed`);
   
-  if(file_path.endsWith('.enc')) return;
+  if(file_path.endsWith('.enc') || file_path.endsWith('.DS_Store') ) return;
 
   const current_downloads = GetDownloads();
   const current_download_matches = current_downloads.filter(cd => cd.path == file_path);

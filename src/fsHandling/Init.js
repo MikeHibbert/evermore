@@ -48,6 +48,7 @@ import { sendMessage } from '../integration/server';
 import { nextTick, report } from 'process';
 import { resolve } from 'path';
 import { source } from 'lowdb/adapters/FileSync';
+import { platform } from 'os';
 
 export const OnFileWatcherReady = () => {
     console.log('Initial scan complete. Ready for changes');
@@ -221,20 +222,32 @@ const processAllOutstandingUploadsAndActions = async () => {
 
     if(syncable_files[''].children.length > 0) {
         const minutes = GetSyncFrequency();
-        notifier.notify({
+        const notification = {
             title: 'Evermore Datastore',
             icon: settings.NOTIFY_ICON_PATH,
-            message: `${syncable_files[''].children.length} files have been queued for sync in the last ${minutes} minutes. Would like to review them now?`,
-            actions: ['Review', 'Postpone']
-        });
+            message: `${syncable_files[''].children.length} files have been queued for sync in the last ${minutes} minutes. Would like to review them now?`
+        };
 
-        notifier.on('review', () => {
-            prepareSyncDialogResponse(syncable_files);
-        });
+        if(process.platform != 'darwin') {
+            notification['actions'] = ['Review', 'Postpone'];
+        }
 
-        notifier.on('postpone', () => {
-            // console.log('"Postpone" was pressed');
-        });
+        notifier.notify(notification);
+
+        if(process.platform != 'darwin') {
+
+            notifier.on('review', () => {
+                prepareSyncDialogResponse(syncable_files);
+            });
+
+            notifier.on('postpone', () => {
+                // console.log('"Postpone" was pressed');
+            });
+        } else {
+            notifier.on('click', () => {
+                prepareSyncDialogResponse(syncable_files);
+            });
+        }
     }
 
     const pending_files = GetAllPendingFiles();
@@ -326,6 +339,7 @@ const prepareSyncDialogResponse = (path_infos) => {
     } else {
         sync_settings_dialog_open = true;
         openReviewSyncDialog(path_infos[''], (path_infos_to_be_synced) => {
+
             processToQueues(path_infos_to_be_synced);
 
             const deleted_file_actions = GetDeletedFiles();

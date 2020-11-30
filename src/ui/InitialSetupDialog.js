@@ -376,6 +376,7 @@ export const selectFileCallback = (retVal) => {
 
 export const configureWithPathsFromInfo = (path_info) => {
     path_info.children.forEach(async pi => {
+        debugger;
         if(pi.type == 'folder') {
             configureWithPathsFromInfo(pi);
         } else {
