@@ -27,13 +27,16 @@ if(process.platform == 'win32') {
         path.resolve(__dirname, '../assets/images/tray-logo32x32.png')
     );
 }
+
 if(process.platform == 'darwin') {
-    const icon_path = path.join(
-        process.cwd(), 
-        'assets/images/tray-logo32x32.png'
-    );
     trayIcon = new QIcon(
-        icon_path
+        path.resolve(__dirname, '../assets/images/tray-logo32x32.png')
+    );
+}
+
+if(process.platform == 'linux') {
+    trayIcon = new QIcon(
+        path.resolve(__dirname, '../assets/images/tray-logo32x32.png')
     );
 }
 
