@@ -437,11 +437,13 @@ export const getDownloadableFilesGQL = async () => {
 
                 if(transactions.hasOwnProperty(row['file'])) {
                     const existing_tx = transactions[row['file']];
-                    if(existing_tx.modified < row.modified) {
+                    if(existing_tx.modified < row.modified && row['Content-Type'] != 'PERSISTENCE') {
                         transactions[row['file']] = row;
                     }
                 } else {
-                    transactions[row['file']] = row;
+                    if(row['Content-Type'] != 'PERSISTENCE') {
+                        transactions[row['file']] = row;
+                    }
                 }
             }
 

@@ -331,11 +331,11 @@ export const ResetProposedFile = (file_path, modified) => {
     }
 
     db.get('proposed')
-        .find({file: file})
+        .find({file: file_path})
         .assign({tx_id: null, modified: modified})
         .write();
 
-    return db.get('proposed').find({file: file}).value();
+    return db.get('proposed').find({file: file_path}).value();
 }
 
 export const RemoveProposedFile = (file_path) => {
