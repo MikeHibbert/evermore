@@ -14,6 +14,13 @@
       "*.spec.js"
     ]
   },
+  "browserslist": [
+    "last 3 and_chr versions",
+    "last 3 chrome versions",
+    "last 3 opera versions",
+    "last 3 ios_saf versions",
+    "last 3 safari versions"
+  ],
   "scripts": {
     "test": "npm-run-all clean transpile && webpack --config webpack.config.js && qode ./node_modules/jest/bin/jest -i --runInBand --detectOpenHandles",
     "service": "node dist/index.js",
@@ -28,12 +35,17 @@
   "dependencies": {
     "@babel/cli": "^7.10.4",
     "@babel/core": "^7.10.4",
+    "@babel/plugin-transform-runtime": "^7.12.1",
+    "@babel/polyfill": "^7.12.1",
     "@babel/preset-env": "^7.10.4",
     "@nodegui/nodegui": "^0.26.0",
     "@sentry/node": "^5.27.3",
     "@sentry/tracing": "^5.27.3",
     "arweave": "^1.9.1",
+    "async": "^3.2.0",
     "axios": "^0.19.2",
+    "babel-plugin-transform-regenerator": "^6.26.0",
+    "babel-plugin-transform-runtime": "^6.23.0",
     "bl": ">=1.2.3",
     "check-disk-space": "^2.1.0",
     "chokidar": "^3.4.0",
@@ -60,6 +72,7 @@
     "npm-run-all": "^4.1.5",
     "npx": "^10.2.2",
     "ps-node": "^0.1.6",
+    "regenerator-runtime": "^0.13.7",
     "rimraf": "^3.0.2",
     "shortid": "^2.2.15",
     "smartweave": "https://arweave.net/AM-u4X2po-3Tx7fma3lRonCfLwrjI42IALwDL_YFXBs",
@@ -70,6 +83,7 @@
   },
   "devDependencies": {
     "@nodegui/packer": "^1.4.1",
+    "babel-polyfill": "^6.26.0",
     "jest": "^26.4.2",
     "webpack": "^4.43.0",
     "webpack-cli": "^3.3.11"
