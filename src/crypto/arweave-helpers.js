@@ -713,7 +713,18 @@ export const downloadFileFromTransaction = async (tx_id) => {
 
             const private_key = await getFileEncryptionKey(save_file_encrypted, transaction, jwk);
             const save_file = path.join(sync_folders[0], `${transaction.file}`);
-            const result = await decryptFile(jwk, private_key, parseInt(transaction.key_size), save_file_encrypted, save_file);
+            try {
+                const result = await decryptFile(jwk, private_key, parseInt(transaction.key_size), save_file_encrypted, save_file);
+            } catch(e) {
+                console.log(e);
+
+                debugger;
+
+                if(fs.existsSync(save_file))
+                    fs.renameSync(save_file, `${now}.del`);  // It's not going to affect the current open handles
+                if(fs.existsSync(`${now}.del`))
+                    fs.unlinkSync(`${now}.del`);
+            }
 
             setFileTimestamps(save_file, transaction);
 

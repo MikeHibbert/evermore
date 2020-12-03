@@ -1,0 +1,1 @@
+xcrun stapler staple ./deploy/darwin/build/Evermore.app

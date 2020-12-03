@@ -8,7 +8,8 @@ import {
     GetDeletedFileFromPath, 
     UndeleteSyncedFile,
     AddSyncedFileFromTransaction,
-    GetPendingFile
+    GetPendingFile,
+    GetSyncedFolders
 } from '../db/helpers';
 import path from 'path';
 import regeneratorRuntime from "regenerator-runtime";
@@ -24,13 +25,16 @@ import { getDownloadableFilesGQL } from '../crypto/arweave-helpers';
 const fileAddedHandler = (file_path) => {
     if(file_path.endsWith('.enc') || file_path.endsWith('.DS_Store') ) return;
 
+    const sync_folder = GetSyncedFolders()[0];
+
     const current_downloads = GetDownloads();
     const current_download_matches = current_downloads.filter(cd => cd.path == file_path);
 
     if(current_download_matches.length > 0) return;
 
     const new_file_modified = getFileUpdatedDate(file_path);
-    const current_synced_file = GetSyncedFileBy({path: file_path});
+    const current_synced_file = GetSyncedFileBy({file: file_path.replace(sync_folder, '')});
+
     if(current_synced_file) {
         if(current_synced_file.modified >= new_file_modified) return; // stop because the downloader has just added this file from the blockchain
     }

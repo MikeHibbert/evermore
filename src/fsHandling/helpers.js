@@ -3,6 +3,7 @@ const glob = require('glob');
 const path = require('path');
 const checkDiskSpace = require('check-disk-space');
 import regeneratorRuntime from "regenerator-runtime";
+import "regenerator-runtime/runtime";
 import {AddFileToDownloads, GetSyncedFolders, GetExclusions} from '../db/helpers';
 import {arweave} from '../crypto/arweave-helpers';
 import {settings} from '../config';
