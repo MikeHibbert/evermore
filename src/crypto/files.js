@@ -1,4 +1,5 @@
 const fs = require('fs');
+const crypto = require('crypto');
 const stream = require('stream');
 const util = require('util');
 const NodeRSA = require('node-rsa');
@@ -6,42 +7,41 @@ const NodeJWK = require('node-jwk');
 const zlib = require('zlib');
 import { https } from 'follow-redirects';
 import regeneratorRuntime from "regenerator-runtime";
+import { arweave } from './arweave-helpers';
+import { SizeChunker } from 'chunking-streams';
 
 const pipeline = util.promisify(stream.pipeline); // for pipelining downloads
+
+export const MAX_CHUNK_SIZE = 256 * 1024;
 
 export const encryptFile = async (wallet, jwk, file_path, dest_path) => {
     return new Promise((resolve, reject) => {
         let crc_result = '';
 
         const key = wallet2PEM(jwk);
+        const private_key = PEM2RSAKey(key.private); 
         const wallet_key = wallet2PEM(wallet);        
-
-        const readStream = fs.createReadStream(file_path, {encoding: 'binary'});
-        const writeableStream = fs.createWriteStream(dest_path, {encoding: 'binary'});
+        const writeableStream = fs.createWriteStream(dest_path, {encoding: null, highWaterMark: MAX_CHUNK_SIZE});
 
         const decode_key = encryptDataWithRSAKey(key.private, wallet_key.private);
 
-        writeableStream.write(decode_key);
+        writeableStream.write(Buffer.from(decode_key, 'binary'));
 
-        readStream.on('data', (chunk) => {
-            writeableStream.write(encryptDataWithRSAKey(chunk, key.private));
-        });
+        fs.readFile(file_path, {encoding: null}, (err, data) => {
+            if (err) reject(err);
 
-        readStream.on('end', () => {
+            const encrypted_data = private_key.encrypt(data);
+
+            writeableStream.write(encrypted_data);
+
             writeableStream.close();
             
-            return resolve({
+            resolve({
                 file_path: dest_path, 
                 key_size: Buffer.byteLength(decode_key, 'binary'), 
                 key: decode_key
             });
-        });
-
-        readStream.on('error', (err) => {
-            return reject(err);
-        });
-
-        readStream.read();        
+        });       
     });
 }
 
@@ -49,42 +49,77 @@ export const decryptFile = async (wallet, private_pem_key, start, file_path, des
     return new Promise((resolve, reject) => {
         let crc_result = '';
 
+        var stats = fs.statSync(file_path);
+        var dataSizeInBytes = stats.size - start;
+
         const private_key = PEM2RSAKey(private_pem_key);      
 
-        const readStream = fs.createReadStream(file_path, {encoding: 'binary', start: start});
-        const writeableStream = fs.createWriteStream(dest_path, {encoding: 'binary'});
+        const readStream = fs.createReadStream(file_path, {encoding: null, start: start});
+        const writeableStream = fs.createWriteStream(dest_path, {encoding: null, highWaterMark: MAX_CHUNK_SIZE});
 
-        readStream.on('data', (chunk) => {
-            writeableStream.write(private_key.decrypt(Buffer.from(chunk, 'binary'), 'binary'));
-        });
+        fs.open(file_path, 'r', (status, fd) => {
+            if (status) {
+                reject(status.message);
+                return;
+            }
 
-        readStream.on('end', () => {
-            writeableStream.close();
-            return resolve({
-                file_path: dest_path
+            var buffer = new Buffer.alloc(dataSizeInBytes);
+            fs.read(fd, buffer, 0, dataSizeInBytes, start, function(err, num, data) {
+                if(err) return reject(err);
+
+                const decrypted_data = private_key.decrypt(data);
+
+                writeableStream.write(decrypted_data);
+                writeableStream.close();
+
+                return resolve({
+                    file_path: dest_path
+                });
             });
         });
 
-        readStream.on('error', (err) => {
-            return reject(err);
-        });
+        // readStream.on('readable', () => {
+        //     let data = readStream.read();
 
-        readStream.read();        
+        //     const chunks = [];
+
+        //     while(data != null) {
+        //         chunks.push(data);
+        //         data = readStream.read();
+        //     }
+
+        //     const decrypted_data = private_key.decrypt(Buffer.concat(chunks));
+        //     writeableStream.write(decrypted_data);
+        // });
+
+        // readStream.on('end', () => {
+        //     writeableStream.close();
+        //     return resolve({
+        //         file_path: dest_path
+        //     });
+        // });
+
+        // readStream.on('error', (err) => {
+        //     return reject(err);
+        // });      
     });
 }
 
 export const getFileEncryptionKey = (file_path, transaction, wallet) => {
     return new Promise((resolve, reject) => {
-        fs.open(file_path, 'r', function(status, fd) {
-            if (status) {
-                return reject(status);
+        const readStream = fs.createReadStream(file_path, {encoding: null, start: 0, end: transaction.key_size - 1});
+
+        const chunks = [];
+
+        readStream.on('readable', () => {
+            let data = readStream.read();
+
+            while(data != null) {
+                chunks.push(data);
+                data = readStream.read();
             }
 
-            const buff = new Buffer.alloc(parseInt(transaction.key_size));
-
-            fs.read(fd, buff, 0, transaction.key_size, 0, (err, bytesRead, buffer) => {
-                return resolve(decryptDataWithWallet(buffer.toString('binary'), wallet).toString('utf8'));
-            })
+            resolve(decryptDataWithWallet(Buffer.concat(chunks), wallet).toString('utf8'));
         });
     });
 }
@@ -116,11 +151,16 @@ export const decryptDataWithWallet = (buff, wallet) => {
 
     const key = PEM2RSAKey(walletPEM.private);
 
-    return key.decrypt(Buffer.from(buff, 'binary'), 'binary');
+    return key.decrypt(buff, 'binary');
 }
 
 export const encryptDataWithRSAKey = (data, private_pem_key) => {
-    return PEM2RSAKey(private_pem_key).encrypt(data, 'binary');
+    const buff = Buffer.from(data, 'binary');
+    return PEM2RSAKey(private_pem_key).encrypt(buff, 'binary');
+}
+
+export const encryptDataWithRSAPrivateKey = (data, private_pem_key) => {
+    return PEM2RSAKey(private_pem_key).encryptPrivate(data, 'binary');
 }
 
 export const decryptDataWithRSAKey = (data, private_pem_key) => {

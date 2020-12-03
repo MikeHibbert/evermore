@@ -1,7 +1,7 @@
 const { platform } = require('os');
 const path = require('path');
 
-console.log(process.cwd());
+// console.log(process.cwd());
 
 let settings = {
     APP_NAME: 'EvermoreDatastore-v0.9',

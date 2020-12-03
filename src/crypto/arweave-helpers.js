@@ -607,12 +607,19 @@ export const getTransactionWithTags = async (tx_id) => {
 }
 
 export const downloadFile = function(url, dest, cb) {
-    var file = fs.createWriteStream(dest, {emitClose : true});
+    var file = fs.createWriteStream(dest, {emitClose : true, encoding: 'binary'});
     var request = https.get(url, function(response) {
-        response.pipe(file);
-        file.on('finish', function() {
-        file.close(cb);  // close() is async, call cb after close completes.
-        });
+        response.on('data', (d) => {
+            file.write(d);
+        })
+
+        response.on('end', () => {
+            // file.end();
+            file.close(cb);
+        })
+        // file.on('finish', function() {
+        //   // close() is async, call cb after close completes.
+        // });
     }).on('error', function(err) { // Handle errors
         fs.unlink(dest); // Delete the file async. (But we don't check the result)
         if (cb) cb(err.message);

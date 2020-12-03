@@ -72,7 +72,7 @@ describe("Encypted File Ops", () => {
 
         const encrypted_data = encryptDataWithRSAKey(original_data, key.private);
 
-        const decrypted_data = decryptDataWithWallet(encrypted_data, wallet).toString('utf8');
+        const decrypted_data = decryptDataWithWallet(Buffer.from(encrypted_data, 'binary'), wallet).toString('utf8');
 
         expect(decrypted_data).toBe(original_data);
     });
@@ -110,27 +110,33 @@ describe("Encypted File Ops", () => {
         const result = await encryptFile(
             wallet, 
             jwk, 
-            path.join(process.cwd(), 'README.md'), 
-            path.join(process.cwd(), 'test-2-README.md.enc')
+            path.join(process.cwd(), 'assets\\images\\KlbjTuV9_400x400.jpg'), 
+            path.join(process.cwd(), 'assets\\images\\KlbjTuV9_400x400.jpg.enc')
         );
 
-        const original_data = fs.readFileSync(path.join(process.cwd(), 'README.md')).toString('utf8');
+        const original_data = fs.readFileSync(path.join(process.cwd(), 'assets\\images\\KlbjTuV9_400x400.jpg'));
 
         const private_key = await getFileEncryptionKey(result.file_path, result, wallet);
 
+        expect(private_key.length).toBe(key.private.length);
+
         expect(private_key).toBe(key.private);
+
+        debugger;
 
         const decrypted_result = await decryptFile(
             wallet, 
             private_key, 
             result.key_size, 
             result.file_path, 
-            path.join(process.cwd(), 'README.md.dec')
+            path.join(process.cwd(), 'assets\\images\\KlbjTuV9_400x400.jpg.dec')
         )
 
-        const decrypted_data = fs.readFileSync(path.join(process.cwd(), 'README.md.dec')).toString('utf8');
+        const decrypted_data = fs.readFileSync(path.join(process.cwd(), 'assets\\images\\KlbjTuV9_400x400.jpg.dec'));
 
-        expect(decrypted_data).toBe(original_data);
+        debugger;
+
+        expect(decrypted_data).toStrictEqual(original_data);
 
         return;
     });

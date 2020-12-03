@@ -37,6 +37,7 @@
     "bl": ">=1.2.3",
     "check-disk-space": "^2.1.0",
     "chokidar": "^3.4.0",
+    "chunking-streams": "0.0.8",
     "clean-webpack-plugin": "^3.0.0",
     "clipboardy": "^2.3.0",
     "config": "^3.3.1",
