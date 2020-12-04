@@ -30,7 +30,7 @@ const fileChangedHandler = async (file_path) => {
         AddProposedFile(null, file_path, parseInt(pending.version + 1), true); 
         
       } else {
-        ResetPendingFile(file_path, new_file_modified);
+        ResetPendingFile(relative_path, new_file_modified);
       }
       sendMessage(`UNREGISTER_PATH:${file_path}\n`);
     } else {

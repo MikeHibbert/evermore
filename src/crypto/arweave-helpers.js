@@ -162,6 +162,8 @@ export const uploadFile = async (file_info, encrypt_file) => {
 
                 let uploader = await arweave.transactions.getUploader(transaction);
 
+                debugger;
+
                 const uploader_record = SaveUploader(uploader);
 
                 while (!uploader.isComplete) {
@@ -718,8 +720,6 @@ export const downloadFileFromTransaction = async (tx_id) => {
             } catch(e) {
                 console.log(e);
 
-                debugger;
-
                 if(fs.existsSync(save_file))
                     fs.renameSync(save_file, `${now}.del`);  // It's not going to affect the current open handles
                 if(fs.existsSync(`${now}.del`))
@@ -737,8 +737,6 @@ export const downloadFileFromTransaction = async (tx_id) => {
         });
     } else {
         const save_file = path.join(sync_folders[0], transaction.file);
-
-        debugger;
 
         downloadFile(`https://arweave.net/${transaction.id}`, save_file, (err) => {
             if (err) {
@@ -906,8 +904,6 @@ export const createPersistenceRecord = async (synced_file, deleted) => {
     if(!wallet_file || wallet_file.length == 0) return;
 
     const wallet_jwk = getJwkFromWalletFile(wallet_file);
-
-    debugger;
 
     const transaction = await arweave.createTransaction({data:'PERSISTENCE_RECORD'}, wallet_jwk);
 

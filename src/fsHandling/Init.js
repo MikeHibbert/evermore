@@ -192,8 +192,10 @@ const processAllOutstandingUploadsAndActions = async () => {
         if(!already_completed) {
             const twenty_minutes_ago = new Date();
             twenty_minutes_ago.setMinutes(new Date().getMinutes() - 20);
+            const twenty_minutes_ago_timestamp = twenty_minutes_ago.getTime();
+            const time_difference = twenty_minutes_ago_timestamp - uploader_record.created;
 
-            if(uploader_record.created < twenty_minutes_ago.getTime()) {
+            if(twenty_minutes_ago_timestamp < uploader_record.created) {
                 pauseSyncProcessing();
 
                 finishUpload(uploader_record.uploader);
@@ -207,16 +209,6 @@ const processAllOutstandingUploadsAndActions = async () => {
             RemoveUploader(uploader_record);
         }        
     }
-
-    // if(uploaders.length > 0) {
-    //     notifier.notify({
-    //         title: 'Evermore Datastore',
-    //         icon: settings.NOTIFY_ICON_PATH,
-    //         message: `${uploaders.length} resumed file uploads have been complete.`
-    //     });
-    // }
-
-
     
     const syncable_files = await getAllSyncableFiles();
 
