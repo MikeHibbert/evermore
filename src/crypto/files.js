@@ -6,7 +6,7 @@ const NodeRSA = require('node-rsa');
 const NodeJWK = require('node-jwk');
 const zlib = require('zlib');
 import { https } from 'follow-redirects';
-import regeneratorRuntime from "regenerator-runtime";
+// import regeneratorRuntime from "regenerator-runtime";
 import { arweave } from './arweave-helpers';
 
 const pipeline = util.promisify(stream.pipeline); // for pipelining downloads

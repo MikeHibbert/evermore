@@ -379,6 +379,7 @@ export const configureWithPathsFromInfo = (path_info) => {
             configureWithPathsFromInfo(pi);
         } else {
             if(pi.checked) {
+                debugger;
                 const online_versions = await getOnlineVersions(pi);
                 
                 if(online_versions.length == 0) {

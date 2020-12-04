@@ -1,6 +1,7 @@
 import {getFileUpdatedDate} from '../fsHandling/helpers';
 const low = require('lowdb');
 const os = require('os');
+const fs = require('fs');
 const path = require('path');
 const FileSync = require('lowdb/adapters/FileSync');
 import {settings} from '../config';
@@ -145,8 +146,6 @@ export const AddPendingFile = (tx_id, file, version, is_update=false) => {
 
     const sync_folders = GetSyncedFolders();
 
-    
-
     let relative_path = file;
 
     for(let i in sync_folders) {
@@ -158,9 +157,9 @@ export const AddPendingFile = (tx_id, file, version, is_update=false) => {
 
     const full_path = path.join(path.normalize(sync_folders[0]), file);
 
-    if(GetPendingFile(full_path)) return;
+    if(fs.lstatSync(full_path).isDirectory()) return;
 
-    
+    if(GetPendingFile(full_path)) return;    
 
     db.get('pending')
         .push({

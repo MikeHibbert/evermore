@@ -5,7 +5,7 @@ import { walletFileSet, GetSyncedFolders } from './db/helpers';
 import initNamePipe from './integration/server';
 import OpenInitialSetupDialog from './ui/InitialSetupDialog';
 const Sentry = require("@sentry/node");
-import 'regenerator-runtime/runtime';
+
 // or use es6 import statements
 // import * as Sentry from '@sentry/node';
 

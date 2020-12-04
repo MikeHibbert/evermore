@@ -14,7 +14,7 @@ const {
 } = require('./arweave-helpers');
 const { interactWriteDryRun, readContract } = require('smartweave');
 const { InitDB, setWalletFilePath } = require('../db/helpers'); 
-import regeneratorRuntime from "regenerator-runtime";
+// import regeneratorRuntime from "regenerator-runtime";
 
 
 test("Should get correct price for data storage", async () => {

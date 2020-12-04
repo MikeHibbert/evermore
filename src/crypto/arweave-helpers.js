@@ -9,7 +9,7 @@ const mime = require('mime-types');
 import { https } from 'follow-redirects';
 import { readContract, selectWeightedPstHolder  } from 'smartweave';
 import { settings } from '../config';
-import regeneratorRuntime from "regenerator-runtime";
+// import regeneratorRuntime from "regenerator-runtime";
 import {
     walletFileSet, 
     UpdatePendingFileTransactionID, 
@@ -836,9 +836,11 @@ export const getOnlineVersions = async (file_info) => {
 
     const jwk = getJwkFromWalletFile(wallet_file);
 
-    const windows = settings.PLATFORM === "win32";
-
     const address = await arweave.wallets.jwkToAddress(jwk);
+
+    debugger;
+
+    const file_info_path_windows_version = file_info.path.split('/').join('\\');
 
     const query = `{
         transactions(
@@ -850,7 +852,7 @@ export const getOnlineVersions = async (file_info) => {
               },
               {
                 name: "file",
-                values: ["${file_info.file}"]
+                values: ["${file_info.file}", "${file_info_path_windows_version}"]
               }
               ]	) {
               edges {

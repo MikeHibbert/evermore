@@ -5,7 +5,6 @@ const CopyWebpackPlugin = require('copy-webpack-plugin');
 module.exports = {
   mode: process.NODE_ENV || "development",
   entry: [
-    'babel-polyfill',
     "./src/index.js"
   ],
   target: "node",
@@ -31,15 +30,6 @@ module.exports = {
             options: { publicPath: "dist" }
           }
         ]
-      },
-      {
-        test: [/.jsx?$/, /.js?$/],
-        exclude: /(node_modules)/,
-        use: [{
-          loader: 'babel-loader',
-          options: {
-          presets: ['es2015','react']
-        }
       },
       {
         test: /\.node$/,

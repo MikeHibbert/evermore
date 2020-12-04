@@ -12,7 +12,7 @@ import {
     GetSyncedFolders
 } from '../db/helpers';
 import path from 'path';
-import regeneratorRuntime from "regenerator-runtime";
+// import regeneratorRuntime from "regenerator-runtime";
 import {sendMessage} from '../integration/server';
 import {
     getFileUpdatedDate, 
