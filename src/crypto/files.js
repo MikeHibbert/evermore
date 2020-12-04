@@ -8,7 +8,6 @@ const zlib = require('zlib');
 import { https } from 'follow-redirects';
 import regeneratorRuntime from "regenerator-runtime";
 import { arweave } from './arweave-helpers';
-import { SizeChunker } from 'chunking-streams';
 
 const pipeline = util.promisify(stream.pipeline); // for pipelining downloads
 
