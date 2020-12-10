@@ -7,7 +7,7 @@ import {
     GetSyncedFileFromPath, 
     GetSyncedFolders 
 } from '../db/helpers';
-import {pathExcluded, isPublicFile} from '../fsHandling/helpers';
+import {pathExcluded, isPublicFile, normalizePath} from '../fsHandling/helpers';
 import path from 'path';
 import { settings } from '../config';
 
@@ -86,14 +86,11 @@ const shareFileLinkToClipboard = (file_path) => {
 }
 
 const getFileStatus = (file_path) => {
-    if(settings.PLATFORM == 'win32') {
-        if(file_path.indexOf('\\') == -1) {
-            console.log(file_path);
-        }        
-    }
+    const synced_folder = GetSyncedFolders();
+    const normalised_path = normalizePath(file_path.replace(synced_folder[0], ''));
 
-    if(!pathExcluded(file_path) && !file_path.endsWith('.enc')) {
-        let file_info = GetPendingFile(path.normalize(file_path));
+    if(!pathExcluded(file_path) && !normalised_path.endsWith('.enc')) {
+        let file_info = GetPendingFile(normalised_path);
         
         if(file_info) {
             if(file_info.tx_id == null) {
@@ -103,13 +100,13 @@ const getFileStatus = (file_path) => {
             }
         }
 
-        file_info = GetProposedFile(file_path);
+        file_info = GetProposedFile(normalised_path);
 
         if(file_info) {
             return `STATUS:SYNC:${file_path}\n`;
         }
 
-        file_info = GetSyncedFileFromPath(path.normalize(file_path));
+        file_info = GetSyncedFileFromPath(normalised_path);
 
         if(file_info) return `STATUS:OK:${file_path}\n`;
     }    
@@ -118,11 +115,14 @@ const getFileStatus = (file_path) => {
 }
 
 const getFileContextMenuItems = (file_path) => {
+    const synced_folder = GetSyncedFolders();
+    const normalised_path = normalizePath(file_path.replace(synced_folder[0], ''));
+
     var responses = ""; 
 
-    const file_info = GetSyncedFileFromPath(path.normalize(file_path));
+    const file_info = GetSyncedFileFromPath(normalised_path);
 
-    if(file_info && isPublicFile(file_path) && !pathExcluded(file_path)) {
+    if(file_info && isPublicFile(file_path) && !pathExcluded(normalised_path)) {
         responses = responses + 'MENU_ITEM:SHARE::Copy Share Link\n';
     }
 

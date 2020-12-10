@@ -18,7 +18,8 @@ import {
     getFileUpdatedDate, 
     getRalativePath, 
     createCRCFor, 
-    pathExcluded
+    pathExcluded,
+    normalizePath
 } from '../fsHandling/helpers';
 import { getDownloadableFilesGQL } from '../crypto/arweave-helpers';
 
@@ -33,7 +34,8 @@ const fileAddedHandler = (file_path) => {
     if(current_download_matches.length > 0) return;
 
     const new_file_modified = getFileUpdatedDate(file_path);
-    const current_synced_file = GetSyncedFileBy({file: file_path.replace(sync_folder, '')});
+    const normalized_file_path = normalizePath(file_path.replace(sync_folder, ''));
+    const current_synced_file = GetSyncedFileBy({path: normalized_file_path});
 
     if(current_synced_file) {
         if(current_synced_file.modified >= new_file_modified) return; // stop because the downloader has just added this file from the blockchain
@@ -41,7 +43,7 @@ const fileAddedHandler = (file_path) => {
 
     console.log(`File ${file_path} has been added`);
 
-    const deleted_file = GetDeletedFileFromPath(file_path);
+    const deleted_file = GetDeletedFileFromPath(normalized_file_path);
 
     if(deleted_file) {
         UndeleteSyncedFile(deleted_file.tx_id);
@@ -49,8 +51,6 @@ const fileAddedHandler = (file_path) => {
     }
     
     getDownloadableFilesGQL().then(async downloadable_files => {
-        
-        const relative_path = getRalativePath(file_path);
         const current_crc = await createCRCFor(file_path);
 
         let found_in_downloadables = false;
@@ -60,13 +60,13 @@ const fileAddedHandler = (file_path) => {
             for(let i in downloadable_files) {
                 const downloadable_file = downloadable_files[i];
 
-                if(downloadable_file.file === relative_path) {
+                if(downloadable_file.path === normalized_file_path) {
                     if(new_file_modified > downloadable_file.modified) {
-                        confirmed_in_blockchain = addProposedIfNewerThanDownloadableVersion(file_path, downloadable_file, current_crc, new_file_modified, confirmed_in_blockchain);
+                        confirmed_in_blockchain = addProposedIfNewerThanDownloadableVersion(normalized_file_path, downloadable_file, current_crc, new_file_modified, confirmed_in_blockchain);
                     } else {
                         const sync_file = GetSyncedFileBy({file: downloadable_file.file});
                         if(sync_file) {
-                            if(downloadable_file.modified == new_file_modified) {
+                            if(downloadable_file.modified == sync_file.modified) {
                                 sendMessage(`UNREGISTER_PATH:${file_path}\n`);
                                 confirmed_in_blockchain = true;
                                 continue;
@@ -84,7 +84,7 @@ const fileAddedHandler = (file_path) => {
             }
         } 
         if(!found_in_downloadables && !confirmed_in_blockchain) {
-            proposeIfOnlyFoundLocally(file_path, new_file_modified);                
+            proposeIfOnlyFoundLocally(normalized_file_path, new_file_modified);                
         }
     });    
 }
@@ -117,8 +117,8 @@ function proposeIfOnlyFoundLocally(file_path, new_file_modified) {
 
 function addProposedIfNewerThanDownloadableVersion(file_path, downloadable_file, current_crc, new_file_modified, confirmed_in_blockchain) {
     if (!GetProposedFile(file_path) && !GetPendingFile(file_path)) {
-        if (downloadable_file.hasOwnProperty('crc')) {
-            if (downloadable_file.crc != current_crc) {
+        // if (downloadable_file.hasOwnProperty('crc')) {
+            // if (downloadable_file.crc != current_crc) {
                 const synced_file = GetSyncedFileFromPathAndModified(file_path, new_file_modified);
 
                 if (!pathExcluded(file_path) && !synced_file) {
@@ -126,8 +126,8 @@ function addProposedIfNewerThanDownloadableVersion(file_path, downloadable_file,
                     sendMessage(`REGISTER_PATH:${file_path}\n`);
                     confirmed_in_blockchain = true;
                 }
-            }
-        }
+            // }
+        // }
     }
     return confirmed_in_blockchain;
 }

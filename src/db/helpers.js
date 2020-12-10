@@ -6,6 +6,7 @@ const path = require('path');
 const FileSync = require('lowdb/adapters/FileSync');
 import {settings} from '../config';
 import {startSyncProcessing, stopSyncProcessing} from '../fsHandling/Init';
+import {normalizePath, denormalizePath} from '../fsHandling/helpers';
 
 let db = null;
 
@@ -139,62 +140,64 @@ export const resetWalletFilePath = () => {
     db.unset('wallet_file').write();
 }
 
-export const AddPendingFile = (tx_id, file, version, is_update=false) => {
+export const AddPendingFile = (tx_id, file_path, version, is_update=false) => {
     if(!db) {
         InitDB();
     }
 
     const sync_folders = GetSyncedFolders();
 
-    let relative_path = file;
+    let relative_path = file_path;
 
     for(let i in sync_folders) {
         const sync_folder = sync_folders[i];
-        if(file.indexOf(sync_folder) != -1) {
-            relative_path = file.replace(sync_folder, '');
+        if(file_path.indexOf(sync_folder) != -1) {
+            relative_path = file_path.replace(sync_folder, '');
         }
     }
 
-    const full_path = path.join(path.normalize(sync_folders[0]), file);
+    const denormalized_path = denormalizePath(file_path);
 
-    if(fs.lstatSync(full_path).isDirectory()) return;
+    if(fs.lstatSync(denormalized_path).isDirectory()) return;
 
-    if(GetPendingFile(full_path)) return;    
+    if(GetPendingFile(file_path)) return;    
 
     db.get('pending')
         .push({
             tx_id: tx_id,
             file: relative_path,
-            path: full_path,
+            path: file_path,
             version: version,
-            modified: getFileUpdatedDate(full_path),
+            modified: getFileUpdatedDate(denormalized_path),
             hostname: os.hostname(),
             is_update: is_update // are we updating an existing file with new data?
         }).write();
 }
 
-export const UpdatePendingFileTransactionID = (file, tx_id) => {
+export const UpdatePendingFileTransactionID = (file_path, tx_id) => {
     if(!db) {
         InitDB();
     }
 
+    debugger;
+
     db.get('pending')
-        .find({file: file})
+        .find({path: file_path})
         .assign({tx_id: tx_id})
         .write();
 }
 
-export const ResetPendingFile = (file, modified) => {
+export const ResetPendingFile = (file_path, modified) => {
     if(!db) {
         InitDB();
     }
 
     db.get('pending')
-        .find({file: file})
+        .find({path: file_path})
         .assign({tx_id: null, modified: modified})
         .write();
 
-    return db.get('pending').find({file: file}).value();
+    return db.get('pending').find({path: file_path}).value();
 }
 
 export const RemovePendingFile = (file_path) => {
@@ -263,6 +266,10 @@ export const GetPendingFile = (file_path) => {
 }
 
 export const AddProposedFile = (tx_id, file_path, version, is_update) => {
+    if(!db) {
+        InitDB();
+    }
+
     const sync_folders = GetSyncedFolders();
 
     let relative_path = file_path;
@@ -274,19 +281,20 @@ export const AddProposedFile = (tx_id, file_path, version, is_update) => {
         }
     }
 
+    relative_path = normalizePath(relative_path);
+
     if(GetProposedFile(relative_path)) return;
 
-    if(!db) {
-        InitDB();
-    }
+    const denormalized_path = denormalizePath(file_path);
+    const full_path = denormalized_path.indexOf(sync_folders[0]) != -1 ? denormalized_path : path.join(sync_folders[0], denormalized_path);
 
     db.get('proposed')
         .push({
             tx_id: tx_id,
             file: relative_path,
-            path: file_path,
+            path: relative_path,
             version: version,
-            modified: getFileUpdatedDate(file_path),
+            modified: getFileUpdatedDate(full_path),
             hostname: os.hostname(),
             is_update: is_update
         }).write();
@@ -297,12 +305,17 @@ export const GetProposedFile = (file_path) => {
         InitDB();
     }
 
+    const sync_folders = GetSyncedFolders();
+
     const file = db.get('proposed').find({path: file_path}).value();
 
     if(file) {
-        const modified = getFileUpdatedDate(file.path);
+        const denormalized_path = denormalizePath(file_path);
+        const full_path = denormalized_path.indexOf(sync_folders[0]) != -1 ? denormalized_path : path.join(sync_folders[0], denormalized_path);
+
+        const modified = getFileUpdatedDate(full_path);
         if(modified > file.modified) {
-            return ResetProposedFile(file.file, modified);
+            return ResetProposedFile(file.path, modified);
         }
     }
     return file;
@@ -344,7 +357,7 @@ export const RemoveProposedFile = (file_path) => {
 
     db.get('proposed')
         .remove({
-            file: file_path
+            path: file_path
         }).write();
 }
 
@@ -396,13 +409,13 @@ export const ConfirmSyncedFile = (tx_id) => {
     db.get('pending').remove({tx_id: tx_id}).write();
 }
 
-export const UpdateSyncedFile = (file, tx_id, version, modified) => {
+export const UpdateSyncedFile = (file_path, tx_id, version, modified) => {
     if(!db) {
         InitDB();
     }
 
     db.get('synced_files')
-        .find({file: file})
+        .find({path: file_path})
         .assign({tx_id: tx_id, version: version, modified: modified})
         .write();
 }
@@ -432,7 +445,7 @@ export const ConfirmSyncedFileFromTransaction = (file_path, transaction) => {
     
     if(pending) {
         if(pending.is_update) {
-            UpdateSyncedFile(pending.file, pending.tx_id, parseInt(pending.version), pending.modified);
+            UpdateSyncedFile(pending.path, pending.tx_id, parseInt(pending.version), pending.modified);
         } else {
             db.get('synced_files')
                 .push({
@@ -533,7 +546,7 @@ export const ConfirmDeletedFile = (tx_id) => {
 
     const file_to_delete = db.get('deleting').find({tx_id: tx_id}).value();
 
-    file_to_delete['action_tx_id'] = null;
+    // file_to_delete['action_tx_id'] = null;
     
     db.get('deleted')
             .push(file_to_delete)
@@ -590,6 +603,8 @@ export const AddFileToDownloads = (file_info) => {
         InitDB();
     }
 
+    debugger;
+
     db.get('downloads')
         .push(file_info).write();
 }
@@ -615,7 +630,7 @@ export const GetDownloads = () => {
 
 export const InDownloadQueue = (file_info) => {
     const download = db.get('downloads')
-    .find({file: file_info.file, tx_id: file_info.tx_id}).value();
+    .find({path: file_info.path, tx_id: file_info.tx_id}).value();
 
     return download != undefined;
 }

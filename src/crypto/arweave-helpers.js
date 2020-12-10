@@ -25,6 +25,8 @@ import {
 } from '../db/helpers';
 import {
     createCRCFor,
+    normalizePath,
+    denormalizePath,
     systemHasEnoughDiskSpace,
 } from '../fsHandling/helpers';
 import {
@@ -75,9 +77,11 @@ export const uploadFile = async (file_info, encrypt_file) => {
 
     const wallet_jwk = getJwkFromWalletFile(wallet_file);
     
-    let stats = fs.statSync(file_info.path);
+    const denormalize_path = denormalizePath(file_info.path);
+    let stats = fs.statSync(denormalize_path);
     let required_space = Math.ceil(stats['size'] * 1.5);
-    let processed_file_path = file_info.path;
+    
+    let processed_file_path = denormalize_path;
 
     if(encrypt_file) {
         required_space = Math.ceil(stats['size'] * 2.5); // abitrary idea that encryption will probably create a larger file than the source.
@@ -98,99 +102,90 @@ export const uploadFile = async (file_info, encrypt_file) => {
 
     if(encrypt_file) {
         const jwk = await arweave.wallets.generate();
-        processed_file_path = `${file_info.path}.enc`;
+        processed_file_path = `${processed_file_path}.enc`;
 
-        encrypted_result = await encryptFile(wallet_jwk, jwk, file_info.path, processed_file_path); 
+        encrypted_result = await encryptFile(wallet_jwk, jwk, denormalize_path, processed_file_path); 
         stats = fs.statSync(processed_file_path);       
     }    
     
-    fs.access(processed_file_path, fs.constants.F_OK | fs.constants.R_OK, async (err) => {
-        if(err) {
-            RemovePendingFile(file_info.path);
+    
+    const file_data = await getFileData(processed_file_path);             
+    
+    try {
+        const crc_for_data = await createCRCFor(denormalize_path);
+
+        const transaction = await arweave.createTransaction({
+            data: file_data
+        }, wallet_jwk);
+
+        const wallet_balance = await getWalletBalance(wallet_file);
+        const data_cost = await arweave.transactions.getPrice(stats['size']);
+
+        const total_winston_cost = parseInt(transaction.reward) + parseInt(data_cost);
+        const total_ar_cost = arweave.ar.winstonToAr(total_winston_cost);
+        
+        if(wallet_balance < total_ar_cost) {
+            notifier.notify({
+                title: 'Evermore Datastore',
+                icon: settings.NOTIFY_ICON_PATH,
+                message: `Your wallet does not contain enough AR to upload, ${total_ar_cost} AR is needed `,
+                timeout: 2
+            });
+    
+            return;
+        }
+
+        transaction.addTag('App-Name', settings.APP_NAME);
+        transaction.addTag('Content-Type', mime.lookup(file_info.file));
+        transaction.addTag('file', file_info.file);
+        transaction.addTag('path', file_info.path);
+        transaction.addTag('modified', file_info.modified);
+        transaction.addTag('hostname', file_info.hostname);
+
+        const created = new Date(stats['birthtime']).getTime();
+        transaction.addTag('created', created);
+        transaction.addTag('version', file_info.version);
+        transaction.addTag('CRC', crc_for_data);
+        transaction.addTag('file_size', stats["size"]);
+
+        if(encrypt_file) {
+            transaction.addTag('key_size', encrypted_result.key_size);
+            transaction.addTag('domain', 'Private');
         } else {
+            transaction.addTag('domain', 'Public');
+        }
 
-            const file_data = await getFileData(processed_file_path);             
-            
-            try {
-                const crc_for_data = await createCRCFor(file_info.path);
+        await arweave.transactions.sign(transaction, wallet_jwk);
 
-                const transaction = await arweave.createTransaction({
-                    data: file_data
-                }, wallet_jwk);
+        UpdatePendingFileTransactionID(file_info.path, transaction.id);
 
-                const wallet_balance = await getWalletBalance(wallet_file);
-                const data_cost = await arweave.transactions.getPrice(stats['size']);
+        let uploader = await arweave.transactions.getUploader(transaction);
 
-                const total_winston_cost = parseInt(transaction.reward) + parseInt(data_cost);
-                const total_ar_cost = arweave.ar.winstonToAr(total_winston_cost);
-                
-                if(wallet_balance < total_ar_cost) {
-                    notifier.notify({
-                        title: 'Evermore Datastore',
-                        icon: settings.NOTIFY_ICON_PATH,
-                        message: `Your wallet does not contain enough AR to upload, ${total_ar_cost} AR is needed `,
-                        timeout: 2
-                    });
-            
-                    return;
-                }
+        const uploader_record = SaveUploader(uploader);
 
-                transaction.addTag('App-Name', settings.APP_NAME);
-                transaction.addTag('Content-Type', mime.lookup(file_info.file));
-                transaction.addTag('file', file_info.file.replace(/([^:])(\/\/+)/g, '$1/'));
-                transaction.addTag('path', file_info.path.replace(/([^:])(\/\/+)/g, '$1/'));
-                transaction.addTag('modified', file_info.modified);
-                transaction.addTag('hostname', file_info.hostname);
+        while (!uploader.isComplete) {
+            await uploader.uploadChunk();
+            console.log(`${file_info.path} : ${uploader.pctComplete}% complete, ${uploader.uploadedChunks}/${uploader.totalChunks}`);
+        }
 
-                const created = new Date(stats['birthtime']).getTime();
-                transaction.addTag('created', created);
-                transaction.addTag('version', file_info.version);
-                transaction.addTag('CRC', crc_for_data);
-                transaction.addTag('file_size', stats["size"]);
+        sendUsagePayment(data_cost);
 
-                if(encrypt_file) {
-                    transaction.addTag('key_size', encrypted_result.key_size);
-                    transaction.addTag('domain', 'Private');
-                } else {
-                    transaction.addTag('key_size', -1);
-                    transaction.addTag('domain', 'Public');
-                }
+        RemoveUploader(uploader_record);
 
-                await arweave.transactions.sign(transaction, wallet_jwk);
+        if(encrypt_file) {
+            const now = new Date().getTime();
 
-                UpdatePendingFileTransactionID(file_info.file, transaction.id);
+            if(fs.existsSync(processed_file_path))
+                fs.renameSync(processed_file_path, `${now}.del`);  // It's not going to affect the current open handles
+            if(fs.existsSync(`${now}.del`))
+                fs.unlinkSync(`${now}.del`);
+        }
 
-                let uploader = await arweave.transactions.getUploader(transaction);
-
-                debugger;
-
-                const uploader_record = SaveUploader(uploader);
-
-                while (!uploader.isComplete) {
-                    await uploader.uploadChunk();
-                    console.log(`${uploader.pctComplete}% complete, ${uploader.uploadedChunks}/${uploader.totalChunks}`);
-                }
-
-                sendUsagePayment(data_cost);
-
-                RemoveUploader(uploader_record);
-
-                if(encrypt_file) {
-                    const now = new Date().getTime();
-
-                    if(fs.existsSync(processed_file_path))
-                        fs.renameSync(processed_file_path, `${now}.del`);  // It's not going to affect the current open handles
-                    if(fs.existsSync(`${now}.del`))
-                        fs.unlinkSync(`${now}.del`);
-                }
-
-                console.log(`${file_info.path} uploaded`);
-            } catch (e) {
-                
-                console.log(e);
-            }
-        }        
-    }); // for whatever reason this file is now gone!
+        console.log(`${file_info.path} uploaded`);
+    } catch (e) {
+        debugger;
+        console.log(e);
+    }   
 }
 
 export const getFileData = (file_path) => {
@@ -427,13 +422,6 @@ export const getDownloadableFilesGQL = async () => {
                         row[tag.name] = parseInt(tag.value);
                     } else {
                         row[tag.name] = tag.value;
-                    }
-                }
-
-                if(row.file.indexOf('\\') != -1) {
-                    if(process.platform != 'win32') {
-                        row.file = row.file.split('\\').join('/');
-                        row.path = row.path.split('\\').join('/');
                     }
                 }
 
@@ -838,33 +826,29 @@ export const getOnlineVersions = async (file_info) => {
 
     const address = await arweave.wallets.jwkToAddress(jwk);
 
-    debugger;
-
-    const file_info_path_windows_version = file_info.path.split('/').join('\\');
-
     const query = `{
         transactions(
             owners: ["${address}"],
-              tags: [
-              {
-                  name: "App-Name",
-                  values: ["${settings.APP_NAME}"]
-              },
-              {
+            tags: [
+            {
+                name: "App-Name",
+                values: ["${settings.APP_NAME}"]
+            },
+            {
                 name: "file",
-                values: ["${file_info.file}", "${file_info_path_windows_version}"]
-              }
-              ]	) {
-              edges {
-                  node {
+                values: ["${file_info.path}"]
+            }
+            ]	) {
+            edges {
+                node {
                     id
                     tags {
                         name
                         value
                     }
-                  }
-              }
-          }
+                }
+            }
+        }
     }`;
 
     const response = await axios.post(settings.GRAPHQL_ENDPOINT, {
@@ -874,6 +858,7 @@ export const getOnlineVersions = async (file_info) => {
     });
 
     if(response.status == 200) {
+        const sync_folders = GetSyncedFolders();
         const final_rows = [];
 
         for(let i in response.data.data.transactions.edges) {
@@ -889,6 +874,9 @@ export const getOnlineVersions = async (file_info) => {
                     row[tag.name] = tag.value;
                 }
                 
+                if(tag.name == 'path' || tag.name == 'file') {
+                    row[tag.name] = normalizePath(tag.value.replace(sync_folders[0], ''));
+                }
             }
 
             final_rows.push(row);
@@ -911,8 +899,8 @@ export const createPersistenceRecord = async (synced_file, deleted) => {
 
     transaction.addTag('App-Name', settings.APP_NAME);
     transaction.addTag('Content-Type', 'PERSISTENCE');
-    transaction.addTag('file', synced_file.file.replace(/([^:])(\/\/+)/g, '$1/'));
-    transaction.addTag('path', synced_file.path.replace(/([^:])(\/\/+)/g, '$1/'));
+    transaction.addTag('file', synced_file.file);
+    transaction.addTag('path', synced_file.path);
     transaction.addTag('modified', synced_file.modified);
     transaction.addTag('hostname', synced_file.hostname);
     transaction.addTag('version', synced_file.version);

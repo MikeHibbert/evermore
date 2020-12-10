@@ -4,7 +4,7 @@ const path = require('path');
 // console.log(process.cwd());
 
 let settings = {
-    APP_NAME: 'EvermoreDatastore-v0.9',
+    APP_NAME: 'EvermoreDatastore-v0.9.2',
     PLATFORM: process.platform,
     CONTRACT_ADDRESS: '1TFZeEewEgUpqT5i2dsZSIRKJq3h1C7ZVi-gE8G-W6U',
     USAGE_PERCENTAGE: 0.2, // 20% usage cost

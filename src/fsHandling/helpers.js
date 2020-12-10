@@ -7,6 +7,7 @@ const checkDiskSpace = require('check-disk-space');
 import {AddFileToDownloads, GetSyncedFolders, GetExclusions} from '../db/helpers';
 import {arweave} from '../crypto/arweave-helpers';
 import {settings} from '../config';
+import { platform } from 'os';
 const { crc32 } = require('crc');
 
 export const getFileUpdatedDate = (file_path) => {
@@ -208,12 +209,14 @@ export function addToFolderChildrenOrUpdate(path_parts, index, file_info, path_o
     if(index == path_parts.length - 1) {
         const matched = path_obj.children.filter(child => child.name == file_info.name);
         if(matched.length == 0) {
-            return path_obj.children.push({...file_info, name: path_parts[index], index: index});
+            const fi = {...file_info, name: path_parts[index], index: index, type: 'file'};
+            return path_obj.children.push(fi);
         } else {
             const match = matched[0];
 
             if(match.type == 'folder') return;
 
+            // TODO: is this ever needed? filtering duplicates is done earlier so this may never execute!
             if(match.modified <= file_info.modified) {
                 match.modified = file_info.modified;
                 match.tx_id = file_info.tx_id;
@@ -250,22 +253,35 @@ export const convertDatabaseRecordToInfos = (sync_folder, database_file_paths, i
     for(let i in database_file_paths) {
         const proposed_file = database_file_paths[i];         
 
-        const system_paths = createFileAndFolderPathsFromSingleFilePath(sync_folder, proposed_file.file);
+        const system_paths = createFileAndFolderPathsFromSingleFilePath(sync_folder, proposed_file.path);
 
         for(let j in system_paths) {
             const system_path = system_paths[j];
+
+            if(system_path.denormalised_path == sync_folder) continue;
+
             let path_type = 'file';
 
             try {
-                if(fs.lstatSync(system_path).isDirectory()) {
+                if(fs.lstatSync(system_path.denormalised_path).isDirectory()) {
                     path_type = 'folder'; 
+                    const system_path_parts = system_path.normalized_path.split('/');
+                    system_path.name = system_path_parts[system_path_parts.length - 1];
                 }
             } catch(e) {}
 
-            let file_info = { path: system_path.replace(sync_folder, ''), children: [], type: path_type, checked: true, action: proposed_file.action };
-            const proposed_file_path = path.join(sync_folder, process.platform == 'win32' ? proposed_file.file : proposed_file.file.replace('\\', '/'));
+            let file_info = { 
+                path: proposed_file.path, 
+                name: system_path.name, 
+                file: proposed_file.file, 
+                children: [], 
+                type: path_type, 
+                checked: true, 
+                tx_id: proposed_file.tx_id,
+                action: proposed_file.action 
+            };
 
-            if(proposed_file_path == system_path) {
+            if(path_type == 'file') {
                 const tx_id = proposed_file.hasOwnProperty('tx_id') ? proposed_file.tx_id : proposed_file.hasOwnProperty('id') ? proposed_file.id : null;
                 const key_size = proposed_file.hasOwnProperty('key_size') ? proposed_file.key_size : null;
 
@@ -273,25 +289,12 @@ export const convertDatabaseRecordToInfos = (sync_folder, database_file_paths, i
                 file_info['key_size'] = key_size;
                 file_info['modified'] = proposed_file.modified;
                 file_info['is_update'] = proposed_file.is_update;
-
-                if(proposed_file.hasOwnProperty('action')) {
-                    file_info['action'] = proposed_file.action;
-                }
-            } 
-
-            let path_parts = [];
-            if(file_info.path.indexOf('\\') != -1) {
-                path_parts = file_info.path.split('\\')
-            } 
-
-            if(file_info.path.indexOf('/') != -1) {
-                path_parts = file_info.path.split('/')
             }
+
+            let path_parts = file_info.path.split('/');
             
             if(path_parts.length > 1) {
-
                 if(folders.hasOwnProperty(path_parts[0])) {
-                    file_info['name'] = path_parts[path_parts.length - 1];
                     addToFolderChildrenOrUpdate(path_parts, 0, file_info, folders[path_parts[0]], 0);                
                 }           
             }  
@@ -302,28 +305,28 @@ export const convertDatabaseRecordToInfos = (sync_folder, database_file_paths, i
 }
 
 const createFileAndFolderPathsFromSingleFilePath = (sync_folder, file_path) => {
-    let path_parts = [];
-    if(file_path.indexOf('\\') != -1) {
-        path_parts = file_path.split('\\')
-    } 
+    let path_parts = file_path.split('/');
 
-    if(file_path.indexOf('/') != -1) {
-        path_parts = file_path.split('/')
-    }
-
-    const path_joiner = process.platform == 'win32' ? "\\" : "/";
+    const denormalised_path_joiner = process.platform == 'win32' ? "\\" : "/";
 
     const paths = [];
-    let current_file_path = sync_folder;
+    let current_denormalised_file_path = sync_folder;
+    let current_normalised_file_path = normalizePath(sync_folder);
 
     for(let i in path_parts) {
         if(i == 0) {
-            current_file_path = current_file_path + path_parts[i];
+            current_denormalised_file_path = current_denormalised_file_path + path_parts[i];
+            current_normalised_file_path = current_normalised_file_path + path_parts[i];
         } else {
-            current_file_path = current_file_path + path_joiner + path_parts[i];
+            current_denormalised_file_path = current_denormalised_file_path + denormalised_path_joiner + path_parts[i];
+            current_normalised_file_path = current_normalised_file_path + '/' + path_parts[i];
         }
 
-        paths.push(current_file_path);
+        paths.push({
+            name: path_parts[path_parts.length - 1],
+            normalized_path: current_normalised_file_path, 
+            denormalised_path: current_denormalised_file_path
+        });
     }
 
     return paths;
@@ -585,10 +588,10 @@ export const systemHasEnoughDiskSpace = async (required_space) => {
     return disk_space >= required_space;
 }
 
-export const createCRCFor = (path) => {
+export const createCRCFor = (file_path) => {
     return new Promise((resolve, reject) => {
         let crc_result = '';
-        const readStream = fs.createReadStream(path);
+        const readStream = fs.createReadStream(file_path);
 
         readStream.on('data', (chunk) => {
             crc_result = crc32(chunk, crc_result).toString(16);
@@ -632,15 +635,36 @@ export const removeTempFolder = () => {
 
 export const compareLocalFileInfoWithOnlineFileInfo = (file_info, online_path_info) => {
     // check if modified date is newer on local path_info
-    const localCRC = createCRCFor(file_info.path);
+    // const localCRC = createCRCFor(file_info.path);
 
     if(file_info.modified <= online_path_info.modified) {
-        if(localCRC != online_path_info.CRC) {
+        // if(localCRC != online_path_info.CRC) {
             AddFileToDownloads(online_path_info); // download the online version as its newer
-        }
-    } else {
-        if(localCRC != online_path_info.CRC) {
-            AddPendingFile(file_info); // add the newer local version to the upload queue
-        }
+        // }
     }
+    // } else {
+    //     if(localCRC != online_path_info.CRC) {
+    //         AddPendingFile(file_info); // add the newer local version to the upload queue
+    //     }
+    // }
+}
+
+export const normalizePath = (file_path) => {
+    if(process.platform == 'win32') {
+        return file_path.split('\\').join('/')
+    }
+
+    return file_path
+}
+
+export const denormalizePath = (file_path) => {
+    const sync_folder = GetSyncedFolders()[0];
+
+    let denormalised_path = process.platform == 'win32' ? file_path.split('/').join('\\') : file_path;
+
+    if(denormalised_path.indexOf(sync_folder) == -1) {
+        denormalised_path = path.join(sync_folder, denormalised_path);
+    }
+    
+    return denormalised_path;
 }

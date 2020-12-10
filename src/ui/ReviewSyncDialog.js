@@ -157,36 +157,36 @@ const getOriginalPathInfoInstance = (path_info, path_infos) => {
     syncRootView.layout.addWidget(actions);
   }
   
-const createFolderItems = (path_info, tree, window, root, parent) => {
-    if(!parent && !root) {
-        parent = new QTreeWidgetItem();
-        parent.setText(0, path_info.name);
+const createFolderItems = (parent_path_info, tree, window, root, grand_parent) => {
+    if(!grand_parent && !root) {
+        grand_parent = new QTreeWidgetItem();
+        grand_parent.setText(0, parent_path_info.name);
     }
 
-    for(let i in path_info.children) {
-        const path = path_info.children[i];
-        if(path.type == "folder") {
+    for(let i in parent_path_info.children) {
+        const path_info = parent_path_info.children[i];
+        if(path_info.type == "folder") {
             let folder_item = null;
             if(root) {
-                folder_item = createFolderItems(path, tree, window, false, null);
+                folder_item = createFolderItems(path_info, tree, window, false, null);
                 tree.addTopLevelItem(folder_item);
             } else {
-                folder_item = createFolderItems(path, tree, window, false, parent);
+                folder_item = createFolderItems(path_info, tree, window, false, grand_parent);
             }
 
-            folder_item.setText(0, path.name);
+            folder_item.setText(0, path_info.name);
             folder_item.setIcon(0, new QIcon(folder_icon_path));
 
             let checked = CheckState.Unchecked;
 
-            if(path.checked) {
+            if(path_info.checked) {
                 checked = CheckState.Checked;
             }
 
-            folder_item.setData(0, USER_DATA_ROLE, JSON.stringify(path));
+            folder_item.setData(0, USER_DATA_ROLE, JSON.stringify(path_info));
             folder_item.setCheckState(0, checked);
 
-            path['control'] = folder_item;
+            path_info['control'] = folder_item;
 
         } else {
             let file_item = null;
@@ -194,12 +194,12 @@ const createFolderItems = (path_info, tree, window, root, parent) => {
                 file_item = new QTreeWidgetItem();
                 tree.addTopLevelItem(file_item);
             } else {
-                file_item = new QTreeWidgetItem(parent);
+                file_item = new QTreeWidgetItem(grand_parent);
             }
 
-            file_item.setText(0, path.name);
+            file_item.setText(0, path_info.name);
 
-            switch(path.action) {
+            switch(path_info.action) {
               case "delete":
                 file_item.setIcon(0, new QIcon(file_delete_icon_file));
                 break;
@@ -212,31 +212,31 @@ const createFolderItems = (path_info, tree, window, root, parent) => {
             }
 
             let checked = CheckState.Unchecked;
-            if(path.checked) {
+            if(path_info.checked) {
                 checked = CheckState.Checked;
             }
             
-            file_item.setData(0, USER_DATA_ROLE, JSON.stringify(path));
+            file_item.setData(0, USER_DATA_ROLE, JSON.stringify(path_info));
             file_item.setCheckState(0, checked);
 
-            path['control'] = file_item;
+            path_info['control'] = file_item;
         }
     }
 
-  return parent;
+  return grand_parent;
 }
 
 
-export const processToQueues = (path_infos) => {
-  path_infos.children.forEach(file_info => {
+export const processToQueues = async (path_infos) => {
+  await Promise.all(path_infos.children.map(async file_info => {
     if(file_info.type == 'folder') {
-      processToQueues(file_info);
+      await processToQueues(file_info);
     } else {
       if(file_info.checked) {
-          addToQueue(file_info);
+        await addToQueue(file_info);
       }            
     }
-  });
+  }));
 }
 
 export const addToQueue = async (file_info) => {
@@ -249,6 +249,9 @@ export const addToQueue = async (file_info) => {
       break;
     case "upload":
       const online_versions = await getOnlineVersions(file_info);
+
+      debugger;
+
       if(online_versions.length == 0) {
           AddPendingFile(null, file_info.path, file_info.version, file_info.is_update);
       } else {
@@ -265,6 +268,7 @@ export const addToQueue = async (file_info) => {
       }
 
       RemoveProposedFile(file_info.path);
+
       break;
   }
 }

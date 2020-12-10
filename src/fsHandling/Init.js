@@ -49,6 +49,7 @@ import { nextTick, report } from 'process';
 import { resolve } from 'path';
 import { source } from 'lowdb/adapters/FileSync';
 import { platform } from 'os';
+import { GetPendingFile } from '../../dist/db/helpers';
 
 export const OnFileWatcherReady = () => {
     console.log('Initial scan complete. Ready for changes');
@@ -79,6 +80,8 @@ const startPendingTrasactionConfirmation = async () => {
             RemovePersistenceRecord(pr.action_tx_id);
         }
     });
+
+
 
     pending_transaction_confirmation_checking_interval = setInterval(async () => {
         const pending_files = GetPendingFilesWithTransactionIDs();
@@ -121,13 +124,14 @@ let sync_processing_interval = null;
 let initial_sync_inteval = null; // used to make a small delay at start up
 export const startSyncProcessing = () => {
     initial_sync_inteval = setInterval(() => {
+        checkSyncableFiles();
         processAll();
         clearInterval(initial_sync_inteval);
-    }, 1 * 1000); // 10 second delay on first time to allow for file monitoring to catch up
 
-    sync_processing_interval = setInterval(() => {
-        processAll();
-    }, GetSyncFrequency() * 60 * 1000);
+        sync_processing_interval = setInterval(() => {
+            checkSyncableFiles();
+        }, GetSyncFrequency() * 60 * 1000);
+    }, 1 * 1000); // 10 second delay on first time to allow for file monitoring to catch up
 }
 
 
@@ -138,13 +142,56 @@ export const stopSyncProcessing = () => {
 }
 
 export const unpauseSyncProcessing = () => {
+    const syncing = GetSyncStatus();
+
+    if(!syncing) return;
+    
     sync_processing_interval = setInterval(() => {
-        processAll();
+        checkSyncableFiles();
     }, GetSyncFrequency() * 60 * 1000);
+}
+
+export const checkSyncableFiles = async () => {
+    const syncable_files = await getAllSyncableFiles();
+
+    if(syncable_files[''].children.length > 0) {
+        const minutes = GetSyncFrequency();
+        const notification = {
+            title: 'Evermore Datastore',
+            icon: settings.NOTIFY_ICON_PATH,
+            message: `${syncable_files[''].children.length} files have been queued for sync in the last ${minutes} minutes. Would like to review them now?`
+        };
+
+        if(process.platform != 'darwin') {
+            notification['actions'] = ['Review', 'Postpone'];
+        }
+
+        notifier.notify(notification);
+
+        if(process.platform != 'darwin') {
+
+            notifier.on('review', reviewSyncableFiles);
+
+            notifier.on('postpone', () => {
+                // console.log('"Postpone" was pressed');
+            });
+        } else {
+            notifier.on('click', reviewSyncableFiles);
+        }
+    }
+}
+
+const reviewSyncableFiles = async () => {
+    const syncable_files = await getAllSyncableFiles();
+    prepareSyncDialogResponse(syncable_files);
 }
 
 
 export const pauseSyncProcessing = () => {
+    const syncing = GetSyncStatus();
+
+    if(!syncing) return;
+
     if(sync_processing_interval) {
         clearInterval(sync_processing_interval);
     }
@@ -161,12 +208,12 @@ const checkPendingFilesStatus = () => {
         getTransactionStatus(file_info.tx_id).then(async (response) => {
             if(response.status == 404) {
                 console.log(`resetting pending file ${file_info.file} as it was not found on the blockchain`);
-                ResetPendingFile(file_info.file, file_info.modified);
+                ResetPendingFile(file_info.path, file_info.modified);
             }
 
             if(response.status == 200) {
                 const transaction = await getTransactionWithTags(file_info.tx_id)
-                ConfirmSyncedFileFromTransaction(file_info.file, transaction);
+                ConfirmSyncedFileFromTransaction(file_info.path, transaction);
                 sendMessage(`STATUS:OK:${file_info.path}\n`);
                 confirmed_count++;
             }
@@ -186,6 +233,8 @@ const processAllOutstandingUploadsAndActions = async () => {
     const uploaders = GetUploaders();
 
     for(let i in uploaders) {
+        debugger;
+
         const uploader_record = uploaders[i];
         const already_completed = await transactionExistsOnTheBlockchain(uploader_record.uploader.transaction.id);
 
@@ -196,50 +245,14 @@ const processAllOutstandingUploadsAndActions = async () => {
             const time_difference = twenty_minutes_ago_timestamp - uploader_record.created;
 
             if(twenty_minutes_ago_timestamp < uploader_record.created) {
-                pauseSyncProcessing();
-
                 finishUpload(uploader_record.uploader);
 
                 RemoveUploader(uploader_record);
-
-                unpauseSyncProcessing();
             }
             
         } else {
             RemoveUploader(uploader_record);
         }        
-    }
-    
-    const syncable_files = await getAllSyncableFiles();
-
-    if(syncable_files[''].children.length > 0) {
-        const minutes = GetSyncFrequency();
-        const notification = {
-            title: 'Evermore Datastore',
-            icon: settings.NOTIFY_ICON_PATH,
-            message: `${syncable_files[''].children.length} files have been queued for sync in the last ${minutes} minutes. Would like to review them now?`
-        };
-
-        if(process.platform != 'darwin') {
-            notification['actions'] = ['Review', 'Postpone'];
-        }
-
-        notifier.notify(notification);
-
-        if(process.platform != 'darwin') {
-
-            notifier.on('review', () => {
-                prepareSyncDialogResponse(syncable_files);
-            });
-
-            notifier.on('postpone', () => {
-                // console.log('"Postpone" was pressed');
-            });
-        } else {
-            notifier.on('click', () => {
-                prepareSyncDialogResponse(syncable_files);
-            });
-        }
     }
 
     const pending_files = GetAllPendingFiles();
@@ -263,13 +276,14 @@ const getAllSyncableFiles = async () => {
 
     downloadable_files = downloadable_files.filter(downloadable_file => {
         const in_downloads = InDownloadQueue(downloadable_file);
-        const pending_file = GetSyncedFileBy({file: downloadable_file.file});
+        const synced_file = GetSyncedFileBy({path: downloadable_file.path});
+        const pending_file = GetPendingFile(downloadable_file.path)
 
-        if(pending_file) {
+        if(pending_file || synced_file) {
             return false;
         }
 
-        const synced_file_matches = GetSyncedFileBy({file: downloadable_file.file});
+        const synced_file_matches = GetSyncedFileBy({path: downloadable_file.path});
 
         if(synced_file_matches) {
             if(Array.isArray(synced_file_matches)) {
@@ -285,12 +299,10 @@ const getAllSyncableFiles = async () => {
     });
 
     if(downloadable_files.length > 0) {
-
         syncable_files = mergePathInfos(syncable_files[''], convertDatabaseRecordToInfos(sync_folder, downloadable_files)['']);
     }
 
     const deleting_files = GetDeletingFiles();
-
     if(deleting_files.length > 0) {
         deleting_files.forEach(pf => {
             pf['action'] = 'delete';
@@ -302,62 +314,36 @@ const getAllSyncableFiles = async () => {
 }
 
 let sync_settings_dialog_open = false;
+
 const prepareSyncDialogResponse = (path_infos) => {
-    pauseSyncProcessing();
-
     if(sync_settings_dialog_open) {
-        refreshReviewSyncDialog(path_infos[''], (path_infos_to_be_synced) => {
-            processToQueues(path_infos_to_be_synced);
-
-            const deleted_file_actions = GetDeletedFiles();
-
-            processAllDeleteActions(deleted_file_actions);
-
-            const pending_files = GetAllPendingFiles();
-
-            processAllPendingFiles(pending_files);
-
-            const downloads = GetDownloads();
-
-            processAllDownloads(downloads);
-
-            unpauseSyncProcessing();
-            sync_settings_dialog_open = false;
-        },
+        refreshReviewSyncDialog(path_infos[''], reviewSyncHandler,
         () => {
-            unpauseSyncProcessing();
             sync_settings_dialog_open = false;
         });
     } else {
         sync_settings_dialog_open = true;
-        openReviewSyncDialog(path_infos[''], (path_infos_to_be_synced) => {
-
-            processToQueues(path_infos_to_be_synced);
-
-            const deleted_file_actions = GetDeletedFiles();
-
-            processAllDeleteActions(deleted_file_actions);
-
-            const pending_files = GetAllPendingFiles();
-
-            processAllPendingFiles(pending_files);
-
-            const downloads = GetDownloads();
-
-            processAllDownloads(downloads);
-
-            unpauseSyncProcessing();
-            sync_settings_dialog_open = false;
-        },
+        openReviewSyncDialog(path_infos[''], reviewSyncHandler,
         () => {
-            unpauseSyncProcessing();
             sync_settings_dialog_open = false;
         });
     }
     
 }
 
-const addPathInfosToPending = (path_infos) => {
+const reviewSyncHandler = async (path_infos_to_be_synced) => {
+    pauseSyncProcessing();  
+
+    await processToQueues(path_infos_to_be_synced);
+
+    processAll();
+
+    unpauseSyncProcessing();
+        
+    sync_settings_dialog_open = false;
+}
+
+const addPathInfosToPending = (path_infos) => { // TODO: is this still used?
     const sync_folders = GetSyncedFolders();
     const sync_folder = sync_folders[0];
 
@@ -368,9 +354,9 @@ const addPathInfosToPending = (path_infos) => {
             addPathInfosToPending(pa);
         } else {
             if(pa.checked) {
-                const proposed_file = GetProposedFileBy({file: pa.path});
+                const proposed_file = GetProposedFileBy({path: pa.path});
                 AddPendingFile(null, pa.path, proposed_file.version, proposed_file.is_update);
-                RemoveProposedFile(path.join(path.normalize(sync_folder), pa.path));
+                RemoveProposedFile(pa.path);
             }            
         }
     }
@@ -379,18 +365,14 @@ const addPathInfosToPending = (path_infos) => {
 const processAllPendingFiles = async (pending_files) => {
     let uploaded_count = 0;
 
-    const public_sync_folder = path.join(getSystemPath(), 'Public');
-
     for(let i in pending_files) {
         const pending_file = pending_files[i];
         if(pending_file.tx_id == null) {            
-            const encrypt_file = pending_file.path.indexOf(public_sync_folder) == -1;
+            const encrypt_file = pending_file.path.indexOf('/Public/') == -1;
 
-            pauseSyncProcessing()
+            debugger;
 
-            uploadFile(pending_file, encrypt_file);
-
-            unpauseSyncProcessing();
+            await uploadFile(pending_file, encrypt_file);
 
             uploaded_count++;
         } else {

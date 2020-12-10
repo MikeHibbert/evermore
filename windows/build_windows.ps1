@@ -9,8 +9,8 @@ Copy-Item windows\bin\EMDOverlays.dll deploy\win32\build\Evermore
 Write-Host "============================"
 Write-Host "COPIED OVERLAY SUPPORT FILES"
 Write-Host "============================"
-
-
+Move-Item .\deploy\win32\build\Evermore\qode.exe .\deploy\win32\build\Evermore\evermore.exe
+Move-Item .\deploy\win32\build\Evermore\dist\assets .\deploy\win32\build\Evermore\assets
 Write-Host "=========================="
 Write-Host "DONE!"
 Write-Host "============================"
