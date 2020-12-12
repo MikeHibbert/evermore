@@ -20,31 +20,31 @@ export const win = new QMainWindow();
 win.setWindowTitle("Evermore Settings");
 win.setWindowIcon(new QIcon(settings.NOTIFY_ICON_PATH));
 
-let trayIcon = null;
+// let trayIcon = null;
+const trayIcon = new QIcon(
+    path.resolve(__dirname, '../assets/images/tray-logo32x32.png')
+);
 
-if(process.platform == 'win32') {
-    trayIcon = new QIcon(
-        path.resolve(__dirname, '../assets/images/tray-logo32x32.png')
-    );
-}
+// if(process.platform == 'win32') {
+//     trayIcon = new QIcon(
+//         path.resolve(__dirname, '../assets/images/tray-logo32x32.png')
+//     );
+// }
 
-if(process.platform == 'darwin') {
-    trayIcon = new QIcon(
-        path.resolve(__dirname, '../assets/images/tray-logo32x32.png')
-    );
-}
+// if(process.platform == 'darwin') {
+//     trayIcon = new QIcon(
+//         path.resolve(__dirname, '../assets/images/tray-logo32x32.png')
+//     );
+// }
 
-if(process.platform == 'linux') {
-    trayIcon = new QIcon(
-        path.resolve(__dirname, '../assets/images/tray-logo32x32.png')
-    );
-}
+// if(process.platform == 'linux') {
+//     trayIcon = new QIcon(
+//         path.resolve(__dirname, '../assets/images/tray-logo32x32.png')
+//     );
+// }
 
 
-const tray = new QSystemTrayIcon();
-tray.setIcon(trayIcon);
-tray.show();
-tray.setToolTip("Evermore");
+let tray = null;
 
 exports.systemTray = tray;
 
@@ -179,7 +179,11 @@ export const createLoggedInSystray = (menu) => {
 }
 
 const initSystemTray = () => {
-    
+    tray = new QSystemTrayIcon();
+    tray.setIcon(trayIcon);
+    tray.show();
+    tray.setToolTip("Evermore");
+
     const menu = new QMenu();
     tray.setContextMenu(menu);
 

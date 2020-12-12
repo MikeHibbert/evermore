@@ -5,9 +5,9 @@
 #define MyAppVersion "0.9.3"
 #define MyAppPublisher "Hibbert IT Solutions Limited"
 #define MyAppURL "https://evermoredata.store"
-#define MyAppExeName "evermore.exe"
+#define MyAppExeName "qode.exe"
 #define OutputBaseFilename "evermore_setup-0.9.3"
-#define MyAppId "{9119FD3A-9E8A-4BF4-9686-13CE1103FAD6}"
+#define MyAppId "{1A56A85B-CAD4-4FF9-B8E2-F79559702F30}"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application. Do not use the same AppId value in installers for other applications.
@@ -15,7 +15,7 @@
 AppId={{#MyAppId}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
-;AppVerName={#MyAppName} {#MyAppVersion}
+AppVerName={#MyAppName} {#MyAppVersion}
 AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
@@ -23,7 +23,7 @@ AppUpdatesURL={#MyAppURL}
 DefaultDirName={autopf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
-PrivilegesRequired=admin
+; PrivilegesRequired=admin
 OutputDir=C:\Users\hibbe\Desktop
 OutputBaseFilename={#OutputBaseFilename}
 SetupIconFile=C:\Users\hibbe\Documents\Nodejs\Evermore\windows\evermore-installer.ico
@@ -38,39 +38,38 @@ UninstallDisplayName={#MyAppName}
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
-[Tasks]
-Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
-
 [Files]
-Source: "C:\Users\hibbe\Documents\Nodejs\Evermore\deploy\win32\build\Evermore\evermore.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Users\hibbe\Documents\Nodejs\Evermore\deploy\win32\build\Evermore\qode.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\hibbe\Documents\Nodejs\Evermore\deploy\win32\build\Evermore\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "C:\Users\hibbe\Documents\Nodejs\Evermore\windows\bin\EMDContextMenu.dll"; DestDir: "{app}"; Flags: onlyifdoesntexist regserver 64bit
-Source: "C:\Users\hibbe\Documents\Nodejs\Evermore\windows\bin\EMDOverlays.dll"; DestDir: "{app}"; Flags: onlyifdoesntexist regserver 64bit
+Source: "C:\Users\hibbe\Documents\Nodejs\Evermore\deploy\win32\build\Evermore\EMDContextMenu.dll"; DestDir: "{app}"; Flags: regserver sharedfile ignoreversion
+Source: "C:\Users\hibbe\Documents\Nodejs\Evermore\deploy\win32\build\Evermore\EMDOverlays.dll"; DestDir: "{app}"; Flags: regserver sharedfile ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
-Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
+Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"
 Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
-Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 Name: "{userstartup}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"
 
-[Tasks]
-Name: AutoRunRegistry; Description: "Start application when user logs in (recommended)"
-
-[Registry]
-Root: HKLM; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; \
-    ValueName: "{#MyAppName}"; ValueData: "{app}\{#MyAppExeName}"; Tasks:AutoRunRegistry
+;[Registry]
+;Root: HKLM; Subkey: "SOFTWARE\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "Evermore"; ValueData: """{app}\{#MyAppExeName}"""; Flags: uninsdeletevalue; 
 
 [Run]
+;Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"; Flags: nowait postinstall skipifsilent
+Filename: "schtasks"; \
+    Parameters: "/Create /F /RL limited /SC onlogon /TR ""{app}\{#MyAppExeName}"" /TN ""Run app as admin on logon"""; \
+    Flags: runhidden
+
+[UninstallRun]
 Filename: regsvr32.exe; Parameters: /u EMDContextMenu.dll; WorkingDir: {app}; \
     Check: FileExists(ExpandConstant('{app}\EMDContextMenu.dll')); \
-    AfterInstall: DoDeleteFile(ExpandConstant('{app}\EMDContextMenu.dll')); \
     Flags: runhidden
 Filename: regsvr32.exe; Parameters: /u EMDOverlays.dll; WorkingDir: {app}; \
     Check: IsWin64 and FileExists(ExpandConstant('{app}\EMDOverlays.dll')); \
-    AfterInstall: DoDeleteFile(ExpandConstant('{app}\EMDOverlays.dll')); \
     Flags: runhidden
 
+; [UninstallDelete]
+; Type: files; Name: "{app}\evermore-db.json"
+ 
 [Code]
 { Cannot use built-in DeleteFile directly in AfterInstall as it's a function,
 { not a procedure. And this way we can add some error handling too. }
@@ -224,7 +223,7 @@ var
   uninstaller: String;
   ErrorCode: Integer;
 begin
-  if IsModuleLoaded( 'evermore.exe' ) then
+  if IsModuleLoaded( 'qode.exe' ) then
   begin
     MsgBox( 'Evermore is running, please close it and run setup again.',
              mbError, MB_OK );
@@ -280,17 +279,36 @@ function InitializeUninstall(): Boolean;
 begin
  
   // check if notepad is running
-  if IsModuleLoadedU( 'evermore.exe' ) then
+  if IsModuleLoadedU( 'qode.exe' ) then
   begin
-    MsgBox( 'CodeGear RAD Studio is running, please close it and run again uninstall.',
+    MsgBox( 'Evermore is running, please close it and run again uninstall.',
              mbError, MB_OK );
     Result := false;
   end
   else Result := true;
 
   // Unload the DLL, otherwise the dll psvince is not deleted
-  UnloadDLL(ExpandConstant('{app}\psvince.dll'));
   UnloadDLL(ExpandConstant('{app}\EMDContextMenu.dll'));
   UnloadDLL(ExpandConstant('{app}\EMDOverlays.dll'));
  
+end;
+
+procedure CurUninstallStepChanged (CurUninstallStep: TUninstallStep);
+ var
+     mres : integer;
+ begin
+    case CurUninstallStep of                   
+      usPostUninstall:
+        begin
+          DelTree(ExpandConstant('{userappdata}\Evermore'), True, True, True);
+          DelTree(ExpandConstant('{app}'), True, True, True);
+       end;
+   end;
+end;  
+
+function UninstallNeedRestart(): Boolean;
+begin
+  // DoDeleteFile('{app}\EMDContextMenu.dll');
+  // DoDeleteFile('{app}\EMDOverlays.dll');
+  Result := true;
 end;

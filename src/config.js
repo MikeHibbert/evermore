@@ -1,7 +1,13 @@
 const { platform } = require('os');
+const fs = require('fs');
 const path = require('path');
 
-// console.log(process.cwd());
+const home_folder = process.env.APPDATA || (process.platform == 'darwin' ? process.env.HOME + '/Library/Preferences' : process.env.HOME + "/.local/share");
+console.log(home_folder);
+
+if(!fs.existsSync(path.join(home_folder, 'Evermore'))) {
+    fs.mkdirSync(path.join(home_folder, 'Evermore'));
+}
 
 let settings = {
     APP_NAME: 'EvermoreDatastore-v0.9.2',
@@ -15,7 +21,7 @@ let settings = {
         timeout: 20000,
         logging: false
     }, 
-    DB_PATH: 'evermore-db.json',
+    DB_PATH:  path.join(home_folder, 'Evermore', 'evermore-db.json'),
     NOTIFY_ICON_PATH: path.join(
         process.cwd(), 
         process.platform == 'win32' ? "assets\\images\\facebook-logo.png" : "assets/images/facebook-logo.png"

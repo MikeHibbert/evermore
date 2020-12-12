@@ -5,6 +5,7 @@ rm -rf "${app_dir}"
 pwd
 rm osx/build.log
 
+npm run build 
 npx nodegui-packer --pack dist > osx/build.log
 cp -r osx/Plugins/* deploy/darwin/build/Evermore.app/Contents/PlugIns
 mv deploy/darwin/build/Evermore.app/Contents/Resources/dist/assets deploy/darwin/build/Evermore.app/Contents/Resources

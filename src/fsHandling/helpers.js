@@ -180,11 +180,11 @@ export const convertPathsToInfos = (sync_folder, file_paths, is_root) => {
 
         try {
             if(fs.lstatSync(file_path).isDirectory()) {
-                path_type = 'folder'; 
+                continue;
             }
         } catch(e) {}
 
-        const file_info = { path: path.normalize(file_path.replace(sync_folder, '')), children: [], type: path_type, checked: true };
+        const file_info = { path: normalizePath(file_path.replace(sync_folder, '')), children: [], type: path_type, checked: true, action: "upload" };
 
         let path_parts = [];
         if(file_info.path.indexOf('\\') != -1) {
@@ -197,7 +197,7 @@ export const convertPathsToInfos = (sync_folder, file_paths, is_root) => {
         
         if(path_parts.length > 1) {
             if(folders.hasOwnProperty(path_parts[0])) {
-                addToFolderChildren(path_parts, 0, file_info, folders[path_parts[0]], 0);                
+                addToFolderChildrenOrUpdate(path_parts, 0, file_info, folders[path_parts[0]]);                
             }           
         }  
     }

@@ -1,5 +1,6 @@
 const clipboardy = require('clipboardy');
 const notifier = require('node-notifier');
+const fs = require('fs');
 import { 
     GetAllPendingFiles,
     GetPendingFile,
@@ -10,6 +11,7 @@ import {
 import {pathExcluded, isPublicFile, normalizePath} from '../fsHandling/helpers';
 import path from 'path';
 import { settings } from '../config';
+import { fstat } from 'fs';
 
  
 const processPipeMessage = (data) => {
@@ -64,14 +66,16 @@ const processPipeMessage = (data) => {
 }
 
 export const openViewblockTransactionPage = (file_path) => {
-    const file_info = GetSyncedFileFromPath(path.normalize(file_path));
+    const synced_folder = GetSyncedFolders()[0];
+    const file_info = GetSyncedFileFromPath(normalizePath(file_path.replace(synced_folder, '')));
     var url = `https://viewblock.io/arweave/tx/${file_info.tx_id}`;
     var start = (process.platform == 'darwin'? 'open': process.platform == 'win32'? 'start': 'xdg-open');
     require('child_process').exec(start + ' ' + url);
 }
 
 const shareFileLinkToClipboard = (file_path) => {
-    const file_info = GetSyncedFileFromPath(path.normalize(file_path));
+    const synced_folder = GetSyncedFolders()[0];
+    const file_info = GetSyncedFileFromPath(normalizePath(file_path.replace(synced_folder, '')));
 
     if(file_info && isPublicFile(file_path) && !pathExcluded(file_path)) {
         clipboardy.writeSync(`https://arweave.net/${file_info.tx_id}`);
@@ -126,7 +130,9 @@ const getFileContextMenuItems = (file_path) => {
         responses = responses + 'MENU_ITEM:SHARE::Copy Share Link\n';
     }
 
-    responses = responses + 'MENU_ITEM:DETAILS::View Transaction Details\n';
+    if(!fs.lstatSync(file_path).isDirectory()) {
+        responses = responses + 'MENU_ITEM:DETAILS::View Transaction Details\n';
+    }    
 
     responses = responses + "GET_MENU_ITEMS:END\n";
 

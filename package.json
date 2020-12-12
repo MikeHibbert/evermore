@@ -27,7 +27,7 @@
     "service": "node dist/index.js",
     "dev": "babel ./src --out-dir dist && qode dist/index.js --unhandled-rejections=strict",
     "build": "npm-run-all clean transpile && webpack --config webpack.config.js",
-    "transpile": "cross-env BABEL_ENV=module babel ./src --out-dir dist --source-maps --copy-files",
+    "transpile": "babel ./src --out-dir dist",
     "clean": "rimraf dist",
     "watch": "webpack --watch"
   },
