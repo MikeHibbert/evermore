@@ -163,7 +163,7 @@ class FoldersView extends Component {
                                         <input style={{display: "none"}} ref="filename" type="file" name="uploader"></input>
                                     
 									<div className="container py-6">
-                                        <div className="pull-right" style={{marginBottom: "10px"}}>
+                                        {/* <div className="pull-right" style={{marginBottom: "10px"}}>
                                             <div className="btn-group">
                                                 <button type="button" onClick={e => {this.onToggleOptions()}} className="btn btn-primary">Actions</button>
                                                 <button type="button" onClick={e => {this.onToggleOptions()}} className="btn btn-primary dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -181,7 +181,7 @@ class FoldersView extends Component {
                                                     </a>
                                                 </div>
                                             </div>
-                                        </div>
+                                        </div> */}
 											<div className="table-responsive">
 												<table className="table table-framed">
 													<thead>
