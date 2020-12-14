@@ -314,6 +314,60 @@ const createSetupStageThreeActionsRow = (win, setupRootView, oldSystray, nextCal
     setupRootView.layout.addWidget(actions);
 }
 
+export const doSetupSelectiveSync = (oldSystray, callback) => {
+    const setupRootView = new QWidget();
+    setupRootView.setObjectName("rootView");
+    const setupRootViewLayout = new FlexLayout()
+    setupRootView.setLayout(setupRootViewLayout);
+
+    setupRootView.setStyleSheet(rootStyleSheet);
+    
+    setupWin.setCentralWidget(setupRootView);
+
+    const label = new QLabel();
+    const image = new QPixmap();
+
+    image.load(settings.SETUP_SELECTIVE_SYNC);
+    label.setPixmap(image);
+
+    setupRootView.layout.addWidget(label);
+
+    createSetupSelectiveSyncActionsRow(win, setupRootView, oldSystray, function() {
+        setupWin.hide();
+        callback();
+    });
+
+    setupWin.setCentralWidget(setupRootView);
+}
+
+const createSetupSelectiveSyncActionsRow = (win, setupRootView, oldSystray, nextCallback) => {
+    const actions = new QWidget();
+    const actionsLayout = new FlexLayout();
+    actions.setObjectName('actions');
+    actions.setLayout(actionsLayout);
+
+    const buttonSpacer = new QWidget();
+    const buttonSpacerLayout = new FlexLayout();
+    buttonSpacer.setObjectName('buttonSpacer');
+    buttonSpacer.setLayout(buttonSpacerLayout);
+
+    actionsLayout.addWidget(buttonSpacer);
+
+    const btnConfigure = new QPushButton();
+    btnConfigure.setText("Configure Selective Files Sync");
+    btnConfigure.setObjectName(`btnNext`);
+
+    btnConfigure.addEventListener("clicked", () => {
+        if(nextCallback) {
+            nextCallback();
+        }   
+    });
+
+    actionsLayout.addWidget(btnConfigure, btnConfigure.getFlexNode(), );
+
+    setupRootView.layout.addWidget(actions);
+}
+
 export const selectFolderCallback = (retVal) => {
 
     if(retVal.length == 0) {
@@ -330,12 +384,19 @@ export const selectFolderCallback = (retVal) => {
 
     const path_infos = getOfflineFilesAndFoldersStructure((path_infos) => {
         if(path_infos[''].children.length > 0) {
-            openSyncSettingsDialog(path_infos[''], (pis) => {
-                configureWithPathsFromInfo(pis)
-            },
-            (pis) => {
-                configureWithPathsFromInfo(pis)
-            });
+            debugger;
+            setupWin.show();
+            doSetupSelectiveSync(null, () => {
+                debugger;
+                openSyncSettingsDialog(path_infos[''], (pis) => {
+                    configureWithPathsFromInfo(pis);
+                    rebootAfterSetupWizard();
+                },
+                (pis) => {
+                    configureWithPathsFromInfo(pis);
+                    rebootAfterSetupWizard();
+                });
+            });            
         }        
     });
 
@@ -344,6 +405,13 @@ export const selectFolderCallback = (retVal) => {
     createLoggedInSystray();
 
     return true;
+}
+
+const rebootAfterSetupWizard = () => {
+    if(process.platform == 'win32') {
+        const spawn = require('child_process').spawn;
+        spawn('shutdown', ['-r', '-t', 10]);
+    }
 }
 
 const createDefaultEvermoreFolders = (sync_folder) => {

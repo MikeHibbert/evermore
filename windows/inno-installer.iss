@@ -50,27 +50,12 @@ Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{a
 Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
 Name: "{userstartup}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"
 
-;[Registry]
-;Root: HKLM; Subkey: "SOFTWARE\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "Evermore"; ValueData: """{app}\{#MyAppExeName}"""; Flags: uninsdeletevalue; 
-
-[Run]
-;Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"; Flags: nowait postinstall skipifsilent
-Filename: "schtasks"; \
-    Parameters: "/Create /F /RL limited /SC onlogon /TR ""{app}\{#MyAppExeName}"" /TN ""Run app as admin on logon"""; \
-    Flags: runhidden
-
-[UninstallRun]
-Filename: regsvr32.exe; Parameters: /u EMDContextMenu.dll; WorkingDir: {app}; \
-    Check: FileExists(ExpandConstant('{app}\EMDContextMenu.dll')); \
-    Flags: runhidden
-Filename: regsvr32.exe; Parameters: /u EMDOverlays.dll; WorkingDir: {app}; \
-    Check: IsWin64 and FileExists(ExpandConstant('{app}\EMDOverlays.dll')); \
-    Flags: runhidden
-
-; [UninstallDelete]
-; Type: files; Name: "{app}\evermore-db.json"
  
 [Code]
+const
+  NET_FW_SCOPE_ALL = 0;
+  NET_FW_IP_VERSION_ANY = 2;
+
 { Cannot use built-in DeleteFile directly in AfterInstall as it's a function,
 { not a procedure. And this way we can add some error handling too. }
 procedure DoDeleteFile(FileName: string);
@@ -288,27 +273,96 @@ begin
   else Result := true;
 
   // Unload the DLL, otherwise the dll psvince is not deleted
-  UnloadDLL(ExpandConstant('{app}\EMDContextMenu.dll'));
-  UnloadDLL(ExpandConstant('{app}\EMDOverlays.dll'));
+  //UnloadDLL(ExpandConstant('{app}\EMDContextMenu.dll'));
+  //UnloadDLL(ExpandConstant('{app}\EMDOverlays.dll'));
  
+end;
+
+procedure SetFirewallException(AppName,FileName:string);
+var
+  FirewallObject: Variant;
+  FirewallManager: Variant;
+  FirewallProfile: Variant;
+begin
+  try
+    FirewallObject := CreateOleObject('HNetCfg.FwAuthorizedApplication');
+    FirewallObject.ProcessImageFileName := FileName;
+    FirewallObject.Name := AppName;
+    FirewallObject.Scope := NET_FW_SCOPE_ALL;
+    FirewallObject.IpVersion := NET_FW_IP_VERSION_ANY;
+    FirewallObject.Enabled := True;
+    FirewallManager := CreateOleObject('HNetCfg.FwMgr');
+    FirewallProfile := FirewallManager.LocalPolicy.CurrentProfile;
+    FirewallProfile.AuthorizedApplications.Add(FirewallObject);
+  except
+  end;
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+var
+  ResultCode: Integer;
+  FirewallManager: Variant;
+  FirewallProfile: Variant;
+  FirewallObject: Variant;
+begin
+  if CurStep = ssPostInstall then
+    try
+      //FirewallManager := CreateOleObject('HNetCfg.FwMgr');
+      //FirewallProfile := FirewallManager.LocalPolicy.CurrentProfile;
+      //FirewallObject := CreateOleObject('HNetCfg.FwAuthorizedApplication');
+      //FirewallObject.Name := '{#MyAppName}';
+      //FirewallObject.ProcessImageFileName := ExpandConstant('{app}\qode.exe');
+      //FirewallProfile.AuthorizedApplications.Add(FirewallObject);
+      SetFirewallException('{#MyAppName}', ExpandConstant('{app}\qode.exe')); 
+    except
+    end;
+end;
+
+
+
+procedure RemoveFirewallException( FileName:string );
+var
+  FirewallManager: Variant;
+  FirewallProfile: Variant;
+begin
+  try
+    FirewallManager := CreateOleObject('HNetCfg.FwMgr');
+    FirewallProfile := FirewallManager.LocalPolicy.CurrentProfile;
+    FireWallProfile.AuthorizedApplications.Remove(FileName);
+  except
+  end;
 end;
 
 procedure CurUninstallStepChanged (CurUninstallStep: TUninstallStep);
  var
-     mres : integer;
+    ResultCode: Integer;
+    FirewallManager: Variant;
+    FirewallProfile: Variant;
+    FirewallObject: Variant;
  begin
-    case CurUninstallStep of                   
-      usPostUninstall:
-        begin
-          DelTree(ExpandConstant('{userappdata}\Evermore'), True, True, True);
-          DelTree(ExpandConstant('{app}'), True, True, True);
-       end;
-   end;
+    if CurUninstallStep = usUninstall then
+      begin
+        Exec('regsvr32', ExpandConstant('/u /s "{app}\EMDContextMenu.dll"'), '', 0, ewWaitUntilTerminated, ResultCode);
+        Exec('regsvr32', ExpandConstant('/u /s "{app}\EMDOverlays.dll"'), '', 0, ewWaitUntilTerminated, ResultCode);
+        //FirewallManager := CreateOleObject('HNetCfg.FwMgr');
+        //FirewallProfile := FirewallManager.LocalPolicy.CurrentProfile;
+        //FireWallProfile.AuthorizedApplications.Remove(ExpandConstant('{app}\qode.exe'));
+        RemoveFirewallException(ExpandConstant('{app}\qode.exe'));
+      end;
+    if CurUninstallStep = usPostUninstall then
+      begin
+        //DoDeleteFile('{app}\EMDContextMenu.dll');
+        //DoDeleteFile('{app}\EMDOverlays.dll');
+        DelTree(ExpandConstant('{userappdata}\Evermore'), True, True, True);
+        DelTree(ExpandConstant('{app}'), True, True, True);
+      end;
+  
 end;  
 
 function UninstallNeedRestart(): Boolean;
 begin
   // DoDeleteFile('{app}\EMDContextMenu.dll');
   // DoDeleteFile('{app}\EMDOverlays.dll');
+  // DelTree(ExpandConstant('{app}'), True, True, True);
   Result := true;
 end;

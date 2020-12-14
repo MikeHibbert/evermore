@@ -112,8 +112,18 @@ export const SetSyncFrequency = (minutes) =>  {
     if(!db) {
         InitDB();
     }
+
+    const syncing = GetSyncStatus();
+    if(syncing) {
+        stopSyncProcessing();
+    }
     
     db.set('sync_frequency', minutes).write();
+
+    if(syncing) {
+        startSyncProcessing();
+    }
+    
 }
 
 export const walletFileSet = () => {

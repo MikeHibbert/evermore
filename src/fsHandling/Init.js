@@ -159,7 +159,8 @@ export const checkSyncableFiles = async () => {
         const notification = {
             title: 'Evermore Datastore',
             icon: settings.NOTIFY_ICON_PATH,
-            message: `${syncable_files[''].children.length} files have been queued for sync in the last ${minutes} minutes. Would like to review them now?`
+            message: `${syncable_files[''].children.length} files have been queued for sync in the last ${minutes} minutes. Would like to review them now?`,
+            appID: settings.API_NOTIFIER_ID
         };
 
         if(process.platform != 'darwin') {
@@ -181,8 +182,21 @@ export const checkSyncableFiles = async () => {
     }
 }
 
-const reviewSyncableFiles = async () => {
+export const reviewSyncableFiles = async () => {
     const syncable_files = await getAllSyncableFiles();
+
+    if(syncable_files[''].children.length == 0) {
+        const notification = {
+            title: 'Evermore Datastore',
+            icon: settings.NOTIFY_ICON_PATH,
+            message: 'There are no files that need reviewing.',
+            appID: settings.API_NOTIFIER_ID
+        };
+        notifier.notify(notification);
+
+        return;
+    }
+
     prepareSyncDialogResponse(syncable_files);
 }
 
@@ -224,7 +238,8 @@ const checkPendingFilesStatus = () => {
         notifier.notify({
             title: 'Evermore Datastore',
             icon: settings.NOTIFY_ICON_PATH,
-            message: `${confirmed_count} files have successfully been mined and are now permanently stored on the blockchain.`            
+            message: `${confirmed_count} files have successfully been mined and are now permanently stored on the blockchain.`,
+            appID: settings.API_NOTIFIER_ID         
         });
     }
 }
@@ -392,7 +407,8 @@ const processAllPendingFiles = async (pending_files) => {
         notifier.notify({
             title: 'Evermore',
             icon: settings.NOTIFY_ICON_PATH,
-            message: `${pending_files.length} have been uploaded and will be mined sortly.`
+            message: `${pending_files.length} have been uploaded and will be mined sortly.`,
+            appID: settings.API_NOTIFIER_ID
         });
     }     
 }
@@ -439,7 +455,8 @@ const processAllPendingTransactions = async (pending_files) => {
         notifier.notify({
             title: 'Evermore',
             icon: settings.NOTIFY_ICON_PATH,
-            message: `${confirmed_count} have been successfully mined and are available on the blockchain.`
+            message: `${confirmed_count} have been successfully mined and are available on the blockchain.`,
+            appID: settings.API_NOTIFIER_ID
         });
     } 
 }

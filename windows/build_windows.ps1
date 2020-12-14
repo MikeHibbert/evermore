@@ -7,6 +7,8 @@ Write-Host "WINDOWS EXE BUILT"
 Write-Host "============================"
 Copy-Item windows\bin\EMDContextMenu.dll deploy\win32\build\Evermore
 Copy-Item windows\bin\EMDOverlays.dll deploy\win32\build\Evermore
+Remove-Item .\deploy\win32\build\Evermore\qode.exe
+Copy-Item windows\bin\qode.exe deploy\win32\build\Evermore\
 Write-Host "============================"
 Write-Host "COPIED OVERLAY SUPPORT FILES"
 Write-Host "============================"

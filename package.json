@@ -69,7 +69,7 @@
     "nexe": "^3.3.7",
     "node-addon-api": "^3.0.2",
     "node-jwk": "^0.1.0",
-    "node-notifier": "^7.0.2",
+    "node-notifier": "git+https://github.com/hungkoala/node-notifier.git",
     "node-rsa": "^1.1.1",
     "nodemon": "^2.0.4",
     "npm-run-all": "^4.1.5",

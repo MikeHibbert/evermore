@@ -83,7 +83,8 @@ const shareFileLinkToClipboard = (file_path) => {
         notifier.notify({
             title: 'Evermore Datastore',
             icon: settings.NOTIFY_ICON_PATH,
-            message: `A public link for '${file_info.file}' was copied to your clipboard.`
+            message: `A public link for '${file_info.file}' was copied to your clipboard.`,
+            appID: settings.API_NOTIFIER_ID
         });
     }
     

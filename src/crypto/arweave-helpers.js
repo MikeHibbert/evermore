@@ -92,7 +92,8 @@ export const uploadFile = async (file_info, encrypt_file) => {
             title: 'Evermore Datastore',
             icon: settings.NOTIFY_ICON_PATH,
             message: `Not enough disk space to upload - ${required_space} bytes required`,
-            timeout: 2
+            timeout: 2,
+            appID: settings.API_NOTIFIER_ID
         });
 
         return;
@@ -129,7 +130,8 @@ export const uploadFile = async (file_info, encrypt_file) => {
                 title: 'Evermore Datastore',
                 icon: settings.NOTIFY_ICON_PATH,
                 message: `Your wallet does not contain enough AR to upload, ${total_ar_cost} AR is needed `,
-                timeout: 2
+                timeout: 2,
+                appID: settings.API_NOTIFIER_ID
             });
     
             return;
@@ -241,7 +243,8 @@ export const setFileStatusAsDeleted = async (file_info) => {
             title: 'Evermore Datastore',
             icon: settings.NOTIFY_ICON_PATH,
             message: `Your wallet does not contain enough AR to upload, ${total_ar_cost} AR is needed `,
-            timeout: 2
+            timeout: 2,
+            appID: settings.API_NOTIFIER_ID
         });
 
         return;
@@ -275,7 +278,8 @@ export const setFileStatusAsDeleted = async (file_info) => {
             title: 'Evermore Datastore',
             icon: settings.NOTIFY_ICON_PATH,
             message: `There was an error updating the status of ${file_info.name} - ${error_msg}`,
-            timeout: 2
+            timeout: 2,
+            appID: settings.API_NOTIFIER_ID
         });
 
         return;
@@ -661,7 +665,8 @@ export const downloadFileFromTransaction = async (tx_id) => {
             title: 'Evermore Datastore',
             icon: settings.NOTIFY_ICON_PATH,
             message: `Not enough disk space to download - ${required_space} bytes required`,
-            timeout: 2
+            timeout: 2,
+            appID: settings.API_NOTIFIER_ID
         });
 
         return;
@@ -694,7 +699,8 @@ export const downloadFileFromTransaction = async (tx_id) => {
                     title: 'Evermore Datastore',
                     icon: settings.NOTIFY_ICON_PATH,
                     message: `Unable to download encrypted file ${save_file_encrypted} your wallet file is not set.`,
-                    timeout: 2
+                    timeout: 2,
+                    appID: settings.API_NOTIFIER_ID
                 });
 
                 fs.unlink(save_file_encrypted, (err) => {});

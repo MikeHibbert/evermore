@@ -3,7 +3,6 @@ const fs = require('fs');
 const path = require('path');
 
 const home_folder = process.env.APPDATA || (process.platform == 'darwin' ? process.env.HOME + '/Library/Preferences' : process.env.HOME + "/.local/share");
-console.log(home_folder);
 
 if(!fs.existsSync(path.join(home_folder, 'Evermore'))) {
     fs.mkdirSync(path.join(home_folder, 'Evermore'));
@@ -38,11 +37,12 @@ let settings = {
         process.cwd(), 
         process.platform == 'win32' ? "assets\\images\\setup-3.png" : "assets/images/setup-3.png"
     ),
-    GRAPHQL_ENDPOINT: 'https://arweave.net/graphql'
-}
-
-if(process.platform != 'win32') {
-    // TODO: set stuff up for alternate DB location if needs be
+    SETUP_SELECTIVE_SYNC: path.join(
+        process.cwd(), 
+        process.platform == 'win32' ? "assets\\images\\setup-selective-sync.png" : "assets/images/setup-selective-sync.png"
+    ),
+    GRAPHQL_ENDPOINT: 'https://arweave.net/graphql',
+    API_NOTIFIER_ID: 'Evermore' // process.platform == 'win32' ? "{1A56A85B-CAD4-4FF9-B8E2-F79559702F30}" : undefined
 }
 
 if(typeof jest != "undefined") {

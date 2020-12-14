@@ -12,9 +12,10 @@ import {
 import path from "path";
 import openSettingsDialog from "./ui/SettingsDialog";
 import OpenInitialSetupDialog from './ui/InitialSetupDialog';
-import {walletFileSet, resetWalletFilePath, GetSyncStatus, SetSyncStatus} from './db/helpers';
+import {walletFileSet, resetWalletFilePath, GetSyncStatus, SetSyncStatus, GetPendingFile, GetAllPendingFiles, GetAllProposedFiles, GetDownloads} from './db/helpers';
 import {getWalletBalance} from './crypto/arweave-helpers';
 import {settings} from './config';
+import {reviewSyncableFiles} from './fsHandling/Init';
 
 export const win = new QMainWindow();
 win.setWindowTitle("Evermore Settings");
@@ -83,6 +84,38 @@ const createLoggedOutSystray = (menu) => {
     menu.addAction(shutdownAction);
 }
 
+let reviewPendingStatusAction = null;
+let reviewProposedStatusAction = null;
+let reviewDownloadStatusAction = null;
+
+export const setReviewStatusText = (status_text) => {
+    reviewPendingStatusAction.setText(status_text);
+}
+
+export const updateFileMonitoringStatuses = () => {
+    const proposed_files = GetAllProposedFiles();
+    if(proposed_files.length > 0) {
+        reviewProposedStatusAction.setText(`${proposed_files.length} files to review`);
+    } else {
+        reviewProposedStatusAction.setText(`0 files to review`);
+    }
+
+    const pending_files = GetAllPendingFiles();
+    if(pending_files.length > 0) {
+        reviewPendingStatusAction.setText(`${pending_files.length} files to upload`);
+    } else {
+        reviewPendingStatusAction.setText(`0 files to upload`);
+    }
+
+    const download_files = GetDownloads();
+    if(download_files.length > 0) {
+        reviewDownloadStatusAction.setText(`${download_files.length} files to download`);
+    } else {
+        reviewDownloadStatusAction.setText(`0 files to download`);
+    }
+}
+
+
 export const createLoggedInSystray = (menu) => {
 
     if(typeof menu == "undefined") {
@@ -101,7 +134,6 @@ export const createLoggedInSystray = (menu) => {
         balanceAction.setText("Balance unavailable.");
     }
     
-    
     balanceAction.addEventListener("triggered", () => {
         const wallet_path = walletFileSet();
 
@@ -112,9 +144,39 @@ export const createLoggedInSystray = (menu) => {
         });
     });
 
+    reviewProposedStatusAction = new QAction();
+    const proposed_files = GetAllProposedFiles();
+    if(proposed_files.length > 0) {
+        reviewProposedStatusAction.setText(`${proposed_files.length} files to review`);
+    } else {
+        reviewProposedStatusAction.setText(`0 files to review`);
+    }
+
+    reviewPendingStatusAction = new QAction();
+    const pending_files = GetAllPendingFiles();
+    if(pending_files.length > 0) {
+        reviewPendingStatusAction.setText(`${pending_files.length} files to upload`);
+    } else {
+        reviewPendingStatusAction.setText(`0 files to upload`);
+    }
+
+    reviewDownloadStatusAction = new QAction();
+    const download_files = GetDownloads();
+    if(download_files.length > 0) {
+        reviewDownloadStatusAction.setText(`${download_files.length} files to download`);
+    } else {
+        reviewDownloadStatusAction.setText(`0 files to download`);
+    }
+
+    const reviewAction = new QAction();
+    reviewAction.setText('Click to review file changes');
+    reviewAction.addEventListener('triggered', () => {
+        reviewSyncableFiles();
+    });
+
     const syncStatus = new QAction();
     const paused = GetSyncStatus();
-    const sync_status = paused == true ? "Syncing Active" : "Syncing Deactivated";
+    const sync_status = paused == true ? "Syncing active" : "Syncing paused";
     syncStatus.setText(sync_status);
     syncStatus.setCheckable(true);
     syncStatus.setChecked(paused);
@@ -123,23 +185,25 @@ export const createLoggedInSystray = (menu) => {
 
         SetSyncStatus(!syncing);
 
-        const sync_status = syncing == true ? "Syncing active" : "Syncing paused";
+        const sync_status = !syncing == true ? "Syncing active" : "Syncing paused";
         syncStatus.setText(sync_status);
-        syncStatus.setChecked(syncing);
+        syncStatus.setChecked(!syncing);
 
         if(syncing) {
             notifier.notify({
                 title: 'Evermore Datastore',
                 icon: settings.NOTIFY_ICON_PATH,
                 message: 'Syncing has been paused',
-                timeout: 2
+                timeout: 2, 
+                appID: settings.API_NOTIFIER_ID
             });
         } else {
             notifier.notify({
                 title: 'Evermore Datastore',
                 icon: settings.NOTIFY_ICON_PATH,
                 message: 'Syncing has resumed',
-                timeout: 2
+                timeout: 2,
+                appID: settings.API_NOTIFIER_ID
             });
         }
     });
@@ -151,7 +215,7 @@ export const createLoggedInSystray = (menu) => {
     });
 
     const openWebclientSite = new QAction();
-    openWebclientSite.setText("Open Evemore Online");
+    openWebclientSite.setText("Open Evemore Webclient");
     openWebclientSite.addEventListener("triggered", () => {
         openWebclient();
     });
@@ -160,6 +224,10 @@ export const createLoggedInSystray = (menu) => {
     // Add everything to menu
     // ----------------------
     menu.addAction(balanceAction);
+    menu.addAction(reviewProposedStatusAction);
+    menu.addAction(reviewPendingStatusAction);    
+    menu.addAction(reviewDownloadStatusAction);
+    menu.addAction(reviewAction);
     menu.addAction(syncStatus);
     menu.addAction(showSettings);
     menu.addAction(openWebclientSite);

@@ -239,7 +239,8 @@ const createSyncRow = async (editable_settings, rootView, win) => {
           notifier.notify({
             title: 'Evermore Datastore',
             icon: settings.NOTIFY_ICON_PATH,
-            message: "There are currently no files to download/sync online"
+            message: "There are currently no files to download/sync online",
+            appID: settings.API_NOTIFIER_ID
           });
 
           return;
