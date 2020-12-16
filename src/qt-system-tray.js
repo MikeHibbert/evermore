@@ -1,5 +1,5 @@
 const fs = require('fs');
-const notifier = require('node-notifier');
+import {showNotification} from './ui/notifications';
 import {
     QKeySequence,
     QApplication,
@@ -190,21 +190,9 @@ export const createLoggedInSystray = (menu) => {
         syncStatus.setChecked(!syncing);
 
         if(syncing) {
-            notifier.notify({
-                title: 'Evermore Datastore',
-                icon: settings.NOTIFY_ICON_PATH,
-                message: 'Syncing has been paused',
-                timeout: 2, 
-                appID: settings.API_NOTIFIER_ID
-            });
+            showNotification('Syncing has been paused');
         } else {
-            notifier.notify({
-                title: 'Evermore Datastore',
-                icon: settings.NOTIFY_ICON_PATH,
-                message: 'Syncing has resumed',
-                timeout: 2,
-                appID: settings.API_NOTIFIER_ID
-            });
+            showNotification('Syncing has resumed');
         }
     });
 

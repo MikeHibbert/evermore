@@ -59,7 +59,6 @@ export const sendUsagePayment = async (jwk, transaction_cost) => {
         await arweave.transactions.sign(tx, jwk);
         await arweave.transactions.post(tx);
     } catch (e) {
-        debugger;
         console.log(e);
     }
     

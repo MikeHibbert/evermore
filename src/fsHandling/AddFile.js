@@ -22,6 +22,7 @@ import {
     normalizePath
 } from '../fsHandling/helpers';
 import { getDownloadableFilesGQL } from '../crypto/arweave-helpers';
+import { updateFileMonitoringStatuses } from '../qt-system-tray';
 
 const fileAddedHandler = (file_path) => {
     if(file_path.endsWith('.enc') || file_path.endsWith('.DS_Store') ) return;
@@ -86,6 +87,8 @@ const fileAddedHandler = (file_path) => {
         if(!found_in_downloadables && !confirmed_in_blockchain) {
             proposeIfOnlyFoundLocally(normalized_file_path, new_file_modified);                
         }
+
+        updateFileMonitoringStatuses();
     });    
 }
 

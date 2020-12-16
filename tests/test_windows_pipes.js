@@ -7,7 +7,6 @@ let pipeAddress  = `\\\\.\\pipe\\${AppName}-${userName}`;
  
 var client = net.connect(pipeAddress, function(stream) {
   console.log('Client: on connection');
-  debugger;
   client.write("RETRIEVE_FILE_STATUS:C:\\Users\\hibbe\\Documents\\Evermore\\Test\\Hamster.bmp");
 })
 

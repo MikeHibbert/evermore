@@ -5,7 +5,7 @@
     "compact": false,
     "presets": ["@babel/preset-env"],
     "plugins": [
-        "@babel/transform-runtime",
-        "@babel/transform-regenerator"
+        "@babel/plugin-transform-runtime",
+        "@babel/plugin-transform-regenerator"
     ]
 }

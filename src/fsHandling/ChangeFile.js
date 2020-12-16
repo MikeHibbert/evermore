@@ -10,6 +10,7 @@ import {
 } from '../db/helpers';
 import {sendMessage} from '../integration/server';
 import {getFileUpdatedDate, getRalativePath, normalizePath} from '../fsHandling/helpers';
+import { updateFileMonitoringStatuses } from '../qt-system-tray';
 
 const fileChangedHandler = async (file_path) => {
   console.log(`File ${file_path} has been changed`);
@@ -46,6 +47,8 @@ const fileChangedHandler = async (file_path) => {
       } 
       sendMessage(`UNREGISTER_PATH:${file_path}\n`);
     }    
+
+    updateFileMonitoringStatuses();
   }
 
   sendMessage(`UNREGISTER_PATH:${file_path}\n`);

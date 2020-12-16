@@ -189,8 +189,6 @@ export const UpdatePendingFileTransactionID = (file_path, tx_id) => {
         InitDB();
     }
 
-    debugger;
-
     db.get('pending')
         .find({path: file_path})
         .assign({tx_id: tx_id})
@@ -612,8 +610,6 @@ export const AddFileToDownloads = (file_info) => {
     if(!db) {
         InitDB();
     }
-
-    debugger;
 
     db.get('downloads')
         .push(file_info).write();

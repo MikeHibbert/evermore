@@ -7,7 +7,7 @@
 #define MyAppURL "https://evermoredata.store"
 #define MyAppExeName "qode.exe"
 #define OutputBaseFilename "evermore_setup-0.9.3"
-#define MyAppId "{1A56A85B-CAD4-4FF9-B8E2-F79559702F30}"
+#define MyAppId "{F464BC3D-46C2-4453-B99B-24EDF4741EAF}"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application. Do not use the same AppId value in installers for other applications.
@@ -49,6 +49,7 @@ Source: "C:\Users\hibbe\Documents\Nodejs\Evermore\deploy\win32\build\Evermore\EM
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"
 Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
 Name: "{userstartup}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"
+Name: "{userstartmenu}\Programs\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"; AppUserModelID: "com.evermore.desktopclient"
 
  
 [Code]

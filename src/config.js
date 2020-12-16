@@ -1,9 +1,14 @@
 const { platform } = require('os');
 const fs = require('fs');
 const path = require('path');
+const windowsShortcutsAppid = require("windows-shortcuts-appid")
 
 const home_folder = process.env.APPDATA || (process.platform == 'darwin' ? process.env.HOME + '/Library/Preferences' : process.env.HOME + "/.local/share");
 
+let appID = undefined;
+if(process.platform == 'win32') {
+    appID = "com.evermore.desktopclient";
+}
 if(!fs.existsSync(path.join(home_folder, 'Evermore'))) {
     fs.mkdirSync(path.join(home_folder, 'Evermore'));
 }
@@ -42,7 +47,7 @@ let settings = {
         process.platform == 'win32' ? "assets\\images\\setup-selective-sync.png" : "assets/images/setup-selective-sync.png"
     ),
     GRAPHQL_ENDPOINT: 'https://arweave.net/graphql',
-    API_NOTIFIER_ID: 'Evermore' // process.platform == 'win32' ? "{1A56A85B-CAD4-4FF9-B8E2-F79559702F30}" : undefined
+    API_NOTIFIER_ID: appID // "com.evermore.desktopclient" // process.platform == 'win32' ? "{1A56A85B-CAD4-4FF9-B8E2-F79559702F30}" : undefined
 }
 
 if(typeof jest != "undefined") {

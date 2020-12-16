@@ -1,6 +1,6 @@
 const chokidar = require('chokidar');
-const notifier = require('node-notifier');
 const path = require('path');
+const notifier = require('node-notifier');
 import fileAddedHandler from './AddFile';
 import fileChangedHandler from './ChangeFile';
 import fileDeletedHandler from './DeleteFile';
@@ -45,11 +45,9 @@ import {convertDatabaseRecordToInfos, getSystemPath, mergePathInfos} from './hel
 import {openReviewSyncDialog, refreshReviewSyncDialog, processToQueues} from '../ui/ReviewSyncDialog';
 import { settings } from '../config';
 import { sendMessage } from '../integration/server';
-import { nextTick, report } from 'process';
-import { resolve } from 'path';
-import { source } from 'lowdb/adapters/FileSync';
-import { platform } from 'os';
 import { GetPendingFile } from '../../dist/db/helpers';
+import {showNotification} from '../ui/notifications';
+import { updateFileMonitoringStatuses } from '../qt-system-tray';
 
 export const OnFileWatcherReady = () => {
     console.log('Initial scan complete. Ready for changes');
@@ -81,7 +79,7 @@ const startPendingTrasactionConfirmation = async () => {
         }
     });
 
-
+    updateFileMonitoringStatuses();
 
     pending_transaction_confirmation_checking_interval = setInterval(async () => {
         const pending_files = GetPendingFilesWithTransactionIDs();
@@ -99,6 +97,8 @@ const startPendingTrasactionConfirmation = async () => {
                 RemovePersistenceRecord(pr.action_tx_id);
             }
         });
+
+        updateFileMonitoringStatuses();
     }, 1 * 60 * 1000); // check them every 10 mins
 }
 
@@ -235,12 +235,7 @@ const checkPendingFilesStatus = () => {
     }
 
     if(confirmed_count > 0) {
-        notifier.notify({
-            title: 'Evermore Datastore',
-            icon: settings.NOTIFY_ICON_PATH,
-            message: `${confirmed_count} files have successfully been mined and are now permanently stored on the blockchain.`,
-            appID: settings.API_NOTIFIER_ID         
-        });
+        showNotification(`${confirmed_count} files have successfully been mined and are now permanently stored on the blockchain.`);
     }
 }
 
@@ -248,8 +243,6 @@ const processAllOutstandingUploadsAndActions = async () => {
     const uploaders = GetUploaders();
 
     for(let i in uploaders) {
-        debugger;
-
         const uploader_record = uploaders[i];
         const already_completed = await transactionExistsOnTheBlockchain(uploader_record.uploader.transaction.id);
 
@@ -385,8 +378,6 @@ const processAllPendingFiles = async (pending_files) => {
         if(pending_file.tx_id == null) {            
             const encrypt_file = pending_file.path.indexOf('/Public/') == -1;
 
-            debugger;
-
             await uploadFile(pending_file, encrypt_file);
 
             uploaded_count++;
@@ -404,12 +395,7 @@ const processAllPendingFiles = async (pending_files) => {
     }
 
     if(uploaded_count > 0) {
-        notifier.notify({
-            title: 'Evermore',
-            icon: settings.NOTIFY_ICON_PATH,
-            message: `${pending_files.length} have been uploaded and will be mined sortly.`,
-            appID: settings.API_NOTIFIER_ID
-        });
+        showNotification(`${pending_files.length} have been uploaded and will be mined sortly.`)
     }     
 }
 
@@ -452,12 +438,7 @@ const processAllPendingTransactions = async (pending_files) => {
     }
 
     if(confirmed_count > 0) {
-        notifier.notify({
-            title: 'Evermore',
-            icon: settings.NOTIFY_ICON_PATH,
-            message: `${confirmed_count} have been successfully mined and are available on the blockchain.`,
-            appID: settings.API_NOTIFIER_ID
-        });
+        showNotification(`${confirmed_count} have been successfully mined and are available on the blockchain.`);
     } 
 }
 

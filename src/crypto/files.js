@@ -65,8 +65,7 @@ export const decryptFile = async (wallet, private_pem_key, start, file_path, des
             var buffer = new Buffer.alloc(dataSizeInBytes);
             fs.read(fd, buffer, 0, dataSizeInBytes, start, function(err, num, data) {
                 if(err) return reject(err);
-
-                debugger;
+                
                 const decrypted_data = private_key.decrypt(data);
 
                 writeableStream.write(decrypted_data);

@@ -9,7 +9,7 @@ const mime = require('mime-types');
 import { https } from 'follow-redirects';
 import { readContract, selectWeightedPstHolder  } from 'smartweave';
 import { settings } from '../config';
-// import regeneratorRuntime from "regenerator-runtime";
+import {showNotification} from '../ui/notifications';
 import {
     walletFileSet, 
     UpdatePendingFileTransactionID, 
@@ -36,6 +36,7 @@ import {
     getFileEncryptionKey
 } from './files';
 import { utimes } from 'utimes';
+import { updateFileMonitoringStatuses } from '../qt-system-tray';
 
 export const arweave = Arweave.init(settings.ARWEAVE_CONFIG);
 
@@ -88,13 +89,7 @@ export const uploadFile = async (file_info, encrypt_file) => {
     }
 
     if(!systemHasEnoughDiskSpace(required_space)) {
-        notifier.notify({
-            title: 'Evermore Datastore',
-            icon: settings.NOTIFY_ICON_PATH,
-            message: `Not enough disk space to upload - ${required_space} bytes required`,
-            timeout: 2,
-            appID: settings.API_NOTIFIER_ID
-        });
+        showNotification(`Not enough disk space to upload - ${required_space} bytes required`);
 
         return;
     }
@@ -126,13 +121,7 @@ export const uploadFile = async (file_info, encrypt_file) => {
         const total_ar_cost = arweave.ar.winstonToAr(total_winston_cost);
         
         if(wallet_balance < total_ar_cost) {
-            notifier.notify({
-                title: 'Evermore Datastore',
-                icon: settings.NOTIFY_ICON_PATH,
-                message: `Your wallet does not contain enough AR to upload, ${total_ar_cost} AR is needed `,
-                timeout: 2,
-                appID: settings.API_NOTIFIER_ID
-            });
+            showNotification(`Your wallet does not contain enough AR to upload, ${total_ar_cost} AR is needed `)
     
             return;
         }
@@ -183,9 +172,10 @@ export const uploadFile = async (file_info, encrypt_file) => {
                 fs.unlinkSync(`${now}.del`);
         }
 
+        updateFileMonitoringStatuses();
+
         console.log(`${file_info.path} uploaded`);
     } catch (e) {
-        debugger;
         console.log(e);
     }   
 }
@@ -239,13 +229,7 @@ export const setFileStatusAsDeleted = async (file_info) => {
     const total_ar_cost = arweave.ar.arToWinston(total_winston_cost);
     
     if(wallet_balance < total_ar_cost) {
-        notifier.notify({
-            title: 'Evermore Datastore',
-            icon: settings.NOTIFY_ICON_PATH,
-            message: `Your wallet does not contain enough AR to upload, ${total_ar_cost} AR is needed `,
-            timeout: 2,
-            appID: settings.API_NOTIFIER_ID
-        });
+        showNotification(`Your wallet does not contain enough AR to upload, ${total_ar_cost} AR is needed `);
 
         return;
     }
@@ -274,13 +258,7 @@ export const setFileStatusAsDeleted = async (file_info) => {
             error_msg = "There was an error connecting to the blockchain.";
         }
 
-        notifier.notify({
-            title: 'Evermore Datastore',
-            icon: settings.NOTIFY_ICON_PATH,
-            message: `There was an error updating the status of ${file_info.name} - ${error_msg}`,
-            timeout: 2,
-            appID: settings.API_NOTIFIER_ID
-        });
+        showNotification(`There was an error updating the status of ${file_info.name} - ${error_msg}`);
 
         return;
     }
@@ -661,13 +639,7 @@ export const downloadFileFromTransaction = async (tx_id) => {
     }  
 
     if(!systemHasEnoughDiskSpace(Math.ceil(transaction.file_size * 2))) {
-        notifier.notify({
-            title: 'Evermore Datastore',
-            icon: settings.NOTIFY_ICON_PATH,
-            message: `Not enough disk space to download - ${required_space} bytes required`,
-            timeout: 2,
-            appID: settings.API_NOTIFIER_ID
-        });
+        showNotification(`Not enough disk space to download - ${required_space} bytes required`);
 
         return;
     }
@@ -695,13 +667,7 @@ export const downloadFileFromTransaction = async (tx_id) => {
             const wallet_file = walletFileSet();
 
             if(!wallet_file || wallet_file.length == 0) {
-                notifier.notify({
-                    title: 'Evermore Datastore',
-                    icon: settings.NOTIFY_ICON_PATH,
-                    message: `Unable to download encrypted file ${save_file_encrypted} your wallet file is not set.`,
-                    timeout: 2,
-                    appID: settings.API_NOTIFIER_ID
-                });
+                showNotification(`Unable to download encrypted file ${save_file_encrypted} your wallet file is not set.`)
 
                 fs.unlink(save_file_encrypted, (err) => {});
             }
@@ -740,6 +706,8 @@ export const downloadFileFromTransaction = async (tx_id) => {
             setFileTimestamps(save_file, transaction);
         });
     }
+
+    updateFileMonitoringStatuses();
 
     AddSyncedFileFromTransaction(transaction);
 

@@ -12,6 +12,7 @@ import {pathExcluded, isPublicFile, normalizePath} from '../fsHandling/helpers';
 import path from 'path';
 import { settings } from '../config';
 import { fstat } from 'fs';
+import { showNotification } from '../ui/notifications';
 
  
 const processPipeMessage = (data) => {
@@ -80,12 +81,7 @@ const shareFileLinkToClipboard = (file_path) => {
     if(file_info && isPublicFile(file_path) && !pathExcluded(file_path)) {
         clipboardy.writeSync(`https://arweave.net/${file_info.tx_id}`);
 
-        notifier.notify({
-            title: 'Evermore Datastore',
-            icon: settings.NOTIFY_ICON_PATH,
-            message: `A public link for '${file_info.file}' was copied to your clipboard.`,
-            appID: settings.API_NOTIFIER_ID
-        });
+        showNotification(`A public link for '${file_info.file}' was copied to your clipboard.`)
     }
     
 }

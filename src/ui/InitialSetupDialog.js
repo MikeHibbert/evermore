@@ -384,10 +384,8 @@ export const selectFolderCallback = (retVal) => {
 
     const path_infos = getOfflineFilesAndFoldersStructure((path_infos) => {
         if(path_infos[''].children.length > 0) {
-            debugger;
             setupWin.show();
             doSetupSelectiveSync(null, () => {
-                debugger;
                 openSyncSettingsDialog(path_infos[''], (pis) => {
                     configureWithPathsFromInfo(pis);
                     rebootAfterSetupWizard();
@@ -447,7 +445,6 @@ export const configureWithPathsFromInfo = (path_info) => {
             configureWithPathsFromInfo(pi);
         } else {
             if(pi.checked) {
-                debugger;
                 const online_versions = await getOnlineVersions(pi);
                 
                 if(online_versions.length == 0) {

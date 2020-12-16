@@ -9,6 +9,7 @@ Copy-Item windows\bin\EMDContextMenu.dll deploy\win32\build\Evermore
 Copy-Item windows\bin\EMDOverlays.dll deploy\win32\build\Evermore
 Remove-Item .\deploy\win32\build\Evermore\qode.exe
 Copy-Item windows\bin\qode.exe deploy\win32\build\Evermore\
+Copy-Item -Path windows\bin\node_modules -Destination deploy\win32\build\Evermore -Recurse
 Write-Host "============================"
 Write-Host "COPIED OVERLAY SUPPORT FILES"
 Write-Host "============================"

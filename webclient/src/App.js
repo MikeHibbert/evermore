@@ -226,7 +226,6 @@ class App extends Component {
 
   setMessages(messages) {
     this.setState({messages: messages});
-    debugger;
   }
 
   clearNewEmailCount() {

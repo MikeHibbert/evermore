@@ -30,6 +30,7 @@ import {
 } from "../fsHandling/helpers";
 import {sendMessage} from '../integration/server';
 import openSyncSettingsDialog from './SyncSettingsDialog';
+import { showNotification } from "./notifications";
 
 const rootStyleSheet = `
   #rootView {
@@ -236,12 +237,7 @@ const createSyncRow = async (editable_settings, rootView, win) => {
         const path_infos = mergePathInfos(offline_path_infos[''], exclusions_and_online_path_infos[''], true);
 
         if(path_infos[''].children.length == 0) {
-          notifier.notify({
-            title: 'Evermore Datastore',
-            icon: settings.NOTIFY_ICON_PATH,
-            message: "There are currently no files to download/sync online",
-            appID: settings.API_NOTIFIER_ID
-          });
+          showNotification("There are currently no files to download/sync online");
 
           return;
         }
