@@ -59,7 +59,7 @@ class DeletedFileTableRow extends Component  {
             });
     }
 
-    async archiveTransaction() {
+    async unArchiveTransaction() {
         await createPersistenceRecord(this.props.file_info, false, this.props.wallet_jwk);
 
         toast(`${this.props.file_info.file} is now being unarchived and will be available to download soon.`, { type: toast.TYPE.SUCCESS }); 
@@ -105,7 +105,7 @@ class DeletedFileTableRow extends Component  {
                         <div className={this.state.optionsDialogCss} style={this.state.optionsDialogStyles}>
                             <div className="scrollable-vertical max-h-50vh">
 
-                                <a className="dropdown-item text-truncate" onClick={() => { this.archiveTransaction() }}>
+                                <a className="dropdown-item text-truncate" onClick={() => { this.unArchiveTransaction() }}>
                                     <i className="fa fa-download"></i>
                                     UnArchive
                                 </a>

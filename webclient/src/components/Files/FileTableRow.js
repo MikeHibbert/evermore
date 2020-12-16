@@ -2,6 +2,8 @@ import React, {Component} from 'react';
 import Moment from 'react-moment';
 import { Link } from 'react-router-dom';
 import arweave from '../../arweave-config';
+import { toast } from 'react-toastify';
+import { createPersistenceRecord } from '../../containers/Files/helpers';
 
 class FileTableRow extends Component  {
     state = {
@@ -57,8 +59,10 @@ class FileTableRow extends Component  {
             });
     }
 
-    archiveTransaction() {
-        
+    async archiveTransaction() {
+            await createPersistenceRecord(this.props.file_info, true, this.props.wallet_jwk);
+    
+            toast(`${this.props.file_info.file} is now being archived`, { type: toast.TYPE.SUCCESS }); 
     }
 
     render() {
@@ -100,13 +104,13 @@ class FileTableRow extends Component  {
 
                         <div className={this.state.optionsDialogCss} style={this.state.optionsDialogStyles}>
                             
-                            <div className="scrollable-vertical max-h-50vh">
+                            {/* <div className="scrollable-vertical max-h-50vh">
 
                                 <a className="dropdown-item text-truncate" onClick={() => { this.downloadTransaction() }}>
                                     <i className="fa fa-download"></i>
                                     Download
                                 </a>
-                            </div>
+                            </div> */}
                             <div className="scrollable-vertical max-h-50vh">
 
                                 <a className="dropdown-item text-truncate" onClick={() => { this.archiveTransaction() }}>

@@ -322,7 +322,8 @@ export const createPersistenceRecord = async (synced_file, deleted, wallet_jwk) 
     transaction.addTag('modified', synced_file.modified);
     transaction.addTag('hostname', synced_file.hostname);
     transaction.addTag('version', synced_file.version);
-    transaction.addTag('action_tx_id', synced_file.action_tx_id);
+    debugger;
+    transaction.addTag('action_tx_id', synced_file.tx_id);
     
     if(deleted) {
         transaction.addTag('action', "DELETE");

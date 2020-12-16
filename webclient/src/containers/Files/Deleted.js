@@ -131,10 +131,27 @@ class DeletedView extends Component {
         const file_rows = [];
         const folder_rows = [];
 
+        let table_header = null;
+        let table_footer = null;
+
         if(this.props.persistence_records != null) {
             const deleted_files = convertPersistenceRecordsToDeletedFileInfos(this.props.persistence_records);
             
             this.createRows(deleted_files[''], file_rows, folder_rows);
+
+            if(deleted_files.length > 0) {
+                table_header = <tr>
+                    <th className="text-gray-500 font-weight-normal fs--14 min-w-300">FILE NAME</th>
+                    <th className="text-gray-500 font-weight-normal fs--14 w--100 text-center">LAST MODIFIED</th>
+                    <th className="text-gray-500 font-weight-normal fs--14 w--60 text-align-end">&nbsp;</th>
+                </tr>;
+
+                table_footer = <tr>
+                    <th className="text-gray-500 font-weight-normal fs--14 min-w-300">FILE NAME</th>
+                    <th className="text-gray-500 font-weight-normal fs--14 w--100 text-center">LAST MODIFIED</th>
+                    <th className="text-gray-500 font-weight-normal fs--14 w--60 text-align-end">&nbsp;</th>
+                </tr>;
+            }
         }
 
         
@@ -166,7 +183,7 @@ class DeletedView extends Component {
                                         <input style={{display: "none"}} ref="filename" type="file" name="uploader"></input>
                                     
 									<div className="container py-6">
-                                        <div className="pull-right" style={{marginBottom: "10px"}}>
+                                        {/* <div className="pull-right" style={{marginBottom: "10px"}}>
                                             <div className="btn-group">
                                                 <button type="button" onClick={e => {this.onToggleOptions()}} className="btn btn-primary">Actions</button>
                                                 <button type="button" onClick={e => {this.onToggleOptions()}} className="btn btn-primary dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -184,15 +201,11 @@ class DeletedView extends Component {
                                                     </a>
                                                 </div>
                                             </div>
-                                        </div>
+                                        </div> */}
 											<div className="table-responsive">
 												<table className="table table-framed">
 													<thead>
-														<tr>
-															<th className="text-gray-500 font-weight-normal fs--14 min-w-300">FILE NAME</th>
-															<th className="text-gray-500 font-weight-normal fs--14 w--100 text-center">LAST MODIFIED</th>
-                                                            <th className="text-gray-500 font-weight-normal fs--14 w--60 text-align-end">&nbsp;</th>
-														</tr>
+														{table_header}
 													</thead>
 
 													<tbody id="item_list">
@@ -201,11 +214,7 @@ class DeletedView extends Component {
 													</tbody>
 
 													<tfoot>
-														<tr>
-                                                            <th className="text-gray-500 font-weight-normal fs--14 min-w-300">FILE NAME</th>
-															<th className="text-gray-500 font-weight-normal fs--14 w--100 text-center">LAST MODIFIED</th>
-                                                            <th className="text-gray-500 font-weight-normal fs--14 w--60 text-align-end">&nbsp;</th>
-														</tr>   
+														{table_footer} 
 													</tfoot>
 
 												</table>

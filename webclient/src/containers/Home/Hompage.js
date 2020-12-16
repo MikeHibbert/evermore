@@ -101,7 +101,7 @@ class HomePage extends Component {
                             <div className="banner-body-content">
                                 <h2>Your data stored ... <br/>For Evermore!</h2>
                                 <p>Never pay to access your data again. Pay to Upload . Access FREE forever.</p>
-                                <Link to='/login' className="g-btn">Get Started</Link>
+                                <Link to='/downloads' className="g-btn">Get Started</Link>
                             </div>
                         </div>
                         <div className="col-md-6">
@@ -123,6 +123,26 @@ class HomePage extends Component {
                 <img src="images/img-part/cloud_3.png" alt="" className="cloud_shpe cloud_shpe_6" />
             </div>
         </header>
+
+        <div className="pricing-section pricing_4 pb-200" id="how-it-works">
+            <div className="container">
+                <div className="row">
+                <div className="col-md-2"></div>		
+                <div className="col-md-8">	
+                    <div className="bestsite-head text-center pt-100 pb-40">
+                        <div className="section-title">
+                            <h2>How does it work?</h2>
+                        </div>
+                        <div className="section-content embed-responsive embed-responsive-16by9">
+                            <p>Checkout our video which explains it all.</p>
+                            <iframe width="800" height="600" className="pt-20" src="https://www.youtube.com/embed/QSq_Pv65ZLI" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                        </div>
+                    </div>
+                </div>	
+                <div className="col-md-2"></div>	
+                </div>
+            </div>
+        </div>
 
 
         <div className="service-section pb-130" id="data-storage">
@@ -153,8 +173,9 @@ class HomePage extends Component {
                                         <img src="images/hv3-service-one.png" alt="service image" />
                                     </div>
                                     <div className="service-body">
-                                        <h5 className="card-title">Date Security</h5>
+                                        <h5 className="card-title">Data Security</h5>
                                         <p className="card-text">All your files are encrypted and stored securely online.</p>
+                                        <p className="card-text">Evermore will only backup data that you approve and nothing more, giving you protection against ransomeware!</p>
                                     </div>
                                 </div>
                             </div>
@@ -167,8 +188,8 @@ class HomePage extends Component {
                                         <img src="images/hv3-service-five.png" alt="service image" />
                                     </div>
                                     <div className="service-body">
-                                        <h5 className="card-title">Blockchain Hosting</h5>
-                                        <p className="card-text">The data you save will always be available as it stored on 'The Arweave', a decentralise blockchain specifically designed to store huge amounts of data.</p>
+                                        <h5 className="card-title">Blockchain Storage</h5>
+                                        <p className="card-text">The data you save will always be available as it is stored on 'The Arweave'. Arweave is a decentralise blockchain specifically designed to store huge amounts of data.</p>
                                         <a target="_blank" href='https://www.arweave.org'>Learn more <i className="fa fa-angle-right"></i></a>
                                     </div>
                                 </div>
@@ -182,8 +203,9 @@ class HomePage extends Component {
                                         <img src="images/hv3-service-four.png" alt="service image" />
                                     </div>
                                     <div className="service-body">
-                                        <h5 className="card-title">Safe and secure</h5>
+                                        <h5 className="card-title">Safe and Secure</h5>
                                         <p className="card-text">All data is encrypted and can only be decrypted by you using a secure cryptocurrency wallet.</p>
+                                        
                                         <a target="_blank" href='https://www.arweave.org'>Learn more <i className="fa fa-angle-right"></i></a>
                                     </div>
                                 </div>
@@ -232,7 +254,8 @@ class HomePage extends Component {
                             <h2>Global Blockchain Network</h2>
                         </div>
                         <div className="section-content">
-                            <p>All data is encrypted and stored in the blockchain making your data impossible to delete as its stored in a decentralised way.</p>
+                            <p className="pb-10">All data is encrypted and saved to distributed nodes on the blockchain making your data impossible to delete as its stored in a decentralised way.</p>
+                            <p>NOTE: It's important to point out at this point that Evermore is a PERMANENT file storage app which means any data you save to the blockchain is stored forever and can't be deleted or censored.</p>
                         </div>
                     </div>
                 </div>	
@@ -253,8 +276,8 @@ class HomePage extends Component {
                         <div className="cloud-content">
                             <h2>Desktop integration</h2>
                             <p><Link to="/downloads" style={{display: "inline-block"}}>Download</Link> one of our desktop apps to begin saving your data to the blockchain.</p>
-                            <p>Your data is stored in the "PermaWeb" which means it can't ever be deleted or taken down.</p>
-                            <p>In addition we keep a full version history so that you can always get you hands on older versions of your data at any point</p>
+                            <p>Your data is stored on the "PermaWeb" which means it can never be deleted or taken down.</p>
+                            <p>In addition, we keep a full version history so that your can always get you hands on older versions of your data at any point</p>
                         </div>
                     </div>
 
@@ -284,7 +307,7 @@ class HomePage extends Component {
                     <div className="col-12 col-md-6 col-lg-4">
                         <div className="footer-title">
                             <img src="images/evermore-logo-light.png" alt="" className="f_logo" />
-                            <p>We make storing and retreiving your data simple and super cost effective because the world is full of data. We bring win-win data storage solutions to everyone.</p>
+                            <p>As the need for reliable data storage grows; so will the need for a secure, permanent, and cost-effective data storage solution. At Evermore, we provide the framework to make this solution a reality. </p>
                         </div>
                     </div>
                     <div className="col-12 col-md-6 col-lg-3">
