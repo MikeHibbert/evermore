@@ -160,25 +160,40 @@ export const checkSyncableFiles = async () => {
             title: 'Evermore Datastore',
             icon: settings.NOTIFY_ICON_PATH,
             message: `${syncable_files[''].children.length} files have been queued for sync in the last ${minutes} minutes. Would like to review them now?`,
-            appID: settings.API_NOTIFIER_ID
+            appID: undefined //settings.API_NOTIFIER_ID
         };
 
-        if(process.platform != 'darwin') {
-            notification['actions'] = ['Review', 'Postpone'];
-        }
+        // if(process.platform != 'darwin') {
+        //     notification['actions'] = ['Review', 'Postpone'];
+        // }
 
-        notifier.notify(notification);
+        notifier.notify({
+                title: 'Evermore Datastore',
+                icon: settings.NOTIFY_ICON_PATH,
+                message: `${syncable_files[''].children.length} files have been queued for sync in the last ${minutes} minutes. Click to review.`,
+                appID: settings.API_NOTIFIER_ID
+            },
+            function (err, response, metadata) {
+                if(!err && response != 'timeout') reviewSyncableFiles();
+        });
+        // notifier.on('click', function (notifierObject, options, event) {
+        //     console.log('clicked');
+        // });
+        // notifier.on('click', () => { 
+        //     console.log('clicked');
+        //     reviewSyncableFiles();
+        // });
 
-        if(process.platform != 'darwin') {
+        // if(process.platform != 'darwin') {
 
-            notifier.on('review', reviewSyncableFiles);
+        //     notifier.on('click', () => { reviewSyncableFiles() });
 
-            notifier.on('postpone', () => {
-                // console.log('"Postpone" was pressed');
-            });
-        } else {
-            notifier.on('click', reviewSyncableFiles);
-        }
+        //     notifier.on('postpone', () => {
+        //         // console.log('"Postpone" was pressed');
+        //     });
+        // } else {
+        //     notifier.on('click', reviewSyncableFiles);
+        // }
     }
 }
 

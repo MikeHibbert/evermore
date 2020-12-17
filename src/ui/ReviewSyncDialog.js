@@ -158,21 +158,21 @@ const getOriginalPathInfoInstance = (path_info, path_infos) => {
   }
   
 const createFolderItems = (parent_path_info, tree, window, root, grand_parent) => {
-    if(!grand_parent && !root) {
-        grand_parent = new QTreeWidgetItem();
-        grand_parent.setText(0, parent_path_info.name);
-    }
-
     for(let i in parent_path_info.children) {
         const path_info = parent_path_info.children[i];
         if(path_info.type == "folder") {
             let folder_item = null;
+            
             if(root) {
-                folder_item = createFolderItems(path_info, tree, window, false, null);
+                folder_item = new QTreeWidgetItem();
                 tree.addTopLevelItem(folder_item);
             } else {
-                folder_item = createFolderItems(path_info, tree, window, false, grand_parent);
+                folder_item = new QTreeWidgetItem(grand_parent);
             }
+            
+            folder_item.setText(0, path_info.name);
+            createFolderItems(path_info, tree, window, false, folder_item);
+            
 
             folder_item.setText(0, path_info.name);
             folder_item.setIcon(0, new QIcon(folder_icon_path));

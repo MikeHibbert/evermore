@@ -208,6 +208,7 @@ export const convertPathsToInfos = (sync_folder, file_paths, is_root) => {
 export function addToFolderChildrenOrUpdate(path_parts, index, file_info, path_obj) {
     if(index == path_parts.length - 1) {
         const matched = path_obj.children.filter(child => child.name == file_info.name);
+
         if(matched.length == 0) {
             const fi = {...file_info, name: path_parts[index], index: index, type: 'file'};
             return path_obj.children.push(fi);
@@ -236,12 +237,12 @@ export function addToFolderChildrenOrUpdate(path_parts, index, file_info, path_o
                 path_obj.children.push(folder);
 
                 addToFolderChildrenOrUpdate(path_parts, index + 1, file_info, folder);
-            } else {
-                for(let i in matched_folders) {
-                    const path = matched_folders[i];
-                    addToFolderChildrenOrUpdate(path_parts, index + 1, file_info, path);
-                }
-            }
+            }  // else {
+            //     for(let i in matched_folders) {
+            //         const path = matched_folders[i];
+            //         addToFolderChildrenOrUpdate(path_parts, index + 1, file_info, path);
+            //     }
+            // }
 
         }
     }
@@ -416,9 +417,9 @@ export const mergePathInfos = (from, to, root=true) => {
         from.children.forEach(a => {
             
             if(a.type == 'folder') {
-                const to_items = to.children.filter(item => item.type == 'folder' && item.name == a.name);
+                const to_items = path_infos.filter(item => item.type == 'folder' && item.name == a.name);
 
-                if(to_items.length == 0) {
+                if(to_items.length != 0) {
                     const b = to_items[0];
                     const folder_info = {name: a.name, type: 'folder', path: a.path, children: [], checked: a.checked, action: a.action }
 
@@ -427,6 +428,10 @@ export const mergePathInfos = (from, to, root=true) => {
                     }                    
 
                     path_infos.push(folder_info);                  
+                } else {
+                    const folder_info = {name: a.name, type: 'folder', path: a.path, children: [], checked: a.checked, action: a.action };
+                    folder_info.children = mergePathInfos(a, folder_info, false);
+                    path_infos.push(folder_info);
                 }
             } else {
                 const to_items = to.children.filter(item => item.type == a.type && item.name == a.name);
