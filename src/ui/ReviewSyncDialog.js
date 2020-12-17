@@ -169,7 +169,6 @@ const createFolderItems = (parent_path_info, tree, window, root, grand_parent) =
             } else {
                 folder_item = new QTreeWidgetItem(grand_parent);
             }
-            
             folder_item.setText(0, path_info.name);
             createFolderItems(path_info, tree, window, false, folder_item);
             

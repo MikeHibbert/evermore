@@ -164,6 +164,8 @@ export const getOfflineFilesAndFoldersStructure = (callback) => {
             console.log('Error', err);
         } 
 
+        debugger;
+
         const path_infos = convertPathsToInfos(sync_folders[0], file_paths, true);
 
         callback(path_infos);
@@ -207,7 +209,7 @@ export const convertPathsToInfos = (sync_folder, file_paths, is_root) => {
 
 export function addToFolderChildrenOrUpdate(path_parts, index, file_info, path_obj) {
     if(index == path_parts.length - 1) {
-        const matched = path_obj.children.filter(child => child.name == file_info.name);
+        const matched = path_obj.children.filter(child => child.path == file_info.path);
 
         if(matched.length == 0) {
             const fi = {...file_info, name: path_parts[index], index: index, type: 'file'};
@@ -237,12 +239,12 @@ export function addToFolderChildrenOrUpdate(path_parts, index, file_info, path_o
                 path_obj.children.push(folder);
 
                 addToFolderChildrenOrUpdate(path_parts, index + 1, file_info, folder);
-            }  // else {
-            //     for(let i in matched_folders) {
-            //         const path = matched_folders[i];
-            //         addToFolderChildrenOrUpdate(path_parts, index + 1, file_info, path);
-            //     }
-            // }
+            }  else {
+                for(let i in matched_folders) {
+                    const path = matched_folders[i];
+                    addToFolderChildrenOrUpdate(path_parts, index + 1, file_info, path);
+                }
+            }
 
         }
     }
