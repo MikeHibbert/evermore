@@ -135,7 +135,7 @@ class HomePage extends Component {
                         </div>
                         <div className="section-content embed-responsive embed-responsive-16by9">
                             <p>Checkout our video which explains it all.</p>
-                            <iframe width="800" height="600" className="pt-20" src="https://www.youtube.com/embed/QSq_Pv65ZLI" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                            <iframe width="800" height="600" className="pt-20" src="https://www.youtube.com/embed/QSq_Pv65ZLI" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe>
                         </div>
                     </div>
                 </div>	

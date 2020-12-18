@@ -46,7 +46,7 @@ class FolderTableRow extends Component  {
                 <td>
                     
                     <Link to='/files' onClick={e => { this.onSelectFolder(e) }} >
-                        <i className="fa fa-folder-o" style={{fontSize: "32px", marginRight: "10px"}}></i>
+                        <img src="assets/images/folder_icon.png" style={{fontSize: "32px", width:"32px", marginRight: "10px"}}/>
                         {this.props.file_info.name}
                     </Link>
 

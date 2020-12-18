@@ -13,6 +13,7 @@
     "react": "^16.13.1",
     "react-desktop-notification": "^1.0.9",
     "react-dom": "^16.13.1",
+    "react-download-link": "^2.3.0",
     "react-inlinesvg": "^1.2.0",
     "react-js-pagination": "^3.0.3",
     "react-moment": "^0.9.7",

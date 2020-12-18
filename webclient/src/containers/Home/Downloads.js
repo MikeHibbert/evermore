@@ -1,15 +1,40 @@
 import React, { Component } from 'react';
 import { Link } from 'react-router-dom';
 import Moment from 'react-moment';
+import DownloadLink from "react-download-link";
+import DownloadFile from './Download';
 
 
 class Downloads extends Component {
+    state = {
+        downloading: false
+    }
+
     componentWillUnmount() {
         document.body.classList.remove('home-version-four');
         document.body.id = "home-version-four";
     }
 
+    getDataFromURL = (url) => new Promise((resolve, reject) => {
+        this.setState({downloading: true});
+        const that = this;
+        setTimeout(() => {
+            fetch(url, {redirect: 'follow'})
+                .then(response => response.text())
+                .then(data => {
+                    that.setState({downloading: false});
+                    resolve(data);
+                });
+        });
+    }, 20);
+
     render() {
+        const windows_release = "https://arweave.net/SwKg8XwQTk4X-_pHUdd7zOnqFlRacqjoC-G_JVSMQNM";
+
+        let windows_download_link = <DownloadFile url={windows_release} filename="evermore_setup-0.9.3.exe" setDownloading={(downloading) => { this.setState({downloading: downloading}); }} />;
+        if(this.state.downloading) {
+            windows_download_link = <div>Downloading Installer from the blockchain... <img style={{height: '32px'}} src="images/spinner.svg" /></div>;
+        }
         return (
             <>
                 <link rel="stylesheet" href="css/style.css"></link>
@@ -32,12 +57,15 @@ class Downloads extends Component {
                                 </p>
                                 <p>Currently we have launched a Windows 10 64bit version of Evermore and will shortly be releasing for Mac and Linux too!</p>
                                 <p> 
-                                    <strong>Windows 10 Beta Installer </strong><a href="https://evermoredata.store/evermore_setup-0.9.3.exe" target="_blank" download="evermore-installer-0.9.3.exe">Click here to download</a>
+                                    <strong>Windows 10 Beta Installer </strong>
+                                    
+                                    {windows_download_link}
+
                                 </p>
                                 </div>
                             <div className="embed-responsive embed-responsive-16by9">
                                 <h2>Setup guide</h2>
-                                <iframe width="800" height="600" src="https://www.youtube.com/embed/VEGofk0JDps" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                                <iframe width="800" height="600" src="https://www.youtube.com/embed/VEGofk0JDps" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe>
                             </div>
                         </div>
 
@@ -101,12 +129,6 @@ class Downloads extends Component {
                 </div>
             </div>
         </footer>
-        <section id="scroll-top" className="scroll-top">
-            <h2 className="disabled">&nbsp;</h2>
-            <div className="to-top pos-rtive">
-                <a href="#" onClick={e => {this.executeScroll(e, "intro")}}><i className= "fa fa-arrow-up"></i></a>
-            </div>
-        </section>
             </>
         )
     }

@@ -145,7 +145,7 @@ const createRecentFilesCollection = (tx_rows) => {
 export const getDownloadableFilesGQL = async (address) => {
     let hasNextPage = true;
     let cursor = '';
-    let available_rows = [];
+    const transactions = {};
 
     const folders = {"": {children:[]}}; 
     folders[""] = {name: "", children: [], index: 0, type: "folder"};
@@ -184,20 +184,20 @@ export const getDownloadableFilesGQL = async (address) => {
             operationName: null,
             query: query,
             variables: {}
-        });
-    
-        
+        });        
     
         if(response.status == 200) {
-            for(let i in response.data.data.transactions.edges) {
-                const row = response.data.data.transactions.edges[i].node;
+            const data = response.data.data;
+            for(let i in data.transactions.edges) {
+                const row = data.transactions.edges[i].node;
     
                 row['action'] = 'download';
+                row['tx_id'] = row.id;
     
                 for(let i in row.tags) {
                     const tag = row.tags[i];
     
-                    if(tag.name == 'version' || tag.name == 'modified') {
+                    if(tag.name == 'version' || tag.name == 'modified' || tag.name == 'created') {
                         row[tag.name] = parseInt(tag.value);
                     } else {
                         row[tag.name] = tag.value;
@@ -206,31 +206,30 @@ export const getDownloadableFilesGQL = async (address) => {
     
                 if(row['Content-Type'] == "PERSISTENCE") continue;
     
-                let found = false;
-                for(let j in available_rows) {
-                    const final_row = available_rows[j];
-    
-                    if(final_row.path == row.path && row.modified > final_row.modified) {
-                        found = true;
-                        available_rows[j] = row;
+                if(transactions.hasOwnProperty(row['file'])) {
+                    const existing_tx = transactions[row['file']];
+                    if(existing_tx.modified < row.modified && row['Content-Type'] != 'PERSISTENCE') {
+                        transactions[row['file']] = row;
                     }
-                }
-    
-                if(!found) {
-                    available_rows.push(row);
+                } else {
+                    if(row['Content-Type'] != 'PERSISTENCE') {
+                        transactions[row['file']] = row;
+                    }
                 }
             }
     
-        }
+            hasNextPage = data.transactions.pageInfo.hasNextPage;
 
-        hasNextPage = response.data.data.transactions.pageInfo.hasNextPage;
+            if(hasNextPage) {
+                cursor = data.transactions.edges[data.data.transactions.edges.length - 1].cursor;
+            }
+        }        
     }
     
-    available_rows = createRecentFilesCollection(available_rows);
-
     const persistence_records = await getPersistenceRecords(address);
 
-    available_rows.forEach(available_row => {
+    Object.keys(transactions).forEach(file_name => {
+        const available_row = transactions[file_name];
         const persistence_matches = persistence_records.filter(pr => pr.action_tx_id == available_row.id);
 
         let current_persistence_state = 'available';
@@ -245,9 +244,6 @@ export const getDownloadableFilesGQL = async (address) => {
 
         if(current_persistence_state == 'available') {
             let path_parts = [];
-            if(available_row.file.indexOf('\\') != -1) {
-                path_parts = available_row.file.split('\\')
-            } 
 
             if(available_row.file.indexOf('/') != -1) {
                 path_parts = available_row.file.split('/')
@@ -255,7 +251,7 @@ export const getDownloadableFilesGQL = async (address) => {
             
             if(path_parts.length > 1) {
                 if(folders.hasOwnProperty(path_parts[0])) {
-                    addToFolderchildren(path_parts, 0, available_row, folders[path_parts[0]], 0);                
+                    addToFolderChildrenOrUpdate(path_parts, 0, available_row, folders[path_parts[0]], 0);                
                 } else {
                     folders[path_parts[0]] = createRootFolder(path_parts, 0, available_row);
                 }
@@ -265,6 +261,49 @@ export const getDownloadableFilesGQL = async (address) => {
     });
 
     return folders;
+}
+
+export function addToFolderChildrenOrUpdate(path_parts, index, file_info, path_obj) {
+    if(index == path_parts.length - 1) {
+        const matched = path_obj.children.filter(child => child.path == file_info.path);
+
+        if(matched.length == 0) {
+            const fi = {...file_info, name: path_parts[index], index: index, type: 'file'};
+            return path_obj.children.push(fi);
+        } else {
+            const match = matched[0];
+
+            if(match.type == 'folder') return;
+
+            // TODO: is this ever needed? filtering duplicates is done earlier so this may never execute!
+            if(match.modified <= file_info.modified) {
+                match.modified = file_info.modified;
+                match.tx_id = file_info.tx_id;
+            }
+        }
+        
+    } else {
+        const current_folder = path_parts[index];
+
+        if(current_folder == path_obj.name) {
+            addToFolderChildrenOrUpdate(path_parts, index + 1, file_info, path_obj);
+        } else {
+            const matched_folders = path_obj.children.filter((folder) => folder.name == current_folder);
+
+            if(matched_folders.length == 0) {
+                const folder = {...file_info, name: current_folder, index: index, type: "folder", children: []};
+                path_obj.children.push(folder);
+
+                addToFolderChildrenOrUpdate(path_parts, index + 1, file_info, folder);
+            }  else {
+                for(let i in matched_folders) {
+                    const path = matched_folders[i];
+                    addToFolderChildrenOrUpdate(path_parts, index + 1, file_info, path);
+                }
+            }
+
+        }
+    }
 }
 
 export const convertPersistenceRecordsToDeletedFileInfos = (persistence_records) => {
