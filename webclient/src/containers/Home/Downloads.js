@@ -29,12 +29,14 @@ class Downloads extends Component {
     }, 20);
 
     render() {
-        const windows_release = "https://arweave.net/SwKg8XwQTk4X-_pHUdd7zOnqFlRacqjoC-G_JVSMQNM";
+        const windows_release = "SwKg8XwQTk4X-_pHUdd7zOnqFlRacqjoC-G_JVSMQNM";
 
-        let windows_download_link = <DownloadFile url={windows_release} filename="evermore_setup-0.9.3.exe" setDownloading={(downloading) => { this.setState({downloading: downloading}); }} />;
-        if(this.state.downloading) {
-            windows_download_link = <div>Downloading Installer from the blockchain... <img style={{height: '32px'}} src="images/spinner.svg" /></div>;
-        }
+        let windows_download_link = <DownloadFile 
+                                    label="Download Windows Beta Installer"
+                                    tx_id={windows_release} 
+                                    filename="evermore_setup-0.9.3.exe" 
+                                    setDownloading={(downloading) => { this.setState({downloading: downloading}); }} />;
+        
         return (
             <>
                 <link rel="stylesheet" href="css/style.css"></link>
@@ -56,12 +58,11 @@ class Downloads extends Component {
                                     In addition, we keep a full version history so that you can always get your hands on older versions of your data at any point<br/>
                                 </p>
                                 <p>Currently we have launched a Windows 10 64bit version of Evermore and will shortly be releasing for Mac and Linux too!</p>
-                                <p> 
-                                    <strong>Windows 10 Beta Installer </strong>
-                                    
+
+                                <div className="mb-30"> 
                                     {windows_download_link}
 
-                                </p>
+                                </div>
                                 </div>
                             <div className="embed-responsive embed-responsive-16by9">
                                 <h2>Setup guide</h2>

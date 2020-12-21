@@ -38,6 +38,26 @@ export function addToFolderchildren(path_parts, index, file_info, path_obj) {
     }
 }
 
+export const getFileWith = async (tx_id) => {
+    var tx = await arweave.transactions.get(tx_id);
+        
+    const tx_row = {};
+
+    tx.get('tags').forEach(tag => {
+        let key = tag.get('name', { decode: true, string: true });
+        let value = tag.get('value', { decode: true, string: true });
+        
+        if(key == "modified" || key == "version") {
+            tx_row[key] = parseInt(value);
+        } else {
+            tx_row[key] = value;
+        }
+        
+    });   
+
+    return tx_row;
+}
+
 export const getFiles = async (address) => {
     const tx_ids = await arweave.arql({
         op: "and",
