@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import { Link } from 'react-router-dom';
 import Moment from 'react-moment';
-import DownloadLink from "react-download-link";
 import DownloadFile from './Download';
 
 
