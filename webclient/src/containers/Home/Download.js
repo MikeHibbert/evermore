@@ -3,26 +3,30 @@ import DownloadLink from "react-download-link";
 import axios from 'axios';
 import {getFileWith} from '../Files/helpers';
 
-const UploaderProgressBar = (props) => {
+const DownloaderProgressBar = (props) => {
     return (
         <div id="clipboard_4" className="mb-3">
-            <div className="progress mb-3">
-                <div className="progress-bar progress-bar-animated" role="progressbar" style={{width: props.percent + "%"}} ></div>
+            <div className="progress mb-3" style={{backgroundColor: 'transparent'}} >
+                <div className="progress-bar progress-bar-animated" 
+                     role="progressbar" 
+                     style={{width: props.percent + "%", backgroundColor: '#fff'}} 
+                     ></div>
             </div>
         </div>
     )
 } 
 
-function magicDownload(data, fileName, ContentType) {
+export function magicDownload(data, fileName, ContentType) {
     var blob = new Blob([data], {
-      type: ContentType
+      type: 'application/octet-stream',
     });
 
     // create hidden link
     var element = document.createElement("a");
     document.body.appendChild(element);
-    element.setAttribute("href", window.URL.createObjectURL(blob));
+    element.setAttribute("href", window.URL.createObjectURL(blob, {type: 'application/octet-stream'}));
     element.setAttribute("download", fileName);
+
     element.style.display = "";
 
     element.click();
@@ -44,16 +48,9 @@ class DownloadFile extends Component {
             const file = getFileWith([that.props.tx_id]);
 
             setTimeout(() => {
-                // fetch(`https://arweave.net/${that.props.tx_id}`, {redirect: 'follow'})
-                //     .then(response => response.text())
-                //     .then(data => {
-                //         that.setState({downloading: true});
-                //         magicDownload(data, that.props.filename, file['Content-Type']);
-                //         resolve(data);
-                //     });
-
                 axios({
                     url: `https://arweave.net/${that.props.tx_id}`,
+                    responseType: 'blob',
                     onDownloadProgress: function (progressEvent) {
                         // Do whatever you want with the native progress event
                         const percent = Math.floor(progressEvent.loaded / progressEvent.total * 100);
@@ -70,17 +67,18 @@ class DownloadFile extends Component {
     }
     
     render() {
-        let download_link = <><div class="cloud-btn">
+        let download_link = <><div className="cloud-btn pb-30">
                                 <ul>
                                     <li>
-                                        <a className="g-btn" style={{cursor: 'pointer'}}onClick={() => this.downloadFile()}>{this.props.label}</a></li>
+                                        <a style={{cursor: 'pointer'}} onClick={() => this.downloadFile()}>{this.props.label}</a>
+                                    </li>
                                 </ul>
                             </div></>;
 
         if(this.state.downloading) {
             download_link = <>
-                <p>Downloading Installer from the blockchain... <img style={{height: '32px'}} src="images/spinner.svg" /></p>
-                <UploaderProgressBar percent={this.state.progress} />;
+                <div>Downloading Installer from the blockchain... <img style={{height: '32px'}} src="images/spinner.svg" /></div>
+                <DownloaderProgressBar percent={this.state.progress} />
             </>;
         }
 

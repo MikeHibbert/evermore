@@ -1,15 +1,32 @@
 import React, {Component} from 'react';
 import Moment from 'react-moment';
+import axios from 'axios';
 import { Link } from 'react-router-dom';
 import arweave from '../../arweave-config';
 import { toast } from 'react-toastify';
 import { createPersistenceRecord } from '../../containers/Files/helpers';
+import { magicDownload } from '../../containers/Home/Download';
+
+const DownloaderProgressBar = (props) => {
+    return (
+        <div id="clipboard_4" className="mb-3">
+            <div className="progress mb-3" style={{backgroundColor: 'transparent'}} >
+                <div className="progress-bar progress-bar-animated" 
+                     role="progressbar" 
+                     style={{width: props.percent + "%"}} 
+                     ></div>
+            </div>
+        </div>
+    )
+} 
 
 class FileTableRow extends Component  {
     state = {
         optionsDialogCss: "dropdown-menu dropdown-menu-clean dropdown-click-ignore max-w-220",
         optionsDialogStyles: null,
-        optionParentCss: "clearfix"
+        optionParentCss: "clearfix",
+        downloading: false,
+        progress: 0
     }
 
     constructor(props) {
@@ -40,23 +57,33 @@ class FileTableRow extends Component  {
         }
     }
 
-    downloadTransaction() {
+    downloadFile(){
         const that = this;
+        return new Promise((resolve, reject) => {
+            that.setState({downloading: true});
 
-        this.toggleOptions(); // close the options dialog
-
-        const transaction_url = `https://www.arweave.net/${this.props.file_info.id}`; 
-
-        fetch(transaction_url)
-			.then(response => { 
-                response.blob().then(blob => {
-					let url = window.URL.createObjectURL(blob);
-					let a = document.createElement('a');
-                    a.href = url;
-					a.download = that.props.file_info.name;
-					a.click();
-				});
+            setTimeout(() => {
+                console.log(`https://arweave.net/${that.props.file_info.id}`)
+                axios({
+                    url: `https://arweave.net/${that.props.file_info.id}`,
+                    responseType: 'blob',
+                    onDownloadProgress: function (progressEvent) {
+                        // Do whatever you want with the native progress event
+                        const percent = Math.floor(progressEvent.loaded / progressEvent.total * 100);
+                        that.setState({progress: percent});
+                    },
+                }).then(response => {
+                    debugger;
+                    that.setState({downloading: false});
+                    const parts = this.props.file_info.path.split("/");
+                    const filename = parts[parts.length - 1];
+                    
+                    magicDownload(response.data, filename, that.props.file_info['Content-Type']);
+                    resolve(response.data);
+                });
             });
+        
+        }, 20);
     }
 
     async archiveTransaction() {
@@ -67,19 +94,36 @@ class FileTableRow extends Component  {
 
     render() {
 
-        const parts = this.props.file_info.path.split("\\");
+        const parts = this.props.file_info.path.split("/");
         const filename = parts[parts.length - 1];
 
         const last_modified = <Moment format={"DD/MM/YYYY HH:mm"}>{this.props.file_info.modified}</Moment>;
 
-        
+        let downloader = null;
+        if(this.state.downloading) {
+            downloader = <>
+                        <div>Downloading Installer from the blockchain... <img style={{height: '32px'}} src="images/spinner-dark.svg" /></div>
+                        <DownloaderProgressBar percent={this.state.progress} /></>;
+        }
+
+        let download_option = null;
+        if(this.props.file_info.path.indexOf('/Public') != -1) {
+            download_option = <div className="scrollable-vertical max-h-50vh">
+
+                <a className="dropdown-item text-truncate" style={{cursor:'pointer'}} onClick={() => { this.downloadFile() }}>
+                    <i className="fa fa-download"></i>
+                    Download
+                </a>
+            </div>;
+        }
 
         return (
             <tr>
                 <td>
                         {filename}
+                        {downloader}
                     <span className="d-block text-muted fs--13">FROM: {this.props.file_info.hostname}</span>
-                    <span className="d-block text-muted fs--13">VERSION: {this.props.file_info.version}</span>
+                    {/* <span className="d-block text-muted fs--13">VERSION: {this.props.file_info.version}</span> */}
 
                 </td>
 
@@ -95,7 +139,7 @@ class FileTableRow extends Component  {
 
                     <div className={this.state.optionParentCss}>
 
-                        <a onClick={() => {this.toggleOptions()}} className="btn btn-sm btn-light rounded-circle js-stoppropag" data-toggle="dropdown" aria-expanded="false" aria-haspopup="true">
+                        <a onClick={() => {this.toggleOptions()}} className="btn btn-sm btn-light rounded-circle js-stoppropag">
                             <span className="group-icon">
                                 <i className="fi fi-dots-vertical-full"></i>
                                 <i className="fi fi-close"></i>
@@ -104,16 +148,10 @@ class FileTableRow extends Component  {
 
                         <div className={this.state.optionsDialogCss} style={this.state.optionsDialogStyles}>
                             
-                            {/* <div className="scrollable-vertical max-h-50vh">
-
-                                <a className="dropdown-item text-truncate" onClick={() => { this.downloadTransaction() }}>
-                                    <i className="fa fa-download"></i>
-                                    Download
-                                </a>
-                            </div> */}
+                            {download_option}
                             <div className="scrollable-vertical max-h-50vh">
 
-                                <a className="dropdown-item text-truncate" onClick={() => { this.archiveTransaction() }}>
+                                <a className="dropdown-item text-truncate" style={{cursor:'pointer'}} onClick={() => { this.archiveTransaction() }}>
                                     <i className="fa fa-download"></i>
                                     Archive
                                 </a>

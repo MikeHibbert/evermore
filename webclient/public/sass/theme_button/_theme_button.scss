@@ -1,0 +1,42 @@
+
+/*==============================
+ theme buttons css goes here
+===============================*/
+
+.btn-one-dtf::before{
+    position:absolute;
+    height:100%;
+    width:100%;
+    content:"";
+    top:0;
+    left:0;
+    opacity:0;
+    border-radius:10px;           
+    background: -webkit-linear-gradient(0deg, rgba(14,148,216,1) 0%, rgba(31,157,236,1) 47%, rgba(48,165,255,1) 100%);
+    background:linear-gradient(0deg, rgba(14,148,216,1) 0%, rgba(31,157,236,1) 47%, rgba(48,165,255,1) 100%);
+}
+ .btn-two-dtf{
+  border-radius:3px;
+  background: -webkit-linear-gradient( 0deg, rgba(0,141,213,1) 0%, rgba(0,141,213,1) 100%);
+  background: linear-gradient( 0deg, rgba(0,141,213,1) 0%, rgba(0,141,213,1) 100%);
+  transition: all 0.3s ease-in-out;
+}
+.btn-outline-primary.btn-sm {
+  background: transparent none repeat scroll 0 0;
+  border-radius: 10px;
+  display:inline-block;
+  border:1px solid $white;
+}
+.btn {
+  border-radius: 18px;
+  font-style: normal;
+  padding: 0 22px;
+  position: relative;
+  text-align: center;
+  text-decoration: none;
+  text-transform: capitalize;
+  z-index:500;
+}
+
+
+
