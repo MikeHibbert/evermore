@@ -1,5 +1,4 @@
 import React, { Component } from 'react';
-import DownloadLink from "react-download-link";
 import axios from 'axios';
 import {getFileWith} from '../Files/helpers';
 
