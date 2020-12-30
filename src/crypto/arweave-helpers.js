@@ -580,6 +580,7 @@ export const getTransactionWithTags = async (tx_id) => {
 
 export const downloadFile = function(url, dest, cb) {
     var file = fs.createWriteStream(dest, {emitClose : true, encoding: 'binary'});
+    
     var request = https.get(url, function(response) {
         response.on('data', (d) => {
             file.write(d);
@@ -597,6 +598,27 @@ export const downloadFile = function(url, dest, cb) {
         if (cb) cb(err.message);
     });
 };
+
+const confirmDestinationFolderExists = (dest_path) => {
+    const sync_folders = GetSyncedFolders();
+    const parts = dest_path.split('/');
+    parts.pop();
+
+    let previous_path = sync_folders[0];
+    const folders = [];
+    const paths = parts.forEach(part => {
+        previous_path = path.join(previous_path, part);
+        folders.push(previous_path);
+    });
+
+    folders.forEach(folder => {
+        try {
+            fs.lstatSync(folder).isDirectory();
+        } catch (e) {
+            fs.mkdirSync(folder);
+        }
+    });
+}
 
 export const downloadFileFromTransaction = async (tx_id) => {
     const persistence_transaction = await arweave.transactions.get(tx_id).then(async (transaction) => {
@@ -655,6 +677,8 @@ export const downloadFileFromTransaction = async (tx_id) => {
         transaction.file = transaction.file.split('\\').join('/');
         transaction.path = transaction.path.split('\\').join('/');
     }
+
+    confirmDestinationFolderExists(transaction.path);
 
     if(is_encrypted) {
         const save_file_encrypted = path.join(sync_folders[0], `${transaction.file.split(' ').join('_')}.enc`);

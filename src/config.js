@@ -1,9 +1,10 @@
 const { platform } = require('os');
 const fs = require('fs');
 const path = require('path');
-const windowsShortcutsAppid = require("windows-shortcuts-appid")
+const { length } = require('file-loader');
 
 const home_folder = process.env.APPDATA || (process.platform == 'darwin' ? process.env.HOME + '/Library/Preferences' : process.env.HOME + "/.local/share");
+console.log(home_folder);
 
 let appID = undefined;
 if(process.platform == 'win32') {

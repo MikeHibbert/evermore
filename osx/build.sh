@@ -10,6 +10,7 @@ npx nodegui-packer --pack dist > osx/build.log
 cp -r osx/Plugins/* deploy/darwin/build/Evermore.app/Contents/PlugIns
 mv deploy/darwin/build/Evermore.app/Contents/Resources/dist/assets deploy/darwin/build/Evermore.app/Contents/Resources
 mv deploy/darwin/build/Evermore.app/Contents/MacOS/qode deploy/darwin/build/Evermore.app/Contents/MacOS/evermore
+cp assets/images/icon-macos.icns deploy/darwin/build/Evermore.app/Contents/Resources/iconmacos.icns
 
 
 set -e
@@ -21,7 +22,7 @@ echo " ### Signing"
 
 # codesign --verbose=4 --strict --timestamp --sign "${identity}" --entitlements "${entitlements}" --options "runtime" ${app_dir}/Contents/Frameworks/*.framework
 # codesign --verbose=4 --strict --timestamp --sign "${identity}" --entitlements "${entitlements}" --options "runtime" ${app_dir}/Contents/PlugIns/*/*.dylib
-codesign --verbose=4 --strict --timestamp --sign "${identity}" --entitlements "${entitlements}" --options "runtime" ${app_dir}/Contents/PlugIns/FinderSyncExt.appex
+# codesign --verbose=4 --strict --timestamp --sign "${identity}" --entitlements "${entitlements}" --options "runtime" ${app_dir}/Contents/PlugIns/FinderSyncExt.appex
 # codesign --verbose=4 --strict --timestamp --sign "${identity}" --entitlements "${entitlements}" --options "runtime" ${app_dir}/Contents/Resources/dist/*.node
 # codesign --verbose=4 --strict --timestamp --sign "${identity}" --entitlements "${entitlements}" --options "runtime" ${app_dir}/Contents/MacOS/qode.json
 # codesign --verbose=4 --strict --timestamp --sign "${identity}" --entitlements "${entitlements}" --options "runtime" ${app_dir}

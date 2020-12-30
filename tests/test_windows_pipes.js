@@ -5,6 +5,9 @@ const userName = os.userInfo().username;
 const AppName = 'ownCloud';
 let pipeAddress  = `\\\\.\\pipe\\${AppName}-${userName}`;
  
+if(process.platform == 'darwin') {
+  pipeAddress = 'G4X28XL4YD.com.evermore.desktopclient.socketApi';
+}
 var client = net.connect(pipeAddress, function(stream) {
   console.log('Client: on connection');
   client.write("RETRIEVE_FILE_STATUS:C:\\Users\\hibbe\\Documents\\Evermore\\Test\\Hamster.bmp");
