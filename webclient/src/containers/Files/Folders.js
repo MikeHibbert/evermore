@@ -4,9 +4,20 @@ import FolderTableRow from '../../components/Files/FolderTableRow';
 import settings from '../../app-config';
 import arweave from '../../arweave-config';
 import {SaveUploader, RemoveUploader} from './helpers';
+import { Link } from 'react-router-dom';
 
 
 const UploaderProgressBar = (props) => {
+    return (
+        <div id="clipboard_4" className="mb-3">
+            <div className="progress mb-3">
+                <div className="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style={{width: props.percent + "%"}} ></div>
+            </div>
+        </div>
+    )
+} 
+
+const DownloaderProgressBar = (props) => {
     return (
         <div id="clipboard_4" className="mb-3">
             <div className="progress mb-3">
@@ -20,6 +31,7 @@ const UploaderProgressBar = (props) => {
 class FoldersView extends Component {
     state = {
         folder_name: "",
+        previous_folders: [],
         paths: null,
         optionsStyle: null,
         optionsClasses: "dropdown-menu",
@@ -32,10 +44,13 @@ class FoldersView extends Component {
 
         this.onSelectFolder.bind(this);
         this.onToggleOptions.bind(this);
+        this.goBack.bind(this);
     }
 
     onSelectFolder(folder_name) {
-        this.setState({folder_name: folder_name});
+        const previous_folders = [...this.state.previous_folders];
+        previous_folders.push(this.state.folder_name);
+        this.setState({folder_name: folder_name, previous_folders: previous_folders});
     }
 
     onUploadFile(e) {
@@ -79,6 +94,8 @@ class FoldersView extends Component {
         reader.readAsArrayBuffer(filename);
     }
 
+    
+
     createRows(file_info, file_rows, folder_rows) {
         if(this.state.folder_name == file_info.name) {
             if(file_info.children.length > 0) {
@@ -91,7 +108,7 @@ class FoldersView extends Component {
                         );
                     } else {
                         file_rows.push(
-                            <FileTableRow file_info={path} key={i} />
+                            <FileTableRow file_info={path} key={i} downloadFile={(e) => {this.download(e, file_info)}} />
                         );
                     }
                 }   
@@ -126,6 +143,19 @@ class FoldersView extends Component {
         this.refs.filename.click();
     }
 
+    goBack(e) {
+        e.preventDefault();
+
+        if(this.state.previous_folders.length != 0 || this.state.previous_folder != "") {
+            const previous_folders = [...this.state.previous_folders];
+            const previous_folder = previous_folders[previous_folders.length - 1];
+            previous_folders.pop();
+
+            this.setState({folder_name: previous_folder, previous_folders: previous_folders});
+        } 
+        
+    }
+
     render() {
         const file_rows = [];
         const folder_rows = [];
@@ -144,6 +174,22 @@ class FoldersView extends Component {
         if(this.state.uploadingFile) {
             uploaderBar = <UploaderProgressBar percent={this.state.uploadPercentComplete} />;
         }
+
+        let back_nav = null;
+        if(this.state.previous_folders.length > 0) {
+            back_nav = <tr>
+                <td>
+                    <Link to='/files' onClick={(e) => { this.goBack(e) }} >
+                        &lt;&lt; BACK
+                    </Link>
+                </td>
+                <td>
+                </td>
+                <td className="text-align-end">
+                </td>
+            </tr>;
+        }
+
         return (
             <div className="row gutters-sm">
 
@@ -193,17 +239,18 @@ class FoldersView extends Component {
 													</thead>
 
 													<tbody id="item_list">
+                                                        {back_nav}
                                                         {folder_rows}
 														{file_rows}
 													</tbody>
 
-													<tfoot>
+													{/* <tfoot>
 														<tr>
                                                             <th className="text-gray-500 font-weight-normal fs--14 min-w-300">FILE NAME</th>
 															<th className="text-gray-500 font-weight-normal fs--14 w--100 text-center">LAST MODIFIED</th>
                                                             <th className="text-gray-500 font-weight-normal fs--14 w--60 text-align-end">&nbsp;</th>
 														</tr>   
-													</tfoot>
+													</tfoot> */}
 
 												</table>
 											</div>

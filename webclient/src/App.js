@@ -256,7 +256,11 @@ class App extends Component {
 
     let routes = [
       <Route key='home' path="/" exact component={() => <RecentActivity files={this.state.files} wallet_address={this.state.wallet_address} jwk={this.state.jwk} />} />,
-      <Route key='files' path="/files" exact component={() => <FoldersView files={this.state.files} wallet_address={this.state.wallet_address} jwk={this.state.jwk} />} />,
+      <Route key='files' path="/files" exact component={() => <FoldersView 
+                                                                  location={this.props.location}
+                                                                  files={this.state.files} 
+                                                                  wallet_address={this.state.wallet_address} 
+                                                                  jwk={this.state.jwk} />} />,
       <Route key='archived' path="/archived" exact component={() => <DeletedView persistence_records={this.state.persistence_records} wallet_address={this.state.wallet_address} jwk={this.state.jwk} />} />,
       <Route key='search' path="/search" exact component={() => <SearchPage wallet_address={this.state.wallet_address} jwk={this.state.jwk} />} />,
       <Route key='logout' path="/logout" exact component={() => <Logout onLogout={this.disconnectWallet.bind(this)} addSuccessAlert={this.addSuccessAlert} expandContentArea={() => {this.expandContentArea()}} />} />

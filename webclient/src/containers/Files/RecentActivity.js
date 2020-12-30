@@ -83,13 +83,13 @@ class RecentActivity extends Component {
 														{file_rows}
 													</tbody>
 
-													<tfoot>
+													{/* <tfoot>
 														<tr>
                                                             <th className="text-gray-500 font-weight-normal fs--14 min-w-300">FILE NAME</th>
 															<th className="text-gray-500 font-weight-normal fs--14 w--100 text-center">LAST MODIFIED</th>
                                                             <th className="text-gray-500 font-weight-normal fs--14 w--60 text-align-end">&nbsp;</th>
 														</tr>   
-													</tfoot>
+													</tfoot> */}
 
 												</table>
 											</div>
