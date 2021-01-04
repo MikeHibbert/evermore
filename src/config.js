@@ -5,6 +5,7 @@ const windowsShortcutsAppid = require("windows-shortcuts-appid");
 const { createLogger, transports } = require('winston');
 
 const home_folder = process.env.APPDATA || (process.platform == 'darwin' ? process.env.HOME + '/Library/Preferences' : process.env.HOME + "/.local/share");
+console.log(home_folder);
 
 let appID = undefined;
 if(process.platform == 'win32') {

@@ -16,6 +16,7 @@ import {walletFileSet, resetWalletFilePath, GetSyncStatus, SetSyncStatus, GetPen
 import {getWalletBalance} from './crypto/arweave-helpers';
 import {settings} from './config';
 import {reviewSyncableFiles} from './fsHandling/Init';
+import {shutdownServer} from './integration/server';
 
 export const win = new QMainWindow();
 win.setWindowTitle("Evermore Settings");
@@ -77,7 +78,8 @@ const createLoggedOutSystray = (menu) => {
     shutdownAction.setText("Shutdown Evermore");
     shutdownAction.setIcon(trayIcon);
     shutdownAction.addEventListener("triggered", () => {
-    const app = QApplication.instance();
+        shutdownServer();
+        const app = QApplication.instance();
         app.exit(0);
     });
 

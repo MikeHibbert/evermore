@@ -1,10 +1,18 @@
 const net = require('net');
 const os = require('os');
+const fs = require('fs');
 
 import {settings} from '../config';
 import processPipeMessage from './actions';
 import {GetSyncedFolders, GetNewPendingFiles, GetPendingFilesWithTransactionIDs, GetSyncedFiles} from '../db/helpers';
 import { connected } from 'process';
+
+
+export const shutdownServer = () => {
+    if(server) {
+        server.close();
+    }
+}
 
 let server = null;
 let pipe_stream = null;
@@ -39,8 +47,13 @@ const initNamePipe = () => {
     if(settings.PLATFORM == 'win32') {
         const userName = os.userInfo().username;
         pipeAddress  = `\\\\.\\pipe\\${AppName}-${userName}`;
-    } else {
+    } 
 
+    if(process.platform == 'darwin') {
+        pipeAddress = 'G4X28XL4YD.com.evermoredata.store.desktopclient.socketApi';
+        if(fs.existsSync(pipeAddress)) {
+            fs.unlinkSync(pipeAddress);
+        }
     }
 
     server = net.createServer(function(stream) {

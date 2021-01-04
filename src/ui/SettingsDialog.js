@@ -31,6 +31,7 @@ import {
 import {sendMessage} from '../integration/server';
 import openSyncSettingsDialog from './SyncSettingsDialog';
 import { showNotification } from "./notifications";
+import { fstat, fstatSync } from "fs-extra";
 
 const rootStyleSheet = `
   #rootView {
@@ -177,12 +178,14 @@ const createWalletPathRow = (editable_settings, rootView) => {
   btnSelectWallet.addEventListener("clicked", () => {
       const fileDialog = new QFileDialog()
       fileDialog.setFileMode(FileMode.AnyFile);
-      fileDialog.setNameFilter('AR Wallet (*.json)');
+      fileDialog.setNameFilter('Arweave Wallet (*.json)');
       fileDialog.exec();
 
       const selected_file = fileDialog.selectedFiles();
 
       if(selected_file.length > 0) {
+        if(fs.lstatSync(denormalized_path).isDirectory()) return;
+        
         editable_settings.wallet_file = selected_file[0];
         editable_settings.wallet_file_changed = true;
         const wallet_path_parts = editable_settings.wallet_path.split(settings.PLATFORM == "win32" ? '\\':'/');
