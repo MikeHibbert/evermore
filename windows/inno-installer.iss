@@ -2,11 +2,11 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Evermore"
-#define MyAppVersion "0.9.3"
+#define MyAppVersion "0.9.2"
 #define MyAppPublisher "Hibbert IT Solutions Limited"
 #define MyAppURL "https://evermoredata.store"
 #define MyAppExeName "qode.exe"
-#define OutputBaseFilename "evermore_setup-0.9.3"
+#define OutputBaseFilename "evermore_setup-0.9.2"
 #define MyAppId "{F464BC3D-46C2-4453-B99B-24EDF4741EAF}"
 
 [Setup]
@@ -23,7 +23,7 @@ AppUpdatesURL={#MyAppURL}
 DefaultDirName={autopf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
-; PrivilegesRequired=admin
+PrivilegesRequired=admin
 OutputDir=C:\Users\hibbe\Desktop
 OutputBaseFilename={#OutputBaseFilename}
 SetupIconFile=C:\Users\hibbe\Documents\Nodejs\Evermore\windows\evermore-installer.ico
@@ -48,8 +48,8 @@ Source: "C:\Users\hibbe\Documents\Nodejs\Evermore\deploy\win32\build\Evermore\EM
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"
 Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
-Name: "{userstartup}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"
-Name: "{userstartmenu}\Programs\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"; AppUserModelID: "com.evermore.desktopclient"
+Name: "{autostartup}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"
+Name: "{autostartmenu}\Programs\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"; AppUserModelID: "com.evermore.desktopclient"
 
  
 [Code]
@@ -260,6 +260,23 @@ begin
     Result := True;
   end;
 end;
+
+function GetModuleHandle(moduleName: String): LongWord;
+external 'GetModuleHandleW@kernel32.dll stdcall';
+
+function FreeLibrary(module: LongWord): Integer;
+external 'FreeLibrary@kernel32.dll stdcall';
+
+procedure freeDLL(DllPath:string);
+    var
+    lib: LongWord; 
+    res: integer;
+begin
+  repeat
+    lib := GetModuleHandle(DllPath);
+    res := FreeLibrary(lib);
+  until res = 0;
+end; 
  
 function InitializeUninstall(): Boolean;
 begin
@@ -274,8 +291,8 @@ begin
   else Result := true;
 
   // Unload the DLL, otherwise the dll psvince is not deleted
-  //UnloadDLL(ExpandConstant('{app}\EMDContextMenu.dll'));
-  //UnloadDLL(ExpandConstant('{app}\EMDOverlays.dll'));
+  freeDLL(ExpandConstant('{app}\EMDContextMenu.dll'));
+  freeDLL(ExpandConstant('{app}\EMDOverlays.dll'));
  
 end;
 

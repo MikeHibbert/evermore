@@ -39,7 +39,8 @@ import {
     getTransactionWithTags,
     createPersistenceRecord, 
     downloadFileFromTransaction, 
-    confirmTransaction
+    confirmTransaction,
+    checkInternet
 } from '../crypto/arweave-helpers';
 import {convertDatabaseRecordToInfos, getSystemPath, mergePathInfos} from './helpers';
 import {openReviewSyncDialog, refreshReviewSyncDialog, processToQueues} from '../ui/ReviewSyncDialog';
@@ -49,16 +50,32 @@ import { GetPendingFile } from '../../dist/db/helpers';
 import {showNotification} from '../ui/notifications';
 import { updateFileMonitoringStatuses } from '../qt-system-tray';
 
+let connectivity_check_interval = null;
 export const OnFileWatcherReady = () => {
     console.log('Initial scan complete. Ready for changes');
 
-    const syncing = GetSyncStatus();
+    checkInternet(internetAvailableCallback);    
+}
 
-    if(syncing) {
-        startSyncProcessing();
-    }  
+const internetAvailableCallback = (available) => {
+    if(connectivity_check_interval) {
+        clearInterval(connectivity_check_interval);
+        connectivity_check_interval = null;
+    }
 
-    startPendingTrasactionConfirmation();
+    if(available) {
+        const syncing = GetSyncStatus();
+
+        if(syncing) {
+            startSyncProcessing();
+        }  
+
+        startPendingTrasactionConfirmation();
+    } else {
+        connectivity_check_interval = setInterval(() => {
+            checkInternet(internetAvailableCallback);   
+        }, 30000); // check again in 30 seconds
+    }        
 }
 
 let pending_transaction_confirmation_checking_interval = null
@@ -105,7 +122,7 @@ const startPendingTrasactionConfirmation = async () => {
 const processAll = () => {
     checkPendingFilesStatus();
 
-    processAllOutstandingUploadsAndActions();
+    // processAllOutstandingUploadsAndActions(); disabled until we know its not causing upload duplicates
 
     const deleted_file_actions = GetDeletedFiles();
 
@@ -277,12 +294,6 @@ const processAllOutstandingUploadsAndActions = async () => {
             RemoveUploader(uploader_record);
         }        
     }
-
-    const pending_files = GetAllPendingFiles();
-
-    if(pending_files.length > 0) {
-        processAllPendingFiles(pending_files);
-    }
 }
 
 const getAllSyncableFiles = async () => {
@@ -390,7 +401,9 @@ const processAllPendingFiles = async (pending_files) => {
 
     for(let i in pending_files) {
         const pending_file = pending_files[i];
-        if(pending_file.tx_id == null) {            
+        const pf = GetPendingFile(pending_file.path); // check to see if its already begun to upload.
+        debugger;
+        if(pf.tx_id == null) {            
             const encrypt_file = pending_file.path.indexOf('/Public/') == -1;
 
             await uploadFile(pending_file, encrypt_file);

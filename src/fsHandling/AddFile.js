@@ -38,6 +38,8 @@ const fileAddedHandler = (file_path) => {
     const normalized_file_path = normalizePath(file_path.replace(sync_folder, ''));
     const current_synced_file = GetSyncedFileBy({path: normalized_file_path});
 
+    // TODO: check if the CRC is the same as the currently syned file
+    
     if(current_synced_file) {
         if(current_synced_file.modified >= new_file_modified) return; // stop because the downloader has just added this file from the blockchain
     }

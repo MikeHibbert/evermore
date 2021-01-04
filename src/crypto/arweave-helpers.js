@@ -1,5 +1,6 @@
 const Arweave = require('arweave/node');
 const fs = require('fs');
+const dns = require('dns');
 const fse = require('fs-extra');
 const crypto = require('crypto');
 const axios = require('axios')
@@ -37,6 +38,8 @@ import {
 } from './files';
 import { utimes } from 'utimes';
 import { updateFileMonitoringStatuses } from '../qt-system-tray';
+import { GetPendingFile } from '../../dist/db/helpers';
+const Sentry = require("@sentry/node");
 
 export const arweave = Arweave.init(settings.ARWEAVE_CONFIG);
 
@@ -45,6 +48,16 @@ export const getJwkFromWalletFile = (file_path) => {
     const jwk = JSON.parse(rawdata);
 
     return jwk;
+}
+
+export const checkInternet = (cb) => {
+    require('dns').lookup('google.com',function(err) {
+        if (err && err.code == "ENOTFOUND") {
+            cb(false);
+        } else {
+            cb(true);
+        }
+    })
 }
 
 export const getWalletBalance = async (file_path) => {
@@ -57,7 +70,7 @@ export const getWalletBalance = async (file_path) => {
             })
         });
     } catch(e) {
-        console.log(e);
+        Sentry.captureException(e);
         return 0;
     }
     
@@ -83,6 +96,8 @@ export const uploadFile = async (file_info, encrypt_file) => {
     let required_space = Math.ceil(stats['size'] * 1.5);
     
     let processed_file_path = denormalize_path;
+    const path_parts = file_info.path.split('/');
+    const filename = path_parts[path_parts.length - 1];
 
     if(encrypt_file) {
         required_space = Math.ceil(stats['size'] * 2.5); // abitrary idea that encryption will probably create a larger file than the source.
@@ -128,6 +143,7 @@ export const uploadFile = async (file_info, encrypt_file) => {
 
         transaction.addTag('App-Name', settings.APP_NAME);
         transaction.addTag('Content-Type', mime.lookup(file_info.file));
+        transaction.addTag('filename', filename);
         transaction.addTag('file', file_info.file);
         transaction.addTag('path', file_info.path);
         transaction.addTag('modified', file_info.modified);
@@ -152,7 +168,7 @@ export const uploadFile = async (file_info, encrypt_file) => {
 
         let uploader = await arweave.transactions.getUploader(transaction);
 
-        const uploader_record = SaveUploader(uploader);
+        //const uploader_record = SaveUploader(uploader);
 
         while (!uploader.isComplete) {
             await uploader.uploadChunk();
@@ -161,7 +177,7 @@ export const uploadFile = async (file_info, encrypt_file) => {
 
         sendUsagePayment(data_cost);
 
-        RemoveUploader(uploader_record);
+        //RemoveUploader(uploader_record);
 
         if(encrypt_file) {
             const now = new Date().getTime();

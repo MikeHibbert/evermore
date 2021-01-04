@@ -32,7 +32,7 @@ class Downloads extends Component {
     }, 20);
 
     render() {
-        const windows_release = "SwKg8XwQTk4X-_pHUdd7zOnqFlRacqjoC-G_JVSMQNM";
+        const windows_release = "yDQfu-9Pgrjv4HIyq5AWq2-yXL27-JZdo50hLnO_fkM";
 
         let windows_download_link = <DownloadFile 
                                     label="Download Windows Beta Installer 0.9.2"

@@ -39,9 +39,9 @@ const fileChangedHandler = async (file_path) => {
       sendMessage(`UNREGISTER_PATH:${normalized_file_path}\n`);
     } else {
       // if its not in Proposed or pending files it should have been put in the sync files 
-      const synced_file = GetSyncedFileFromPath(file_path);
+      const synced_file = GetSyncedFileFromPath(normalized_file_path);
 
-      if(synced_file) {
+      if(synced_file.modified < new_file_modified) {
         // this the newest version so add it to pending for another upload
         AddProposedFile(null, normalized_file_path, parseInt(synced_file.version + 1), true); 
       } 

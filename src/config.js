@@ -1,17 +1,32 @@
 const { platform } = require('os');
 const fs = require('fs');
 const path = require('path');
-const windowsShortcutsAppid = require("windows-shortcuts-appid")
+const windowsShortcutsAppid = require("windows-shortcuts-appid");
+const { createLogger, transports } = require('winston');
 
 const home_folder = process.env.APPDATA || (process.platform == 'darwin' ? process.env.HOME + '/Library/Preferences' : process.env.HOME + "/.local/share");
 
 let appID = undefined;
 if(process.platform == 'win32') {
     appID = "com.evermore.desktopclient";
+    if(process.cwd().endsWith('system32')) { // Windows has screwed up so set the CWD properly
+        const cwd_path = process.execPath.replace('\\qode.exe', '');
+        process.chdir(cwd_path);
+    }
 }
 if(!fs.existsSync(path.join(home_folder, 'Evermore'))) {
     fs.mkdirSync(path.join(home_folder, 'Evermore'));
+    fs.mkdirSync(path.join(home_folder, 'Evermore', 'logs'));
 }
+
+const logger = createLogger({
+    transports: [
+      new transports.File({ filename: path.join(home_folder, 'Evermore', 'logs', 'combined.json') }) 
+    ],
+    exceptionHandlers: [
+      new transports.File({ filename: path.join(home_folder, 'Evermore', 'logs', 'exceptions.json') })
+    ]
+  });
 
 let settings = {
     APP_NAME: 'EvermoreDatastore-v0.9.2',
@@ -25,6 +40,8 @@ let settings = {
         timeout: 20000,
         logging: false
     }, 
+    LOGGER: logger,
+    HOME_FOLDER: path.join(home_folder, 'Evermore'),
     DB_PATH:  path.join(home_folder, 'Evermore', 'evermore-db.json'),
     NOTIFY_ICON_PATH: path.join(
         process.cwd(), 
@@ -53,5 +70,7 @@ let settings = {
 if(typeof jest != "undefined") {
     settings.DB_PATH = "test_db.json";
 }
+
+
 
 exports.settings = settings;

@@ -121,15 +121,17 @@ const getFileContextMenuItems = (file_path) => {
 
     var responses = ""; 
 
-    const file_info = GetSyncedFileFromPath(normalised_path);
+    if(file_path.indexOf(synced_folder[0]) != -1) {
+        const file_info = GetSyncedFileFromPath(normalised_path);
 
-    if(file_info && isPublicFile(file_path) && !pathExcluded(normalised_path)) {
-        responses = responses + 'MENU_ITEM:SHARE::Copy Share Link\n';
+        if(file_info && isPublicFile(file_path) && !pathExcluded(normalised_path)) {
+            responses = responses + 'MENU_ITEM:SHARE::Copy Share Link\n';
+        }
+
+        if(!fs.lstatSync(file_path).isDirectory()) {
+            responses = responses + 'MENU_ITEM:DETAILS::View Transaction Details\n';
+        }    
     }
-
-    if(!fs.lstatSync(file_path).isDirectory()) {
-        responses = responses + 'MENU_ITEM:DETAILS::View Transaction Details\n';
-    }    
 
     responses = responses + "GET_MENU_ITEMS:END\n";
 
