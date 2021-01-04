@@ -31,13 +31,14 @@ class CostCalculator extends Component {
     }
 
     componentWillMount() {
-        const crypto_info_url = "https://api.bilaxy.com/v1/ticker?symbol=297";
+        const crypto_info_url = "https://newapi.bilaxy.com/v1/valuation?currency=AR";
         const proxy = 'https://cors-anywhere.herokuapp.com/';
 
         const that = this;
 
-        axios.get(proxy + crypto_info_url).then(res => {
-            that.setState({current_price: parseFloat(res.data.data.last)});
+        axios.get(crypto_info_url).then(res => {
+            debugger;
+            that.setState({current_price: parseFloat(res.data.AR.usd_value)});
         })
     }
 
