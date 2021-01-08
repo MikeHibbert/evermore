@@ -13,4 +13,4 @@ echo "### creating zip"
 ditto -ck --rsrc --sequesterRsrc --keepParent "${app_dir}" "deploy/darwin/build/Evermore.zip"
 
 echo "### uploading to apple"
-xcrun altool --notarize-app -t osx --file "deploy/darwin/build/Evermore.zip" --primary-bundle-id "com.evermore.desktopclient" --username "${username}" --password "${password}" --asc-provider ${ascProvider}
+xcrun altool --notarize-app -t osx --file "deploy/darwin/build/Evermore.zip" --primary-bundle-id "com.evermoredata.store" --username "${username}" --password "${password}" --asc-provider ${ascProvider}

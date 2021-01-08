@@ -50,10 +50,12 @@ const initNamePipe = () => {
     } 
 
     if(process.platform == 'darwin') {
-        pipeAddress = 'G4X28XL4YD.com.evermoredata.store.desktopclient.socketApi';
+        pipeAddress = `G4X28XL4YD.${settings.APPLICATION_REV_DOMAIN}.socketApi`;
         if(fs.existsSync(pipeAddress)) {
             fs.unlinkSync(pipeAddress);
         }
+
+        console.log(`Pipe address: ${pipeAddress}`);
     }
 
     server = net.createServer(function(stream) {

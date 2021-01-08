@@ -14,8 +14,8 @@
 	<true/>
 	<key>com.apple.security.application-groups</key>
 	<array>
-		<string>G4X28XL4YD.com.evermoredata.store</string>
-		<string>G4X28XL4YD.com.evermoredata.store.FinderSyncExt</string>
+		<string>com.evermoredata.store</string>
+		<string>com.evermoredata.store.FinderSyncExt</string>
 	</array>
 </dict>
 </plist>
