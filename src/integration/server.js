@@ -50,52 +50,98 @@ const initNamePipe = () => {
     } 
 
     if(process.platform == 'darwin') {
-        pipeAddress = `G4X28XL4YD.${settings.APPLICATION_REV_DOMAIN}.socketApi`;
+        pipeAddress = `${settings.HOME_FOLDER}/G4X28XL4YD.${settings.APPLICATION_REV_DOMAIN}.socketApi`;
+        pipeAddress = `/tmp/G4X28XL4YD.${settings.APPLICATION_REV_DOMAIN}.socketApi`;
         if(fs.existsSync(pipeAddress)) {
             fs.unlinkSync(pipeAddress);
         }
 
         console.log(`Pipe address: ${pipeAddress}`);
+
+        // startMacOSSandboxIPC();
+
+        server = net.createServer(function(stream) {
+            stream['name'] = `${clients.length}_stream`;
+            clients.push(stream);
+
+            debugger;
+
+            stream.on('data', function(data) {
+                const message = data.toString();
+
+                const response = processPipeMessage(message);
+        
+                if(message.indexOf('SHARE') == -1) {
+                    stream.write(response);
+                }
+            });
+        
+            stream.on('close',function(){
+                console.log('Server: on close');
+
+                const that = this;
+                clients = clients.filter(client => client.name !== that.name);
+            })
+        
+            stream.on('end', function(args) {
+                console.log('Server: on end')
+
+                const that = this;
+                clients = clients.filter(client => client.name !== that.name);
+                // server.close();
+            });
+        
+            stream.on('error', function(error) {
+                console.log('Server: on error')
+                // server.close();
+            });
+        });    
+
+        server.listen(pipeAddress,function(){
+            console.log('Server: on listening');
+        });
     }
+}
 
-    server = net.createServer(function(stream) {
-        stream['name'] = `${clients.length}_stream`;
-        clients.push(stream);
+// const XpcConnect = require('xpc-connect');
 
-        stream.on('data', function(data) {
-            const message = data.toString();
+const startMacOSSandboxIPC = () => {
+    // const ipc = require('node-ipc');
 
-            const response = processPipeMessage(message);
+    // ipc.config.socketRoot = settings.GROUP_CONTAINER;
+    // ipc.config.id = '.socketApi';
+    // ipc.config.appspace = 'G4X28XL4YD.com.evermoredata.store';
+
+    // ipc.serve(function(data) {
+    //     ipc.server.on(
+    //         'message',
+    //         function(data,socket){
+    //             ipc.log('got a message : '.debug, data);
+    //             ipc.server.emit(
+    //                 socket,
+    //                 'message',  //this can be anything you want so long as
+    //                             //your client knows.
+    //                 data+' world!'
+    //             );
+    //         }
+    //     );
+    // });
+
+    // ipc.server.start();
+
     
-            if(message.indexOf('SHARE') == -1) {
-                stream.write(response);
-            }
-        });
-    
-        stream.on('close',function(){
-            console.log('Server: on close');
+    debugger;
+    const xpcConnect = new XpcConnect('G4X28XL4YD.com.evermoredata.store.socketApi');
 
-            const that = this;
-            clients = clients.filter(client => client.name !== that.name);
-        })
-    
-        stream.on('end', function(args) {
-            console.log('Server: on end')
-
-            const that = this;
-            clients = clients.filter(client => client.name !== that.name);
-            // server.close();
-        });
-       
-        stream.on('error', function(error) {
-            console.log('Server: on error')
-            // server.close();
-        });
-    });    
-
-    server.listen(pipeAddress,function(){
-        console.log('Server: on listening');
+    xpcConnect.on('error', function(message) {
+        console.log(message);
     });
+
+    xpcConnect.on('event', function(event) {
+        console.log(event);
+    });
+
+    xpcConnect.setup();
 }
 
 export default initNamePipe;

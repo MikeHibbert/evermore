@@ -12,10 +12,13 @@
 	<true/>
 	<key>com.apple.security.cs.disable-library-validation</key>
 	<true/>
+	<key>com.apple.security.network.client</key>
+	<true/>
+	<key>com.apple.security.network.server</key>
+	<true/>
 	<key>com.apple.security.application-groups</key>
 	<array>
-		<string>com.evermoredata.store</string>
-		<string>com.evermoredata.store.FinderSyncExt</string>
+		<string>G4X28XL4YD.com.evermoredata.store</string>
 	</array>
 </dict>
 </plist>
