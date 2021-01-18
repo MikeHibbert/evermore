@@ -17,6 +17,15 @@ import arweave from './arweave-config';
 import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
 import { getPersistenceRecords } from './containers/Files/helpers';
+import ReactGA from 'react-ga';
+
+const trackingId = "G-KF5E8TVH1N"; // Replace with your Google Analytics tracking ID
+ReactGA.initialize(trackingId);
+ReactGA.set({
+  userId: sessionStorage.getItem('AR_Wallet', null),
+  // any data that is relevant to the user session
+  // that you would like to track with google analytics
+});
 
 class App extends Component {
   state = {
