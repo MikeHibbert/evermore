@@ -5,7 +5,15 @@ const windowsShortcutsAppid = require("windows-shortcuts-appid");
 const { createLogger, transports } = require('winston');
 
 const home_folder = process.env.APPDATA || (process.platform == 'darwin' ? process.env.HOME + '/Library/Preferences' : process.env.HOME + "/.local/share");
-console.log(home_folder);
+const group_container = process.platform == 'darwin' ? process.env.HOME + '/Library/Group Containers/': '';
+
+let APPLICATION_REV_DOMAIN = 'Evermore';
+
+if(process.platform == 'darwin') {
+    APPLICATION_REV_DOMAIN = 'com.evermoredata.store';
+}
+
+console.log(path.join(home_folder, APPLICATION_REV_DOMAIN));
 
 let appID = undefined;
 if(process.platform == 'win32') {
@@ -15,19 +23,25 @@ if(process.platform == 'win32') {
         process.chdir(cwd_path);
     }
 }
-if(!fs.existsSync(path.join(home_folder, 'Evermore'))) {
-    fs.mkdirSync(path.join(home_folder, 'Evermore'));
-    fs.mkdirSync(path.join(home_folder, 'Evermore', 'logs'));
+
+
+
+if(!fs.existsSync(path.join(home_folder, APPLICATION_REV_DOMAIN))) {
+    fs.mkdirSync(path.join(home_folder, APPLICATION_REV_DOMAIN));
+    fs.mkdirSync(path.join(home_folder, APPLICATION_REV_DOMAIN, 'logs'));
 }
 
 const logger = createLogger({
     transports: [
-      new transports.File({ filename: path.join(home_folder, 'Evermore', 'logs', 'combined.json') }) 
+      new transports.File({ filename: path.join(home_folder, APPLICATION_REV_DOMAIN, 'logs', 'errors.log'), level: 'error' }) 
     ],
     exceptionHandlers: [
-      new transports.File({ filename: path.join(home_folder, 'Evermore', 'logs', 'exceptions.json') })
+      new transports.File({ filename: path.join(home_folder, APPLICATION_REV_DOMAIN, 'logs', 'exceptions.log') })
     ]
   });
+
+
+console.log(path.join(home_folder, APPLICATION_REV_DOMAIN, 'logs'));
 
 let settings = {
     APP_NAME: 'EvermoreDatastore-v0.9.2',
@@ -41,9 +55,11 @@ let settings = {
         timeout: 20000,
         logging: false
     }, 
+    APPLICATION_REV_DOMAIN: APPLICATION_REV_DOMAIN,
     LOGGER: logger,
-    HOME_FOLDER: path.join(home_folder, 'Evermore'),
-    DB_PATH:  path.join(home_folder, 'Evermore', 'evermore-db.json'),
+    HOME_FOLDER: path.join(home_folder, APPLICATION_REV_DOMAIN),
+    GROUP_CONTAINER: group_container, 
+    DB_PATH:  path.join(home_folder, APPLICATION_REV_DOMAIN, 'evermore-db.json'),
     NOTIFY_ICON_PATH: path.join(
         process.cwd(), 
         process.platform == 'win32' ? "assets\\images\\facebook-logo.png" : "assets/images/facebook-logo.png"
