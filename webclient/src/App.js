@@ -75,6 +75,10 @@ class App extends Component {
 
     const that = this;
     
+    this.props.history.listen(location => {
+      ReactGA.set({ page: location.pathname }); // Update the user's current page
+      ReactGA.pageview(location.pathname); // Record a pageview for the given page
+    });
     // this.interval = setInterval(async function() {
     //   debugger;
     //   await checkPendingMessages();
