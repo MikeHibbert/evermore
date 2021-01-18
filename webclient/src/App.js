@@ -19,8 +19,8 @@ import './App.css';
 import { getPersistenceRecords } from './containers/Files/helpers';
 import ReactGA from 'react-ga';
 
-const trackingId = "G-KF5E8TVH1N"; // Replace with your Google Analytics tracking ID
-ReactGA.initialize(trackingId);
+const trackingId = "G-YSH82SBB2L"; // Replace with your Google Analytics tracking ID
+ReactGA.initialize(trackingId,{debug: true});
 ReactGA.set({
   userId: sessionStorage.getItem('AR_Wallet', null),
   // any data that is relevant to the user session
