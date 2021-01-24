@@ -3,9 +3,12 @@ const notifier = require('node-notifier');
 const fs = require('fs');
 import { 
     GetAllPendingFiles,
+    GetAllProposedFiles,
+    GetNewPendingFiles,
     GetPendingFile,
     GetProposedFile,
     GetSyncedFileFromPath, 
+    GetSyncedFiles, 
     GetSyncedFolders 
 } from '../db/helpers';
 import {pathExcluded, isPublicFile, normalizePath} from '../fsHandling/helpers';
@@ -13,9 +16,16 @@ import path from 'path';
 import { settings } from '../config';
 import { fstat } from 'fs';
 import { showNotification } from '../ui/notifications';
+import { getRegisteredFolders } from '../fsHandling/AddDir';
 
+function toBytesInt32 (num) {
+    arr = new ArrayBuffer(4); // an Int32 takes 4 bytes
+    view = new DataView(arr);
+    view.setUint32(0, num, false); // byteOffset = 0; litteEndian = false
+    return arr;
+}
  
-const processPipeMessage = (data) => {
+const processPipeMessage = (data, stream) => {
     var commands = data.split('\n');
     
     let response = "";
@@ -27,18 +37,63 @@ const processPipeMessage = (data) => {
         parts = parts.filter((item) => item != command);
     
         var command_value = parts.join(':');
+        const registered_folders = getRegisteredFolders();
 
         console.log(`Command: ${command}, ${command_value}`);
 
         switch(command) {
+            case "GET_SYNC_MAIN_PATH":
+                const sync_folder = GetSyncedFolders();
+                response = sync_folder[0] + "\n";
+
+                for(let i in registered_folders) {
+                    const registered_folder = registered_folders[i];
+                    response = response + registered_folder + "\n";
+                }
+                
+                // stream.write(response);
+                // continue;
+                break;
             case "RETRIEVE_FILE_STATUS":
 
                 if(command_value.indexOf('.') != -1) { // its a file and not a folder path
                     response = response + getFileStatus(command_value);
                 } else {
                     response = response + getFolderStatus(command_value);
-                }            
+                }        
+  
                 break;
+
+            case "RETRIEVE_FILE_STATUSES":
+                const synced_files = GetSyncedFiles();
+                const proposed_files = GetAllProposedFiles();
+                const pending_files = GetNewPendingFiles();
+
+                // debugger;
+
+                for(let i in registered_folders) {
+                    const registered_folder = registered_folders[i];
+                    response = response + getFolderStatus(registered_folder);
+                }
+
+                for(let i in synced_files) {
+                    let synced_file = synced_files[i];
+                    response = response + getFileStatus(synced_file.path);
+                }
+                return response;
+
+                break;
+            case "RETRIEVE_FOLDER_STATUS":
+                for(let i in registered_folders) {
+                    const registered_folder = registered_folders[i];
+                    response = response + getFolderStatus(registered_folder);
+                }
+
+                stream.write(response);
+
+                continue;
+                break;
+
             case "GET_STRINGS":
                 if(command_value == "CONTEXT_MENU_TITLE") {
                     response = response + "STRING:CONTEXT_MENU_TITLE:Evermore\n";
@@ -56,12 +111,14 @@ const processPipeMessage = (data) => {
                 openViewblockTransactionPage(command_value);
                 response = "DETAILS:OK\n";
                 break;
-            default:
-                response = response + `STATUS:NOP:${command_value}\n`;
-                break;
+            // default:
+            //     response = response + `STATUS:NOP:${command_value}\n`;
+            //     break;
         }
 
     }
+
+    console.log(response);
 
     return response;
 }
@@ -89,6 +146,10 @@ const shareFileLinkToClipboard = (file_path) => {
 const getFileStatus = (file_path) => {
     const synced_folder = GetSyncedFolders();
     const normalised_path = normalizePath(file_path.replace(synced_folder[0], ''));
+
+    if(process.platform == 'darwin') {
+        file_path = path.join(synced_folder[0], file_path);
+    }
 
     if(!pathExcluded(file_path) && !normalised_path.endsWith('.enc')) {
         let file_info = GetPendingFile(normalised_path);

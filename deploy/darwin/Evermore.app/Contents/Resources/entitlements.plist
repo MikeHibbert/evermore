@@ -16,9 +16,11 @@
 	<true/>
 	<key>com.apple.security.network.server</key>
 	<true/>
+	<key>com.apple.developer.team-identifier</key>
+	<string>G4X28XL4YD</string>
 	<key>com.apple.security.application-groups</key>
 	<array>
-		<string>G4X28XL4YD.com.evermoredata.store</string>
+		<string>com.evermoredata.store</string>
 	</array>
 </dict>
 </plist>

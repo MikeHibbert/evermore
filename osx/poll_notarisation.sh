@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 username=hibbert.michael@gmail.com
 password="udhq-oojt-uymo-roxk"
-notarisationid=bd0973d5-6701-4481-8599-11dd91a44bd2
+notarisationid=685562d3-2da6-4191-92c4-25625b8d4ff6
 xcrun altool --username "${username}" --password "${password}" --notarization-info "${notarisationid}"

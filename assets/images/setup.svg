@@ -9,7 +9,7 @@
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    sodipodi:docname="setup.svg"
-   inkscape:version="1.0 (4035a4fb49, 2020-05-01)"
+   inkscape:version="1.0.2 (e86c8708, 2021-01-15)"
    id="svg8"
    version="1.1"
    viewBox="0 0 210 297"
@@ -118,16 +118,16 @@
      inkscape:guide-bbox="true"
      showguides="true"
      inkscape:window-maximized="1"
-     inkscape:window-y="-8"
-     inkscape:window-x="1912"
-     inkscape:window-height="1017"
+     inkscape:window-y="25"
+     inkscape:window-x="0"
+     inkscape:window-height="1027"
      inkscape:window-width="1920"
      showgrid="false"
-     inkscape:current-layer="g1140"
+     inkscape:current-layer="layer4"
      inkscape:document-units="mm"
-     inkscape:cy="2598.6908"
-     inkscape:cx="3581.3417"
-     inkscape:zoom="0.125"
+     inkscape:cy="-779.54888"
+     inkscape:cx="98.251787"
+     inkscape:zoom="0.044194174"
      inkscape:pageshadow="2"
      inkscape:pageopacity="0.0"
      borderopacity="1.0"
@@ -147,10 +147,11 @@
     </rdf:RDF>
   </metadata>
   <g
-     sodipodi:insensitive="true"
      inkscape:label="Layer 2"
      id="layer2"
-     inkscape:groupmode="layer">
+     inkscape:groupmode="layer"
+     style="display:inline"
+     sodipodi:insensitive="true">
     <rect
        inkscape:export-ydpi="8.4666643"
        inkscape:export-xdpi="8.4666643"
@@ -163,11 +164,11 @@
        style="opacity:0.98;fill:#002955;fill-opacity:1;stroke-width:1.19521" />
   </g>
   <g
-     sodipodi:insensitive="true"
      id="layer1"
      inkscape:groupmode="layer"
      inkscape:label="Layer 1"
-     style="display:inline">
+     style="display:none"
+     sodipodi:insensitive="true">
     <path
        inkscape:export-ydpi="8.4666643"
        inkscape:export-xdpi="8.4666643"
@@ -195,7 +196,7 @@
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:40.0003px;font-family:'URW Gothic L';-inkscape-font-specification:'URW Gothic L, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;writing-mode:lr-tb;text-anchor:start;opacity:0.98;fill:#f9f9f9;fill-opacity:1"
          id="flowPara863">Evermore</flowPara></flowRoot>
     <text
-       style="font-style:normal;font-weight:normal;font-size:10.5833px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect22);fill:#000000;fill-opacity:1;stroke:none;"
+       style="font-style:normal;font-weight:normal;font-size:10.58329999999999949px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect22);fill:#000000;fill-opacity:1;stroke:none;"
        id="text20"
        xml:space="preserve" />
     <path
@@ -215,79 +216,81 @@
     <text
        xml:space="preserve"
        id="text848"
-       style="font-style:normal;font-weight:normal;font-size:10.5833px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect850);fill:#ffffff;fill-opacity:1;stroke:none;" />
+       style="font-style:normal;font-weight:normal;font-size:10.58329999999999949px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect850);fill:#ffffff;fill-opacity:1;stroke:none;" />
     <text
        inkscape:export-ydpi="8.4666643"
        inkscape:export-xdpi="8.4666643"
        xml:space="preserve"
        id="text854"
-       style="font-style:normal;font-weight:normal;font-size:43.7444px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect856);fill:#000000;fill-opacity:1;stroke:none;"
+       style="font-style:normal;font-weight:normal;font-size:43.74439999999999884px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect856);fill:#000000;fill-opacity:1;stroke:none;"
        transform="translate(-66.282841,-32.072342)"><tspan
          x="33.408203"
-         y="98.90276"><tspan
+         y="100.10856"><tspan
            style="font-size:43.7444px;fill:#ffffff">Setup
 </tspan></tspan><tspan
          x="33.408203"
-         y="153.58326"><tspan
+         y="154.78906"><tspan
            style="font-size:43.7444px;fill:#ffffff">
 </tspan></tspan><tspan
          x="33.408203"
-         y="208.26375"><tspan
-           dx="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -0.00010681152"
-           style="font-size:43.7444px;fill:#ffffff">To get you started we need to go through a few steps that take a few minutes </tspan><tspan
-           style="font-size:43.7444px;fill:#ffffff">to </tspan></tspan><tspan
+         y="209.46955"><tspan
+           dx="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -0.00011825562"
+           style="font-size:43.7444px;fill:#ffffff">To get you started we need to go through a few steps that take a few minutes </tspan></tspan><tspan
          x="33.408203"
-         y="262.94425"><tspan
+         y="264.15005"><tspan
+           style="font-size:43.7444px;fill:#ffffff">to </tspan><tspan
            style="font-size:43.7444px;fill:#ffffff">complete...
 </tspan></tspan><tspan
          x="33.408203"
-         y="317.62475"><tspan
+         y="318.83055"><tspan
            style="font-size:43.7444px;fill:#ffffff">
 </tspan></tspan><tspan
          x="33.408203"
-         y="372.30526"><tspan
+         y="373.51106"><tspan
+           dx="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -0.00011825562"
            style="font-size:43.7444px;fill:#ffffff">First off we need to get you connected using a 'cypto wallet' that will </tspan></tspan><tspan
          x="33.408203"
-         y="426.98577"><tspan
+         y="428.19157"><tspan
            style="font-size:43.7444px;fill:#ffffff">permanently identify you and your data. 
 </tspan></tspan><tspan
          x="33.408203"
-         y="481.66628"><tspan
+         y="482.87208"><tspan
            style="font-size:43.7444px;fill:#ffffff">
 </tspan></tspan><tspan
          x="33.408203"
-         y="536.34679"><tspan
-           dx="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -0.00010490417"
+         y="537.55259"><tspan
+           dx="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -0.00010681152 0 0 0 0 0 -0.00011062622"
            style="font-size:43.7444px;fill:#ffffff">You can create your new personalized wallet by clicking 'Create My Wallet' </tspan></tspan><tspan
          x="33.408203"
-         y="591.02727"><tspan
+         y="592.23307"><tspan
            style="font-size:43.7444px;fill:#ffffff">below.
 </tspan></tspan><tspan
          x="33.408203"
-         y="645.70775"><tspan
+         y="646.91355"><tspan
            style="font-size:43.7444px;fill:#ffffff">
 </tspan></tspan><tspan
          x="33.408203"
-         y="700.38823"><tspan
+         y="701.59403"><tspan
+           dx="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -0.00011062622"
            style="font-size:43.7444px;fill:#ffffff">Once you've downloaded your wallet file, back it up onto a USB memory stick or </tspan></tspan><tspan
          x="33.408203"
-         y="755.06871"><tspan
+         y="756.27452"><tspan
            style="font-size:43.7444px;fill:#ffffff">another offline storage device for safe keeping.
 </tspan></tspan><tspan
          x="33.408203"
-         y="809.7492"><tspan
+         y="810.955"><tspan
            style="font-size:43.7444px;fill:#ffffff">
 </tspan></tspan><tspan
          x="33.408203"
-         y="864.42968"><tspan
+         y="865.63548"><tspan
            style="font-size:43.7444px;fill:#ffffff">
 </tspan></tspan><tspan
          x="33.408203"
-         y="919.11016"><tspan
+         y="920.31596"><tspan
            style="font-size:43.7444px;fill:#ffffff">Click 'next' to continue.
 </tspan></tspan><tspan
          x="33.408203"
-         y="973.79064"><tspan
+         y="974.99644"><tspan
            style="font-size:43.7444px;fill:#ffffff">
 </tspan></tspan></text>
   </g>
@@ -298,86 +301,86 @@
      inkscape:groupmode="layer"
      style="display:none">
     <text
-       style="font-style:normal;font-weight:normal;font-size:10.5833px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect872);fill:#ffffff;fill-opacity:1;stroke:none;"
+       style="font-style:normal;font-weight:normal;font-size:10.58329999999999949px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect872);fill:#ffffff;fill-opacity:1;stroke:none;"
        id="text864"
        xml:space="preserve" />
     <text
        transform="translate(-66.282841,-32.072342)"
-       style="font-style:normal;font-weight:normal;font-size:43.7444px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect875);fill:#000000;fill-opacity:1;stroke:none;"
+       style="font-style:normal;font-weight:normal;font-size:43.74439999999999884px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect875);fill:#000000;fill-opacity:1;stroke:none;"
        id="text868"
        xml:space="preserve"
        inkscape:export-xdpi="8.4666643"
        inkscape:export-ydpi="8.4666643"><tspan
          x="33.408203"
-         y="98.90276"><tspan
+         y="100.10856"><tspan
            style="font-size:43.7444px;fill:#ffffff">Connect your wallet
 </tspan></tspan><tspan
          x="33.408203"
-         y="153.58326"><tspan
+         y="154.78906"><tspan
            style="font-size:43.7444px;fill:#ffffff">
 </tspan></tspan><tspan
          x="33.408203"
-         y="208.26375"><tspan
-           dx="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -0.00011062622"
+         y="209.46955"><tspan
+           dx="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -0.00010299683"
            style="font-size:43.7444px;fill:#ffffff">Now that your wallet is downloaded, you need to tell Evermore where you saved </tspan></tspan><tspan
          x="33.408203"
-         y="262.94425"><tspan
+         y="264.15005"><tspan
            style="font-size:43.7444px;fill:#ffffff">it on your computer.
 </tspan></tspan><tspan
          x="33.408203"
-         y="317.62475"><tspan
+         y="318.83055"><tspan
            style="font-size:43.7444px;fill:#ffffff">
 </tspan></tspan><tspan
          x="33.408203"
-         y="372.30526"><tspan
-           dx="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -0.00010490417 0 0 0 0 0 0 0 0.00011253357"
+         y="373.51106"><tspan
+           dx="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -0.00010681152"
            style="font-size:43.7444px;fill:#ffffff">After that, select a folder on your system where you want to place files that you </tspan></tspan><tspan
          x="33.408203"
-         y="426.98577"><tspan
+         y="428.19157"><tspan
            style="font-size:43.7444px;fill:#ffffff">are going to save to the blockchain. 
 </tspan></tspan><tspan
          x="33.408203"
-         y="481.66628"><tspan
+         y="482.87208"><tspan
            style="font-size:43.7444px;fill:#ffffff">
 </tspan></tspan><tspan
          x="33.408203"
-         y="536.34679"><tspan
-           dx="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.00011062622"
+         y="537.55259"><tspan
+           dx="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -0.00010681152 0.00010490417"
            style="font-size:43.7444px;fill:#ffffff">We recommend you create an 'Evermore' folder in your Documents folder, but </tspan></tspan><tspan
          x="33.408203"
-         y="591.02727"><tspan
+         y="592.23307"><tspan
            style="font-size:43.7444px;fill:#ffffff">its possible to select any folder that you choose
 </tspan></tspan><tspan
          x="33.408203"
-         y="645.70775"><tspan
+         y="646.91355"><tspan
            style="font-size:43.7444px;fill:#ffffff">
 </tspan></tspan><tspan
          x="33.408203"
-         y="700.38823"><tspan
+         y="701.59403"><tspan
            style="font-size:43.7444px;fill:#ffffff">
 </tspan></tspan><tspan
          x="33.408203"
-         y="755.06871"><tspan
+         y="756.27452"><tspan
            style="font-size:43.7444px;fill:#ffffff">
 </tspan></tspan><tspan
          x="33.408203"
-         y="809.7492"><tspan
+         y="810.955"><tspan
            style="font-size:43.7444px;fill:#ffffff">
 </tspan></tspan><tspan
          x="33.408203"
-         y="864.42968"><tspan
+         y="865.63548"><tspan
            style="font-size:43.7444px;fill:#ffffff">
 </tspan></tspan><tspan
          x="33.408203"
-         y="919.11016"><tspan
+         y="920.31596"><tspan
            style="font-size:43.7444px;fill:#ffffff">Click 'Connect' to proceed.
 </tspan></tspan><tspan
          x="33.408203"
-         y="973.79064"><tspan
+         y="974.99644"><tspan
            style="font-size:43.7444px;fill:#ffffff">
 </tspan></tspan></text>
     <text
-       style="font-style:normal;font-weight:normal;font-size:10.5833px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect1066);fill:#000000;fill-opacity:1;stroke:none;"
+       style="font-style:normal;font-weight:normal;font-size:10.58329999999999949px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect1066);fill:#000000;fill-opacity:1;stroke:none;"
        id="text1064"
        xml:space="preserve" />
   </g>
@@ -390,81 +393,81 @@
     <text
        xml:space="preserve"
        id="text879"
-       style="font-style:normal;font-weight:normal;font-size:10.5833px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect887);fill:#ffffff;fill-opacity:1;stroke:none;" />
+       style="font-style:normal;font-weight:normal;font-size:10.58329999999999949px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect887);fill:#ffffff;fill-opacity:1;stroke:none;" />
     <text
        xml:space="preserve"
        id="text883"
-       style="font-style:normal;font-weight:normal;font-size:43.7444px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect889);fill:#000000;fill-opacity:1;stroke:none;"
+       style="font-style:normal;font-weight:normal;font-size:43.74439999999999884px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect889);fill:#000000;fill-opacity:1;stroke:none;"
        transform="translate(-66.282841,-32.072342)"
        inkscape:export-xdpi="8.4666672"
        inkscape:export-ydpi="8.4666672"><tspan
          x="33.408203"
-         y="98.90276"><tspan
+         y="100.10856"><tspan
            style="font-size:43.7444px;fill:#ffffff">All Done!
 </tspan></tspan><tspan
          x="33.408203"
-         y="153.58326"><tspan
+         y="154.78906"><tspan
            style="font-size:43.7444px;fill:#ffffff">
 </tspan></tspan><tspan
          x="33.408203"
-         y="208.26375"><tspan
+         y="209.46955"><tspan
+           dx="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -0.00010299683 0 0.00010490417 -0.00011825562"
            style="font-size:43.7444px;fill:#ffffff">Your all set to begin saving your data premanently on the blockchain!
 </tspan></tspan><tspan
          x="33.408203"
-         y="262.94425"><tspan
+         y="264.15005"><tspan
            style="font-size:43.7444px;fill:#ffffff">
 </tspan></tspan><tspan
          x="33.408203"
-         y="317.62475"><tspan
+         y="318.83055"><tspan
            style="font-size:43.7444px;fill:#ffffff">
 </tspan></tspan><tspan
          x="33.408203"
-         y="372.30526"><tspan
+         y="373.51106"><tspan
            style="font-size:43.7444px;fill:#ffffff">
 </tspan></tspan><tspan
          x="33.408203"
-         y="426.98577"><tspan
+         y="428.19157"><tspan
            style="font-size:43.7444px;fill:#ffffff">
 </tspan></tspan><tspan
          x="33.408203"
-         y="481.66628"><tspan
+         y="482.87208"><tspan
            style="font-size:43.7444px;fill:#ffffff">
 </tspan></tspan><tspan
          x="33.408203"
-         y="536.34679"><tspan
+         y="537.55259"><tspan
            style="font-size:43.7444px;fill:#ffffff">
 </tspan></tspan><tspan
          x="33.408203"
-         y="591.02727"><tspan
+         y="592.23307"><tspan
            style="font-size:43.7444px;fill:#ffffff">
 </tspan></tspan><tspan
          x="33.408203"
-         y="645.70775"><tspan
+         y="646.91355"><tspan
            style="font-size:43.7444px;fill:#ffffff">
 </tspan></tspan><tspan
          x="33.408203"
-         y="700.38823"><tspan
+         y="701.59403"><tspan
            style="font-size:43.7444px;fill:#ffffff">
 </tspan></tspan><tspan
          x="33.408203"
-         y="755.06871"><tspan
-           dx="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -0.00011062622 0.00011253357"
-           style="font-size:43.7444px;fill:#ffffff">If you need any help at anytime please feel free to checkout our FAQs and Video </tspan></tspan><tspan
+         y="756.27452"><tspan
+           style="font-size:43.7444px;fill:#ffffff">If you need any help at anytime please feel free to checkout our FAQs and </tspan></tspan><tspan
          x="33.408203"
-         y="809.7492"><tspan
-           dx="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.00011253357 -0.00012016296 0 0.00011253357"
+         y="810.955"><tspan
+           style="font-size:43.7444px;fill:#ffffff">Video </tspan><tspan
            style="font-size:43.7444px;fill:#ffffff">tutorials available online at https://www.evermoredata.store
 </tspan></tspan><tspan
          x="33.408203"
-         y="864.42968"><tspan
+         y="865.63548"><tspan
            style="font-size:43.7444px;fill:#ffffff">
 </tspan></tspan><tspan
          x="33.408203"
-         y="919.11016"><tspan
+         y="920.31596"><tspan
            style="font-size:43.7444px;fill:#ffffff">Click 'Connect' to proceed.
 </tspan></tspan><tspan
          x="33.408203"
-         y="973.79064"><tspan
+         y="974.99644"><tspan
            style="font-size:43.7444px;fill:#ffffff">
 </tspan></tspan></text>
   </g>
@@ -472,86 +475,106 @@
      inkscape:label="selective sync"
      id="g1140"
      inkscape:groupmode="layer"
-     style="display:inline">
+     style="display:none">
     <text
-       style="font-style:normal;font-weight:normal;font-size:10.5833px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect1142);fill:#ffffff;fill-opacity:1;stroke:none;"
+       style="font-style:normal;font-weight:normal;font-size:10.58329999999999949px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect1142);fill:#ffffff;fill-opacity:1;stroke:none;"
        id="text1068"
        xml:space="preserve" />
     <text
        inkscape:export-ydpi="8.4666672"
        inkscape:export-xdpi="8.4666672"
        transform="translate(-66.282841,-32.072342)"
-       style="font-style:normal;font-weight:normal;font-size:43.7444px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect1144);fill:#000000;fill-opacity:1;stroke:none;"
+       style="font-style:normal;font-weight:normal;font-size:43.74439999999999884px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect1144);fill:#000000;fill-opacity:1;stroke:none;"
        id="text1138"
        xml:space="preserve"><tspan
          x="33.408203"
-         y="98.90276"><tspan
+         y="100.10856"><tspan
            style="font-size:43.7444px;fill:#ffffff">Selective File Sync
 </tspan></tspan><tspan
          x="33.408203"
-         y="153.58326"><tspan
+         y="154.78906"><tspan
            style="font-size:43.7444px;fill:#ffffff">
 </tspan></tspan><tspan
          x="33.408203"
-         y="208.26375"><tspan
-           dx="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.00011253357"
+         y="209.46955"><tspan
            style="font-size:43.7444px;fill:#ffffff">Setup has detected you already have files in the folder you selected.
 </tspan></tspan><tspan
          x="33.408203"
-         y="262.94425"><tspan
+         y="264.15005"><tspan
            style="font-size:43.7444px;fill:#ffffff">
 </tspan></tspan><tspan
          x="33.408203"
-         y="317.62475"><tspan
-           dx="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -0.00010299683 0 0 0 -0.00010681152"
+         y="318.83055"><tspan
            style="font-size:43.7444px;fill:#ffffff">You can tell Evermore which of those files to save and which ones to ignore </tspan></tspan><tspan
          x="33.408203"
-         y="372.30526"><tspan
+         y="373.51106"><tspan
            style="font-size:43.7444px;fill:#ffffff">using the next dialog.
 </tspan></tspan><tspan
          x="33.408203"
-         y="426.98577"><tspan
+         y="428.19157"><tspan
            style="font-size:43.7444px;fill:#ffffff">
 </tspan></tspan><tspan
          x="33.408203"
-         y="481.66628"><tspan
-           dx="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -0.00010681152 0 0 0 0 -0.00010681152"
+         y="482.87208"><tspan
            style="font-size:43.7444px;fill:#ffffff">Simply click save on the next dialog to include all the files setup found or </tspan></tspan><tspan
          x="33.408203"
-         y="536.34679"><tspan
+         y="537.55259"><tspan
            style="font-size:43.7444px;fill:#ffffff">uncheck the ones you want ignored.
 </tspan></tspan><tspan
          x="33.408203"
-         y="591.02727"><tspan
+         y="592.23307"><tspan
            style="font-size:43.7444px;fill:#ffffff">
 </tspan></tspan><tspan
          x="33.408203"
-         y="645.70775"><tspan
+         y="646.91355"><tspan
            style="font-size:43.7444px;fill:#ffffff">
 </tspan></tspan><tspan
          x="33.408203"
-         y="700.38823"><tspan
+         y="701.59403"><tspan
            style="font-size:43.7444px;fill:#ffffff">
 </tspan></tspan><tspan
          x="33.408203"
-         y="755.06871"><tspan
+         y="756.27452"><tspan
            style="font-size:43.7444px;fill:#ffffff">
 </tspan></tspan><tspan
          x="33.408203"
-         y="809.7492"><tspan
+         y="810.955"><tspan
            style="font-size:43.7444px;fill:#ffffff">
 </tspan></tspan><tspan
          x="33.408203"
-         y="864.42968"><tspan
+         y="865.63548"><tspan
            style="font-size:43.7444px;fill:#ffffff">
 </tspan></tspan><tspan
          x="33.408203"
-         y="919.11016"><tspan
+         y="920.31596"><tspan
            style="font-size:43.7444px;fill:#ffffff">Click 'Configure Selective Files Sync' to proceed.
 </tspan></tspan><tspan
          x="33.408203"
-         y="973.79064"><tspan
+         y="974.99644"><tspan
            style="font-size:43.7444px;fill:#ffffff">
 </tspan></tspan></text>
+  </g>
+  <g
+     inkscape:groupmode="layer"
+     id="layer4"
+     inkscape:label="banner">
+    <rect
+       inkscape:export-ydpi="25.4"
+       inkscape:export-xdpi="25.4"
+       inkscape:export-filename="/Users/macbookair/Documents/macos-installer-builder/macOS-x64/darwin/Resources/banner.png"
+       y="-22.011906"
+       x="-101.298"
+       height="1840"
+       width="700"
+       id="rect874-0"
+       style="display:inline;opacity:0.06752412;fill:#002955;fill-opacity:1;stroke-width:0.941976" />
+    <path
+       id="path845-2"
+       style="display:inline;opacity:1;fill:#002955;fill-opacity:1;stroke-width:1.07145"
+       d="M 1104.2656 4043.6094 L 1104.2656 4043.6348 C 887.1044 4044.1953 676.11571 4119.6187 494.88672 4263.2441 C 480.54613 4274.6088 471.99324 4281.7602 443.96094 4305.8184 L 443.4707 4305.8184 C 433.56411 4314.3212 367.08301 4380.1139 357.42188 4390.9785 C 339.33404 4411.3128 323.81006 4429.591 310.86133 4445.7832 C 158.05307 4636.892 73.464228 4871.1127 44.474609 5183.3633 C 33.024796 5306.9697 29.560755 5408.5093 27.734375 5679.9629 L 27.734375 5718.8398 L -114.99805 5719.0293 C -245.30987 5719.2183 -300.32198 5719.9185 -364.88281 5722.2168 C -370.9136 5722.4317 -376.89748 5722.6628 -382.85938 5722.9023 L -382.85938 6109.7266 C -332.04331 6107.4552 -289.69427 6106.6975 -166.44531 6105.4336 C -65.992194 6104.4018 -10.318806 6103.4871 17.927734 6102.4277 L 32.21875 6101.8789 L 32.847656 6114.2324 C 33.540667 6144.9502 34.799866 6282.2932 34.169922 6330.4297 C 32.784334 6544.2852 13.897307 6703.5844 -26.107422 6838.7773 C -29.355634 6849.7572 -32.739387 6860.5275 -36.242188 6871.1211 L 375.64648 6871.1211 C 392.3213 6792.3074 404.34167 6707.2278 412.11328 6614.5273 C 421.0059 6508.5176 423.87724 6432.4338 427.4043 6205.9199 C 428.22309 6155.289 429.29492 6112.3166 429.29492 6110.4238 L 429.92383 6106.9766 L 436.86523 6106.7891 C 440.68165 6106.6719 489.26327 6106.2727 544.82422 6105.8535 C 696.93323 6104.697 735.8607 6104.0875 805.8125 6101.7812 C 1058.0852 6093.4584 1247.9012 6065.8212 1408.6191 6014.0156 C 1536.6447 5972.7481 1643.6216 5917.864 1739.6094 5844.1973 C 1788.5321 5806.653 1842.2553 5755.5305 1887.752 5703.2207 C 2016.54 5555.1656 2099.1577 5379.062 2126.9629 5193.3379 C 2134.5523 5142.614 2137.1973 5106.1501 2137.1973 5051.209 C 2137.2199 4983.2742 2131.8547 4928.7831 2118.7988 4864.1074 C 2084.7014 4695.2359 2008.3786 4543.2954 1890.877 4410.3555 C 1852.9 4367.3936 1793.0109 4311.6656 1742.4629 4272.25 C 1588.5086 4152.1952 1418.8964 4078.174 1240.0645 4052.9922 C 1194.6724 4046.6003 1149.3369 4043.4933 1104.2656 4043.6094 z M 1096.2363 4469.9414 L 1096.2461 4469.9414 C 1210.8211 4470.3118 1323.15 4504.303 1424.5293 4569.8203 C 1455.8177 4590.0419 1479.5792 4608.2568 1511.0566 4636.1523 C 1617.7317 4730.6742 1685.6621 4858.0493 1703.9824 4997.8809 C 1717.6114 5101.898 1702.2891 5208.044 1659.8594 5303.4453 C 1595.6074 5447.9317 1471.4548 5563.4123 1308.7148 5630.0703 C 1190.5079 5678.4868 1051.39 5705.0045 865.85742 5714.4824 C 805.09418 5717.5858 751.93318 5718.8023 622.68555 5720.0254 C 527.90085 5720.9264 475.23759 5721.7464 444.08789 5722.8047 L 424.41406 5723.4766 L 423.7832 5680.832 C 420.23744 5444.0605 425.40891 5305.9199 442.41992 5182.6113 C 472.0078 4968.1889 533.97897 4812.6111 639.98047 4686.6406 L 639.95703 4686.6406 C 652.57842 4671.637 702.73063 4621.8522 717.50586 4609.6504 C 799.48056 4541.9636 889.15858 4498.8879 987.02344 4480.1895 C 999.5813 4477.7944 1016.5215 4475.0394 1024.6836 4474.0723 C 1048.5791 4471.2342 1072.4566 4469.8647 1096.2363 4469.9414 z "
+       transform="scale(0.26458333)"
+       inkscape:export-filename="/Users/macbookair/Documents/macos-installer-builder/macOS-x64/darwin/Resources/banner.png"
+       inkscape:export-xdpi="25.4"
+       inkscape:export-ydpi="25.4" />
   </g>
 </svg>

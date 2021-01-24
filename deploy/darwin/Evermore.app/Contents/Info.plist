@@ -27,7 +27,7 @@
     <key>CFBundleIconFile</key>
     <string>iconmacos</string>
     <key>LSMinimumSystemVersion</key>
-    <string>10.15</string>
+    <string>10.10</string>
     <key>NSHumanReadableCopyright</key>
     <string>Copyright © 2021 Hibbert IT Solutions Limited. All rights reserved.</string>
     <key>NSHighResolutionCapable</key>

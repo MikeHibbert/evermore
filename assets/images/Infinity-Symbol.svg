@@ -7,7 +7,7 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   inkscape:version="1.0 (4035a4fb49, 2020-05-01)"
+   inkscape:version="1.0.2 (e86c8708, 2021-01-15)"
    height="2703.2141"
    width="2703.2141"
    sodipodi:docname="Infinity-Symbol.svg"
@@ -23,16 +23,16 @@
    id="defs11" /><sodipodi:namedview
    inkscape:guide-bbox="true"
    showguides="true"
-   inkscape:current-layer="g853"
+   inkscape:current-layer="layer2"
    inkscape:window-maximized="1"
-   inkscape:window-y="-8"
-   inkscape:window-x="-8"
+   inkscape:window-y="25"
+   inkscape:window-x="0"
    inkscape:cy="1402.725"
    inkscape:cx="1534.2824"
    inkscape:zoom="0.17277359"
    showgrid="false"
    id="namedview9"
-   inkscape:window-height="1017"
+   inkscape:window-height="1027"
    inkscape:window-width="1920"
    inkscape:pageshadow="2"
    inkscape:pageopacity="0"
@@ -51,11 +51,10 @@
      position="1985.257,1325.6887" /></sodipodi:namedview>
 
 <g
-   style="display:none"
+   style="display:inline"
    inkscape:label="Layer 1"
    id="layer1"
-   inkscape:groupmode="layer"
-   sodipodi:insensitive="true"><rect
+   inkscape:groupmode="layer"><rect
      style="fill:#002955;fill-opacity:1;stroke-width:0.998441"
      id="rect13"
      width="2703.2141"
@@ -78,13 +77,12 @@
    inkscape:groupmode="layer"
    id="layer3"
    inkscape:label="Layer 3"
-   sodipodi:insensitive="true"
-   style="display:none" /><g
-   sodipodi:insensitive="true"
+   style="display:inline" /><g
    style="display:none;opacity:1"
    inkscape:label="Layer 2"
    id="layer2"
-   inkscape:groupmode="layer"><g
+   inkscape:groupmode="layer"
+   sodipodi:insensitive="true"><g
      id="g6-4"
      transform="matrix(0.66023085,-0.61400548,0.59279642,0.68385258,108.93135,1755.8504)"
      style="fill:#e6e6e6;stroke:none;stroke-opacity:1"
@@ -118,7 +116,7 @@
    inkscape:groupmode="layer"
    id="g853"
    inkscape:label="Layer 1 copy"
-   style="display:inline"><rect
+   style="display:none"><rect
      ry="439.88205"
      inkscape:export-ydpi="18.1828"
      inkscape:export-xdpi="18.1828"

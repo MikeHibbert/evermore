@@ -58,6 +58,7 @@ export const openReviewSyncDialog = (path_infos, saveCallback, cancelCallback) =
     syncRootView.setLayout(syncRootViewLayout);
 
     const tree = new QTreeWidget();
+    tree.setHeaderHidden(true);
 
     createFolderItems(path_infos, tree, syncWin, true, null);
 

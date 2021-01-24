@@ -50,8 +50,8 @@ const initNamePipe = () => {
     } 
 
     if(process.platform == 'darwin') {
-        pipeAddress = `${settings.HOME_FOLDER}/G4X28XL4YD.${settings.APPLICATION_REV_DOMAIN}.socketApi`;
-        pipeAddress = `/tmp/G4X28XL4YD.${settings.APPLICATION_REV_DOMAIN}.socketApi`;
+        pipeAddress = `${settings.GROUP_CONTAINER}.socketApi`;
+        // pipeAddress = `/tmp/G4X28XL4YD.${settings.APPLICATION_REV_DOMAIN}.socketApi`;
         if(fs.existsSync(pipeAddress)) {
             fs.unlinkSync(pipeAddress);
         }
@@ -64,14 +64,15 @@ const initNamePipe = () => {
             stream['name'] = `${clients.length}_stream`;
             clients.push(stream);
 
-            debugger;
-
             stream.on('data', function(data) {
                 const message = data.toString();
 
-                const response = processPipeMessage(message);
+                const response = processPipeMessage(message, stream);
         
                 if(message.indexOf('SHARE') == -1) {
+                    if(response.startsWith('STATUS:NOP')) {
+                        debugger;
+                    }
                     stream.write(response);
                 }
             });
@@ -92,7 +93,7 @@ const initNamePipe = () => {
             });
         
             stream.on('error', function(error) {
-                console.log('Server: on error')
+                console.log(`Server error: ${error}`)
                 // server.close();
             });
         });    

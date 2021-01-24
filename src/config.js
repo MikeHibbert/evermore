@@ -5,7 +5,7 @@ const windowsShortcutsAppid = require("windows-shortcuts-appid");
 const { createLogger, transports } = require('winston');
 
 const home_folder = process.env.APPDATA || (process.platform == 'darwin' ? process.env.HOME + '/Library/Preferences' : process.env.HOME + "/.local/share");
-const group_container = process.platform == 'darwin' ? process.env.HOME + '/Library/Group Containers/': '';
+const group_container = process.platform == 'darwin' ? process.env.HOME + '/Library/Group\ Containers/com.evermoredata.store/': '';
 
 let APPLICATION_REV_DOMAIN = 'Evermore';
 
