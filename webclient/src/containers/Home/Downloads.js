@@ -35,7 +35,7 @@ class Downloads extends Component {
         const windows_release = "yDQfu-9Pgrjv4HIyq5AWq2-yXL27-JZdo50hLnO_fkM";
 
         let windows_download_link = <DownloadFile 
-                                    label="Download Windows Beta Installer 0.9.2"
+                                    label="Download Windows 10 Installer"
                                     tx_id={windows_release} 
                                     filename="evermore_setup-0.9.2.exe" 
                                     setDownloading={(downloading) => { this.setState({downloading: downloading}); }} />;
