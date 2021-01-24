@@ -50,7 +50,7 @@ const initNamePipe = () => {
     } 
 
     if(process.platform == 'darwin') {
-        pipeAddress = `${settings.GROUP_CONTAINER}.socketApi`;
+        pipeAddress = `${settings.HOME_FOLDER}.socketApi`;
         // pipeAddress = `/tmp/G4X28XL4YD.${settings.APPLICATION_REV_DOMAIN}.socketApi`;
         if(fs.existsSync(pipeAddress)) {
             fs.unlinkSync(pipeAddress);
