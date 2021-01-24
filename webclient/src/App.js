@@ -17,6 +17,15 @@ import arweave from './arweave-config';
 import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
 import { getPersistenceRecords } from './containers/Files/helpers';
+import ReactGA from 'react-ga';
+
+const trackingId = "G-YSH82SBB2L"; // Replace with your Google Analytics tracking ID
+ReactGA.initialize(trackingId,{debug: true});
+ReactGA.set({
+  userId: sessionStorage.getItem('AR_Wallet', null),
+  // any data that is relevant to the user session
+  // that you would like to track with google analytics
+});
 
 class App extends Component {
   state = {
@@ -66,6 +75,10 @@ class App extends Component {
 
     const that = this;
     
+    this.props.history.listen(location => {
+      ReactGA.set({ page: location.pathname }); // Update the user's current page
+      ReactGA.pageview(location.pathname); // Record a pageview for the given page
+    });
     // this.interval = setInterval(async function() {
     //   debugger;
     //   await checkPendingMessages();

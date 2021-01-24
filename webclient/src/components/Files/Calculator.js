@@ -2,6 +2,7 @@ import React, {Component} from 'react';
 import axios from 'axios';
 import arweave from '../../arweave-config';
 import { format } from "d3-format";
+const LimestoneApi = require('@limestonefi/api');
 
 const valueToBytesUsingScale = (value, scale) => {
     let ret_val = 0;
@@ -31,15 +32,16 @@ class CostCalculator extends Component {
     }
 
     componentWillMount() {
-        const crypto_info_url = "https://newapi.bilaxy.com/v1/valuation?currency=AR";
-        const proxy = 'https://cors-anywhere.herokuapp.com/';
+        // const crypto_info_url = "https://newapi.bilaxy.com/v1/valuation?currency=AR";
+        // const proxy = 'https://cors-anywhere.herokuapp.com/';
 
-        const that = this;
+        // const that = this;
 
-        axios.get(crypto_info_url).then(res => {
-            debugger;
-            that.setState({current_price: parseFloat(res.data.AR.usd_value)});
-        })
+        // axios.get(crypto_info_url).then(res => {
+        //     that.setState({current_price: parseFloat(res.data.AR.usd_value)});
+        // })
+
+        
     }
 
     onToggleDropdown() {
@@ -58,9 +60,12 @@ class CostCalculator extends Component {
         const that = this;
         arweave.transactions.getPrice(size).then(price => {
             const ar = parseFloat(arweave.ar.winstonToAr(price));
-            const cost = ar * that.state.current_price;
+            LimestoneApi.getPrice("AR").then(current_price => {
+                const cost = ar * current_price.price;
 
-            that.setState({cost: cost + (cost * 0.2), ar_cost:ar + (ar * 0.2)});
+                that.setState({cost: cost + (cost * 0.2), ar_cost:ar + (ar * 0.2)});
+            });
+            
         })
 
     }

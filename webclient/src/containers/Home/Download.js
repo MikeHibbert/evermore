@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import axios from 'axios';
 import {getFileWith} from '../Files/helpers';
+import ReactGA from 'react-ga';
 
 const DownloaderProgressBar = (props) => {
     return (
@@ -25,6 +26,11 @@ export function magicDownload(data, fileName, ContentType) {
     document.body.appendChild(element);
     element.setAttribute("href", window.URL.createObjectURL(blob, {type: 'application/octet-stream'}));
     element.setAttribute("download", fileName);
+
+    ReactGA.event({
+        category: "Sign Up",
+        action: `User Downloaded ${fileName}`,
+      });
 
     element.style.display = "";
 
