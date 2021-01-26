@@ -5,6 +5,7 @@ import settings from '../../app-config';
 import arweave from '../../arweave-config';
 import {SaveUploader, RemoveUploader} from './helpers';
 import { Link } from 'react-router-dom';
+import AddFolderDialog from './AddFolderDialog';
 
 
 const UploaderProgressBar = (props) => {
@@ -18,10 +19,11 @@ const UploaderProgressBar = (props) => {
 } 
 
 const DownloaderProgressBar = (props) => {
+    const css_classes = props.decrypting ? "progress-bar progress-bar-striped progress-bar-animated": "progress-bar progress-bar-striped progress-bar-animated decrypting";
     return (
         <div id="clipboard_4" className="mb-3">
             <div className="progress mb-3">
-                <div className="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style={{width: props.percent + "%"}} ></div>
+                <div className={css_classes} role="progressbar" style={{width: props.percent + "%"}} ></div>
             </div>
         </div>
     )
@@ -36,7 +38,8 @@ class FoldersView extends Component {
         optionsStyle: null,
         optionsClasses: "dropdown-menu",
         uploadPercentComplete: 0,
-        uploadingFile: false
+        uploadingFile: false,
+        subfolder_dialog: false
     }
 
     constructor(props) {
@@ -45,6 +48,7 @@ class FoldersView extends Component {
         this.onSelectFolder.bind(this);
         this.onToggleOptions.bind(this);
         this.goBack.bind(this);
+        this.hideFolderDialog.bind(this);
     }
 
     onSelectFolder(folder_name) {
@@ -140,7 +144,21 @@ class FoldersView extends Component {
     openFileDialog(e) {
         e.preventDefault();
 
+        this.onToggleOptions();
+
         this.refs.filename.click();
+    }
+
+    openSubFolderDialog(e) {
+        e.preventDefault();
+
+        this.onToggleOptions();
+
+        this.setState({subfolder_dialog: true});
+    }
+
+    hideFolderDialog() {
+        this.setState({subfolder_dialog: false});
     }
 
     goBack(e) {
@@ -162,6 +180,16 @@ class FoldersView extends Component {
 
         if(this.props.files != null) {
             this.createRows(this.props.files[""], file_rows, folder_rows);
+        }
+
+        let subfolder_dialog = null;
+        if(this.state.subfolder_dialog) {
+            subfolder_dialog = <AddFolderDialog 
+                hideFolderDialog={() => {this.hideFolderDialog()}}
+                folder_name={this.state.folder_name}
+                previous_folders={this.state.previous_folders}
+                files={this.props.files}
+            />;
         }
 
         
@@ -225,9 +253,13 @@ class FoldersView extends Component {
                                                         <i className="fa fa-upload" aria-hidden="true"></i>
                                                         Upload to this folder
                                                     </a>
+                                                    <a className="dropdown-item active" onClick={(e) => this.openSubFolderDialog(e)} href="#">
+                                                        <i className="fa fa-upload" aria-hidden="true"></i>
+                                                        Add a subfolder
+                                                    </a>
                                                 </div>
                                             </div>
-                                        </div> */}
+                                        </div>  */}
 											<div className="table-responsive">
 												<table className="table table-framed">
 													<thead>
@@ -258,6 +290,8 @@ class FoldersView extends Component {
                                             
 
 									</div>
+
+                                    {subfolder_dialog}
 								</div>
 
 							</div>

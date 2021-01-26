@@ -39,6 +39,14 @@ class Downloads extends Component {
                                     tx_id={windows_release} 
                                     filename="evermore_setup-0.9.2.exe" 
                                     setDownloading={(downloading) => { this.setState({downloading: downloading}); }} />;
+
+        const macos_release = "jv_NpoyGbKR6zTPmNmZcgwqc-RokDPnEIYAZcufoX1E";
+
+        let macos_download_link = <DownloadFile 
+                                    label="Download Mac OS X Installer"
+                                    tx_id={windows_release} 
+                                    filename="Evermore-macos-installer-x64-0.9.2.pkg" 
+                                    setDownloading={(downloading) => { this.setState({downloading: downloading}); }} />;
         
         return (
             <>
@@ -110,11 +118,15 @@ class Downloads extends Component {
 
                                         In addition, we keep a full version history so that you can always get your hands on older versions of your data at any point<br/>
                                     </p>
-                                    <p>Currently we have launched a Windows 10 64bit version of Evermore and will shortly be releasing for Mac and Linux too!</p>
+                                    <h3>Evermore for Windows 10 64bit</h3>
 
                                     {windows_download_link}
 
-                                    <h2>Setup guide</h2>
+                                    <h3>Evermore for Mac OS X (Catalina &amp; Big Sur) </h3>
+
+                                    {macos_download_link}
+
+                                    <h3>Setup guide</h3>
                                     </div>
                                     
                                     <div className="embed-responsive embed-responsive-16by9 mt-20">

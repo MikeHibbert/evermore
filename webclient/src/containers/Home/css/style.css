@@ -4001,7 +4001,7 @@ footer {
     left: 0; }
   .cloud-hosting .cloud-content {
     margin-top: 50px; }
-    .cloud-hosting .cloud-content h2, .cloud-hosting .cloud-content p {
+    .cloud-hosting .cloud-content h2,  .cloud-hosting .cloud-content h3, .cloud-hosting .cloud-content p {
       color: #ffffff; }
     .cloud-hosting .cloud-content h2 {
       font-size: 36px;
