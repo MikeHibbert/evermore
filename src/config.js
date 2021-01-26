@@ -11,6 +11,10 @@ let APPLICATION_REV_DOMAIN = 'Evermore';
 
 if(process.platform == 'darwin') {
     APPLICATION_REV_DOMAIN = 'com.evermoredata.store';
+
+    if(!fs.existsSync(path.join(home_folder, APPLICATION_REV_DOMAIN))) {
+        fs.mkdirSync(path.join(home_folder, APPLICATION_REV_DOMAIN));
+    }
 }
 
 console.log(path.join(home_folder, APPLICATION_REV_DOMAIN));
@@ -29,6 +33,7 @@ if(process.platform == 'win32') {
 if(!fs.existsSync(path.join(home_folder, APPLICATION_REV_DOMAIN))) {
     fs.mkdirSync(path.join(home_folder, APPLICATION_REV_DOMAIN));
     fs.mkdirSync(path.join(home_folder, APPLICATION_REV_DOMAIN, 'logs'));
+    fs.mkdirSync(group_container);
 }
 
 const logger = createLogger({

@@ -8,7 +8,7 @@ rm osx/build.log
 npm run build 
 npx nodegui-packer --pack dist > osx/build.log
 # cp -r ../evermore-findersync/client-build/shell_integration/MacOSX/Release/*.appex deploy/darwin/build/Evermore.app/Contents/PlugIns
-cp -r osx/Pl/*.appex deploy/darwin/build/Evermore.app/Contents/PlugIns
+cp -r osx/PlugIns/*.appex deploy/darwin/build/Evermore.app/Contents/PlugIns
 
 mv deploy/darwin/build/Evermore.app/Contents/Resources/dist/assets deploy/darwin/build/Evermore.app/Contents/Resources
 mv deploy/darwin/build/Evermore.app/Contents/MacOS/qode deploy/darwin/build/Evermore.app/Contents/MacOS/evermore
