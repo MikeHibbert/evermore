@@ -29,6 +29,7 @@ if(process.platform == 'win32') {
 if(!fs.existsSync(path.join(home_folder, APPLICATION_REV_DOMAIN))) {
     fs.mkdirSync(path.join(home_folder, APPLICATION_REV_DOMAIN));
     fs.mkdirSync(path.join(home_folder, APPLICATION_REV_DOMAIN, 'logs'));
+    fs.mkdirSync(group_container);
 }
 
 const logger = createLogger({

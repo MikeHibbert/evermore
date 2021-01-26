@@ -2,22 +2,19 @@ const notifier = require('node-notifier');
 const Sentry = require("@sentry/node");
 import {settings} from '../config';
 
+// if(process.platform == 'darwin') {
+//   const Notification = require('node-mac-notifier');
+// }
 export const showNotification = (message) => {
   try {
-    notifier.notify({
-        title: 'Evermore Datastore',
-        icon: settings.NOTIFY_ICON_PATH,
-        message: message,
-        timeout: 2, 
-        appID: settings.API_NOTIFIER_ID
-    });
-  } catch (e) {
-    Sentry.captureException(e);
-  }
-}
+    // if(process.platform == 'darwin') {
+    //   const notification = new Notification('Evermore Datastore', { 
+    //     body: message,
+    //     icon: settings.NOTIFY_ICON_PATH, 
+    //     bundleId: 'com.evermoredata.store'
+    //   });
 
-export const showNotificationWithClickHandler = (message, clickHandler) => {
-    try {
+    // } else {
       notifier.notify({
           title: 'Evermore Datastore',
           icon: settings.NOTIFY_ICON_PATH,
@@ -25,6 +22,30 @@ export const showNotificationWithClickHandler = (message, clickHandler) => {
           timeout: 2, 
           appID: settings.API_NOTIFIER_ID
       });
+    // }
+  } catch (e) {
+    Sentry.captureException(e);
+  }
+}
+
+export const showNotificationWithClickHandler = (message, clickHandler) => {
+    try {
+      // if(process.platform == 'darwin') {
+      //   const notification = new Notification('Evermore Datastore', { 
+      //     body: message,
+      //     icon: settings.NOTIFY_ICON_PATH, 
+      //     bundleId: 'com.evermoredata.store'
+      //   });
+      //   notification.addEventListener('click', clickHandler);
+      // } else {
+        notifier.notify({
+            title: 'Evermore Datastore',
+            icon: settings.NOTIFY_ICON_PATH,
+            message: message,
+            timeout: 2, 
+            appID: settings.API_NOTIFIER_ID
+        });
+      // }
     } catch (e) {
       Sentry.captureException(e);
     }
