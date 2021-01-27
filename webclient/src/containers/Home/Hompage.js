@@ -25,6 +25,13 @@ class HomePage extends Component {
     componentDidMount() {
         document.body.classList.add('home-version-four');
         document.body.id = "home-version-four";
+
+        window.gtag('event', 'page_view', {
+            page_title: 'index',
+            page_location: '/',
+            page_path: '/',
+            send_to: 'G-YSH82SBB2L'
+          });
     }
 
     componentWillUnmount() {

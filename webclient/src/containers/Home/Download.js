@@ -27,14 +27,14 @@ export function magicDownload(data, fileName, ContentType) {
     element.setAttribute("href", window.URL.createObjectURL(blob, {type: 'application/octet-stream'}));
     element.setAttribute("download", fileName);
 
-    ReactGA.event({
-        category: "Sign Up",
-        action: `User Downloaded ${fileName}`,
-      });
-
     element.style.display = "";
 
     element.click();
+
+    window.gtag('event', 'sign_up', {
+        'event_category' :'engagement',
+        'event_label' : `Dowloaded ${fileName}`
+      });
 
     document.body.removeChild(element);
 }
