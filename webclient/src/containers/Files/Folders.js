@@ -3,7 +3,7 @@ import FileTableRow from '../../components/Files/FileTableRow';
 import FolderTableRow from '../../components/Files/FolderTableRow';
 import settings from '../../app-config';
 import arweave from '../../arweave-config';
-import {SaveUploader, RemoveUploader} from './helpers';
+import {SaveUploader, RemoveUploader, addFolderInfoToPathInfos} from './helpers';
 import { Link } from 'react-router-dom';
 import AddFolderDialog from './AddFolderDialog';
 
@@ -144,7 +144,7 @@ class FoldersView extends Component {
     openFileDialog(e) {
         e.preventDefault();
 
-        this.onToggleOptions();
+        this.setState({optionsStyle: null, optionsClasses: "dropdown-menu"});
 
         this.refs.filename.click();
     }
@@ -152,7 +152,9 @@ class FoldersView extends Component {
     openSubFolderDialog(e) {
         e.preventDefault();
 
-        this.onToggleOptions();
+        debugger;
+
+        this.setState({optionsStyle: null, optionsClasses: "dropdown-menu"});
 
         this.setState({subfolder_dialog: true});
     }
@@ -186,8 +188,7 @@ class FoldersView extends Component {
         if(this.state.subfolder_dialog) {
             subfolder_dialog = <AddFolderDialog 
                 hideFolderDialog={() => {this.hideFolderDialog()}}
-                folder_name={this.state.folder_name}
-                previous_folders={this.state.previous_folders}
+                previous_folders={[...this.state.previous_folders, this.state.folder_name]}
                 files={this.props.files}
             />;
         }
@@ -237,7 +238,7 @@ class FoldersView extends Component {
                                         <input style={{display: "none"}} ref="filename" type="file" name="uploader"></input>
                                     
 									<div className="container py-6">
-                                        {/* <div className="pull-right" style={{marginBottom: "10px"}}>
+                                        <div className="pull-right" style={{marginBottom: "10px"}}>
                                             <div className="btn-group">
                                                 <button type="button" onClick={e => {this.onToggleOptions()}} className="btn btn-primary">Actions</button>
                                                 <button type="button" onClick={e => {this.onToggleOptions()}} className="btn btn-primary dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -259,7 +260,7 @@ class FoldersView extends Component {
                                                     </a>
                                                 </div>
                                             </div>
-                                        </div>  */}
+                                        </div> 
 											<div className="table-responsive">
 												<table className="table table-framed">
 													<thead>

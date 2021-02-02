@@ -1,6 +1,7 @@
 import { render } from '@testing-library/react';
 import React from 'react';
 import { Component } from 'react';
+import { addFolderInfoToPathInfos } from './helpers';
 
 class AddFolderDialog extends Component {
     state = {
@@ -29,7 +30,8 @@ class AddFolderDialog extends Component {
     }
 
     createSubFolder() {
-
+        addFolderInfoToPathInfos(this.state.folder_name, this.props.previous_folders, 0, this.props.files[""]);
+        this.closeDialog();
     }
 
     OnChange(e) {
@@ -54,7 +56,7 @@ class AddFolderDialog extends Component {
                             </div>
 
                             <div className="modal-footer">
-                                <button type="button" className="btn btn-primary">
+                                <button type="button" className="btn btn-primary" onClick={() => { this.createSubFolder(); }}>
                                     <i className="fi fi-check"></i> 
                                     Create subfolder
                                 </button>

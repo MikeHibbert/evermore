@@ -11,6 +11,20 @@ export function createRootFolder(path_parts, index, file_info) {
     }
 }
 
+export function addFolderInfoToPathInfos(folder_name, path_parts, index, file_info) {
+    if(index == path_parts.length - 1) {
+        file_info.children.push({
+            name: folder_name,
+            type: 'folder',
+            children: []
+        })
+    } else {
+        const child_file_infos = file_info.children.filter(fi => fi.name == path_parts[index + 1] && fi.type == 'folder');
+
+        addFolderInfoToPathInfos(folder_name, path_parts, index + 1, child_file_infos[0])
+    }
+}
+
 export function addToFolderchildren(path_parts, index, file_info, path_obj) {
     if(index == path_parts.length - 1) {
         return path_obj.children.push({...file_info, name: path_parts[index], index: index, type: "file"});

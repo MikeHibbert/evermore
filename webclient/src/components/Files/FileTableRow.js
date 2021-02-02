@@ -35,8 +35,19 @@ class FileTableRow extends Component  {
         this.toggleOptions.bind(this);
     }
 
+    componentDidMount() {
+        // document.addEventListener(
+        //     "click",
+        //     event =>  this.setState({
+        //         optionsDialogCss: "dropdown-menu dropdown-menu-clean dropdown-click-ignore max-w-220",
+        //         optionsDialogStyles: null,
+        //         optionParentCss: "clearfix"
+        //     })
+        //   );
+    }
+
     toggleOptions() {
-        if(!this.state.optionsDialogStyles) {
+         if(!this.state.optionsDialogStyles) {
             this.setState({
                 optionsDialogCss: "dropdown-menu dropdown-menu-clean dropdown-click-ignore max-w-220 show",
                 optionsDialogStyles: {
@@ -49,6 +60,7 @@ class FileTableRow extends Component  {
                 optionParentCss: "clearfix"
             });
         } else {
+            
             this.setState({
                 optionsDialogCss: "dropdown-menu dropdown-menu-clean dropdown-click-ignore max-w-220",
                 optionsDialogStyles: null,
@@ -139,7 +151,7 @@ class FileTableRow extends Component  {
 
                     <div className={this.state.optionParentCss}>
 
-                        <a onClick={() => {this.toggleOptions()}} className="btn btn-sm btn-light rounded-circle js-stoppropag">
+                        <a onClick={() => {this.toggleOptions()}} onBlur={() => {this.toggleOptions()}} className="btn btn-sm btn-light rounded-circle js-stoppropag">
                             <span className="group-icon">
                                 <i className="fi fi-dots-vertical-full"></i>
                                 <i className="fi fi-close"></i>
@@ -149,9 +161,9 @@ class FileTableRow extends Component  {
                         <div className={this.state.optionsDialogCss} style={this.state.optionsDialogStyles}>
                             
                             {download_option}
-                            <div className="scrollable-vertical max-h-50vh">
+                            <div className="scrollable-vertical max-h-50vh" >
 
-                                <a className="dropdown-item text-truncate" style={{cursor:'pointer'}} onClick={() => { this.archiveTransaction() }}>
+                                <a className="dropdown-item text-truncate" style={{cursor:'pointer'}} onClick={() => { this.archiveTransaction() }} >
                                     <i className="fa fa-download"></i>
                                     Archive
                                 </a>
