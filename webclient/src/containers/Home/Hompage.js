@@ -108,7 +108,7 @@ class HomePage extends Component {
                             <div className="banner-body-content">
                                 <h2>Your data stored ... <br/>For Evermore!</h2>
                                 <p>Never pay to access your data again. Pay to Upload . Access FREE forever.</p>
-                                <Link to='/downloads' className="g-btn">Get Started</Link>
+                                <Link to='/downloads' className="g-btn">Get Started for FREE</Link>
                             </div>
                         </div>
                         <div className="col-md-6">
@@ -224,7 +224,7 @@ class HomePage extends Component {
         </div>
 
         
-        <div className="pricing-section pricing_4 pb-200" id="price-calculator">
+        {/* <div className="pricing-section pricing_4 pb-200" id="price-calculator">
             <div className="container">
                 <div className="row">		
                     <div className="offset-md-2 col-md-8">	
@@ -248,7 +248,7 @@ class HomePage extends Component {
 
                 </div>
             </div>	
-        </div>
+        </div> */}
 
 
         <div className="location-section pb-60" id="network-info">

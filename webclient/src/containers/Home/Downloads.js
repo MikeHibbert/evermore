@@ -2,12 +2,17 @@ import React, { Component } from 'react';
 import { Link } from 'react-router-dom';
 import Moment from 'react-moment';
 import DownloadFile from './Download';
+import settings from '../../app-config';
+import arweave from '../../arweave-config';
+const LimestoneApi = require('@limestonefi/api');
 
 
 class Downloads extends Component {
     state = {
-        downloading: false
+        downloading: false,
+        possible_upload_size_of_new_wallet: 0
     }
+
     componentDidMount() {
         document.body.classList.add('home-version-four');
         document.body.id = "home-version-four";
@@ -18,6 +23,16 @@ class Downloads extends Component {
             page_path: '/downloads',
             send_to: 'G-YSH82SBB2L'
           });
+
+        const that = this;
+        // 1000000
+        arweave.transactions.getPrice(1000000000).then(price => {
+            const ar_cost_of_one_mb = parseFloat(arweave.ar.winstonToAr(price));
+            const new_wallet_percentage = settings.NEW_WALLET_AMOUNT / ar_cost_of_one_mb;
+            const size_in_mb = Math.floor(1000000000 * new_wallet_percentage / 1000000);
+            
+            that.setState({possible_upload_size_of_new_wallet: size_in_mb});
+        })
     }
 
     componentWillUnmount() {
@@ -39,6 +54,7 @@ class Downloads extends Component {
     }, 20);
 
     render() {
+        const upload_amount = `${this.state.possible_upload_size_of_new_wallet}MB`;
         const windows_release = "yDQfu-9Pgrjv4HIyq5AWq2-yXL27-JZdo50hLnO_fkM";
 
         let windows_download_link = <DownloadFile 
@@ -117,7 +133,10 @@ class Downloads extends Component {
                     <div className="container">
                         <div className="row">
                             <div className="col-md-5">
-                                <div className="cloud-content">
+                                <div className="cloud-content banner-body-content">
+                                    <h2>Get started for FREE</h2>
+                                    <p>To get you started we'll provide you with a crypto wallet and some AR Coin which is enough to upload {upload_amount} of data for FREE.</p>
+                                    <p>Get started by downloading our FREE software which will take care of saving your data then get you started with your wallet and crypto!</p>
                                     <h2>Downloads</h2>
                                     <p>Download one of our desktop apps to begin saving your data to the blockchain.<br/><br/>
 
