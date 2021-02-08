@@ -111,8 +111,18 @@ class FoldersView extends Component {
                             <FolderTableRow file_info={path} onSelectFolder={e => { this.onSelectFolder(e) }} key={i} />
                         );
                     } else {
+                        const public_folders = this.state.previous_folders.filter(f => f == 'Public');
+
+                        let is_public = public_folders.length > 0 || this.state.folder_name == 'Public' ? true : false;
+
                         file_rows.push(
-                            <FileTableRow file_info={path} key={i} downloadFile={(e) => {this.download(e, file_info)}} />
+                            <FileTableRow 
+                                file_info={path} 
+                                key={i} 
+                                wallet={this.props.jwk}
+                                downloadFile={(e) => {this.download(e, file_info)}}
+                                is_public={is_public}
+                            />
                         );
                     }
                 }   
@@ -238,7 +248,7 @@ class FoldersView extends Component {
                                         <input style={{display: "none"}} ref="filename" type="file" name="uploader"></input>
                                     
 									<div className="container py-6">
-                                        {/* <div className="pull-right" style={{marginBottom: "10px"}}>
+                                        <div className="pull-left" style={{marginBottom: "10px"}}>
                                             <div className="btn-group">
                                                 <button type="button" onClick={e => {this.onToggleOptions()}} className="btn btn-primary">Actions</button>
                                                 <button type="button" onClick={e => {this.onToggleOptions()}} className="btn btn-primary dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -260,7 +270,7 @@ class FoldersView extends Component {
                                                     </a>
                                                 </div>
                                             </div> 
-                                        </div> */} 
+                                        </div> 
 											<div className="table-responsive">
 												<table className="table table-framed">
 													<thead>

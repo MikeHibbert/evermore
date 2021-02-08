@@ -1,15 +1,20 @@
-const fs = require('fs');
-const crypto = require('crypto');
-const stream = require('stream');
-const util = require('util');
-const NodeRSA = require('node-rsa');
-const NodeJWK = require('node-jwk');
-const zlib = require('zlib');
+import fs from 'fs';
+import crypto from 'crypto';
+import stream from 'stream';
+import util from 'util';
+import NodeRSA from 'node-rsa';
+import NodeJWK from 'node-jwk';
+import zlib from 'zlib';
 import { https } from 'follow-redirects';
-// import regeneratorRuntime from "regenerator-runtime";
-import { arweave } from './arweave-helpers';
+import Arweave from 'arweave/node';
 
-const pipeline = util.promisify(stream.pipeline); // for pipelining downloads
+const arweave = Arweave.init({
+    host: 'arweave.net',// Hostname or IP address for a Arweave host
+    port: 443,          // Port
+    protocol: 'https',  // Network protocol http or https
+    timeout: 20000,     // Network request timeouts in milliseconds
+    logging: false,     // Enable network request logging
+});
 
 export const MAX_CHUNK_SIZE = 256 * 1024;
 
@@ -44,82 +49,29 @@ export const encryptFile = async (wallet, jwk, file_path, dest_path) => {
     });
 }
 
-export const decryptFile = async (wallet, private_pem_key, start, file_path, dest_path) => {
+export const decryptFileData = async (wallet, transaction, blob, postMessage) => {
     return new Promise((resolve, reject) => {
-        let crc_result = '';
+        blob.arrayBuffer().then(data => {
+            let crc_result = '';
+            var dataSizeInBytes = data.byteLength - transaction.key_size;
 
-        var stats = fs.statSync(file_path);
-        var dataSizeInBytes = stats.size - start;
-
-        const private_key = PEM2RSAKey(private_pem_key);      
-
-        const readStream = fs.createReadStream(file_path, {encoding: null, start: start});
-        const writeableStream = fs.createWriteStream(dest_path, {encoding: null, highWaterMark: MAX_CHUNK_SIZE});
-
-        fs.open(file_path, 'r', (status, fd) => {
-            if (status) {
-                reject(status.message);
-                return;
-            }
-
-            var buffer = new Buffer.alloc(dataSizeInBytes);
-            fs.read(fd, buffer, 0, dataSizeInBytes, start, function(err, num, data) {
-                if(err) return reject(err);
+            getFileEncryptionKey(data, transaction, wallet).then(private_pem_key => {
+                const private_key = PEM2RSAKey(private_pem_key); 
                 
-                const decrypted_data = private_key.decrypt(data);
+                const data_to_decrypt = Buffer.from(data).slice(transaction.key_size);
 
-                writeableStream.write(decrypted_data);
-                writeableStream.close();
+                const decrypted_data = private_key.decrypt(data_to_decrypt);
 
-                return resolve({
-                    file_path: dest_path
-                });
+                return resolve(decrypted_data); 
             });
-        });
-
-        // readStream.on('readable', () => {
-        //     let data = readStream.read();
-
-        //     const chunks = [];
-
-        //     while(data != null) {
-        //         chunks.push(data);
-        //         data = readStream.read();
-        //     }
-
-        //     const decrypted_data = private_key.decrypt(Buffer.concat(chunks));
-        //     writeableStream.write(decrypted_data);
-        // });
-
-        // readStream.on('end', () => {
-        //     writeableStream.close();
-        //     return resolve({
-        //         file_path: dest_path
-        //     });
-        // });
-
-        // readStream.on('error', (err) => {
-        //     return reject(err);
-        // });      
+        });      
     });
 }
 
-export const getFileEncryptionKey = (file_path, transaction, wallet) => {
+export const getFileEncryptionKey = (data, transaction, wallet) => {
     return new Promise((resolve, reject) => {
-        const readStream = fs.createReadStream(file_path, {encoding: null, start: 0, end: transaction.key_size - 1});
-
-        const chunks = [];
-
-        readStream.on('readable', () => {
-            let data = readStream.read();
-
-            while(data != null) {
-                chunks.push(data);
-                data = readStream.read();
-            }
-
-            resolve(decryptDataWithWallet(Buffer.concat(chunks), wallet).toString('utf8'));
-        });
+        const key_data = data.slice(0, transaction.key_size);
+        resolve(decryptDataWithWallet(Buffer.from(key_data), wallet).toString('utf8'));
     });
 }
 
@@ -140,7 +92,7 @@ export const getOnlineDataEncryptionKey = async (transaction, callback, error_ca
             }
         });
     }).on('error', function(err) { // Handle errors
-        fs.unlink(dest); // Delete the file async. (But we don't check the result)
+        // fs.unlink(dest); // Delete the file async. (But we don't check the result)
         if (error_callback) error_callback(err.message);
     });
 }

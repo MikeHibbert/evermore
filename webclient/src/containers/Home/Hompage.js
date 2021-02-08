@@ -170,6 +170,7 @@ class HomePage extends Component {
                             <div className="section-content pt-20 pb-40">
                                 <iframe width="800" height="600" src="https://www.youtube.com/embed/gFCzB-b-GVo" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
                             </div>
+                            {/* <p>For more information on how you can also purchase additional Evermore Token click <a href='https://community.xyz/#s57IutYLp-lUJOaDzQBk2HgHTprdHir1brPom42Fmb4' target='_blank'>here.</a></p> */}
                         </div>
                     </div>	
                     <div className="offset-md-2"></div>	

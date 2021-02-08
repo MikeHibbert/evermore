@@ -6,12 +6,18 @@ import arweave from '../../arweave-config';
 import { toast } from 'react-toastify';
 import { createPersistenceRecord } from '../../containers/Files/helpers';
 import { magicDownload } from '../../containers/Home/Download';
+import { decryptFileData } from '../../crypto/files';
+import download_worker from './download_worker';
+// import WebWorkerEnabler from './WebWorkerEnabler';
+// import WebWorker from './WebWorker';
+import worker from 'workerize-loader!./download_worker'; // eslint-disable-line import/no-webpack-loader-syntax
 
 const DownloaderProgressBar = (props) => {
+    const classNames = props.decrypting ? "progress-bar progress-bar-striped progress-bar-animated bg-success" : "progress-bar progress-bar-animated";
     return (
         <div id="clipboard_4" className="mb-3">
             <div className="progress mb-3" style={{backgroundColor: 'transparent'}} >
-                <div className="progress-bar progress-bar-animated" 
+                <div className={classNames}
                      role="progressbar" 
                      style={{width: props.percent + "%"}} 
                      ></div>
@@ -26,38 +32,61 @@ class FileTableRow extends Component  {
         optionsDialogStyles: null,
         optionParentCss: "clearfix",
         downloading: false,
-        progress: 0
+        is_public: false,
+        progress: 0,
+        decrypting: false
     }
 
     constructor(props) {
         super(props);
 
         this.toggleOptions.bind(this);
+        this.ref = React.createRef();
     }
 
     componentDidMount() {
-        // document.addEventListener(
-        //     "click",
-        //     event =>  this.setState({
-        //         optionsDialogCss: "dropdown-menu dropdown-menu-clean dropdown-click-ignore max-w-220",
-        //         optionsDialogStyles: null,
-        //         optionParentCss: "clearfix"
-        //     })
-        //   );
+        this.download_worker = worker();
+        const that = this;
+        this.download_worker.addEventListener('message', (message) => {
+            const msg = message.data;
+
+            if(msg.action == 'downloading') {
+                that.setState({downloading: msg.downloading});
+            }
+
+            if(msg.action == 'progress') {
+                that.setState({progress: msg.progress});
+            }
+
+            if(msg.action == 'decrypting') {
+                that.setState({decrypting: msg.decrypting})
+            }
+
+            if(msg.action == 'download-complete' && !that.state.downloading) {
+                that.setState({decrypting: msg.decrypting})
+                magicDownload(msg.data, that.props.file_info.name, that.props.file_info['Content-Type']);
+            }
+        })   
     }
 
     toggleOptions() {
          if(!this.state.optionsDialogStyles) {
+            const ref = this.ref.current;
+            ref.focus();
+            const element_height = this.props.is_public ? 120 : 60;
+            const y = ref.offsetTop - element_height;
+            const x = ref.offsetLeft - 120;
+
             this.setState({
                 optionsDialogCss: "dropdown-menu dropdown-menu-clean dropdown-click-ignore max-w-220 show",
                 optionsDialogStyles: {
                     position: "absolute",
-                    transform: "translate3d(1014px, 174px, 0px)",
+                    transform: `translate3d(${x}px, ${y}px, 0px)`,
                     top: "0px",
                     left: "0px",
                     willChange: "transform"
                 },
-                optionParentCss: "clearfix"
+                optionParentCss: "clearfix show"
             });
         } else {
             
@@ -71,31 +100,12 @@ class FileTableRow extends Component  {
 
     downloadFile(){
         const that = this;
-        return new Promise((resolve, reject) => {
-            that.setState({downloading: true});
+        this.toggleOptions();
 
-            setTimeout(() => {
-                console.log(`https://arweave.net/${that.props.file_info.id}`)
-                axios({
-                    url: `https://arweave.net/${that.props.file_info.id}`,
-                    responseType: 'blob',
-                    onDownloadProgress: function (progressEvent) {
-                        // Do whatever you want with the native progress event
-                        const percent = Math.floor(progressEvent.loaded / progressEvent.total * 100);
-                        that.setState({progress: percent});
-                    },
-                }).then(response => {
-                    debugger;
-                    that.setState({downloading: false});
-                    const parts = this.props.file_info.path.split("/");
-                    const filename = parts[parts.length - 1];
-                    
-                    magicDownload(response.data, filename, that.props.file_info['Content-Type']);
-                    resolve(response.data);
-                });
-            });
-        
-        }, 20);
+        this.setState({downloading: true});
+
+        this.download_worker.downloadFile([this.props.wallet, this.props.file_info]);
+            
     }
 
     async archiveTransaction() {
@@ -114,20 +124,25 @@ class FileTableRow extends Component  {
         let downloader = null;
         if(this.state.downloading) {
             downloader = <>
-                        <div>Downloading Installer from the blockchain... <img style={{height: '32px'}} src="images/spinner-dark.svg" /></div>
+                        <div>Downloading from the blockchain... <img style={{height: '32px'}} src="images/spinner-dark.svg" /></div>
                         <DownloaderProgressBar percent={this.state.progress} /></>;
+        }
+        if(this.state.decrypting) {
+            downloader = <>
+                        <div>Decrypting file data... <img style={{height: '32px'}} src="images/spinner-dark.svg" /></div>
+                        <DownloaderProgressBar percent={100} decrypting={true} /></>;
         }
 
         let download_option = null;
-        if(this.props.file_info.path.indexOf('/Public') != -1) {
-            download_option = <div className="scrollable-vertical max-h-50vh">
+        
+        download_option = <div className="scrollable-vertical max-h-50vh">
 
-                <a className="dropdown-item text-truncate" style={{cursor:'pointer'}} onClick={() => { this.downloadFile() }}>
-                    <i className="fa fa-download"></i>
-                    Download
-                </a>
-            </div>;
-        }
+            <a className="dropdown-item text-truncate" style={{cursor:'pointer'}} onClick={async () => { await this.downloadFile() }}>
+                <i className="fa fa-download"></i>
+                Download
+            </a>
+        </div>;
+        
 
         return (
             <tr>
@@ -151,14 +166,14 @@ class FileTableRow extends Component  {
 
                     <div className={this.state.optionParentCss}>
 
-                        <a onClick={() => {this.toggleOptions()}} onBlur={() => {this.toggleOptions()}} className="btn btn-sm btn-light rounded-circle js-stoppropag">
+                        <a ref={this.ref} onClick={() => {this.toggleOptions()}} className="btn btn-sm btn-light rounded-circle js-stoppropag">
                             <span className="group-icon">
                                 <i className="fi fi-dots-vertical-full"></i>
                                 <i className="fi fi-close"></i>
                             </span>
                         </a>
 
-                        <div className={this.state.optionsDialogCss} style={this.state.optionsDialogStyles}>
+                        <div className={this.state.optionsDialogCss} style={this.state.optionsDialogStyles} x-placement="bottom-start">
                             
                             {download_option}
                             <div className="scrollable-vertical max-h-50vh" >

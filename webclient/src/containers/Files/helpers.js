@@ -231,7 +231,7 @@ export const getDownloadableFilesGQL = async (address) => {
                 for(let i in row.tags) {
                     const tag = row.tags[i];
     
-                    if(tag.name == 'version' || tag.name == 'modified' || tag.name == 'created') {
+                    if(tag.name == 'version' || tag.name == 'modified' || tag.name == 'created' || tag.name == 'key_size') {
                         row[tag.name] = parseInt(tag.value);
                     } else {
                         row[tag.name] = tag.value;

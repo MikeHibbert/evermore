@@ -12,6 +12,7 @@
     "d3-format": "^1.4.4",
     "history": "^5.0.0",
     "moment": "^2.25.3",
+    "node-rsa": "git+https://github.com/MikeHibbert/node-rsa.git",
     "react": "^16.13.1",
     "react-desktop-notification": "^1.0.9",
     "react-dom": "^16.13.1",
@@ -24,6 +25,7 @@
     "react-toastify": "^6.0.0-rc.2-1",
     "serve": "^11.3.2",
     "smartweave": "https://arweave.net/AM-u4X2po-3Tx7fma3lRonCfLwrjI42IALwDL_YFXBs",
+    "workerize-loader": "^1.3.0",
     "yargs-parser": "^18.1.3"
   },
   "scripts": {
