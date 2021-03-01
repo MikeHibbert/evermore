@@ -8,6 +8,7 @@ import zlib from 'zlib';
 import { https } from 'follow-redirects';
 import Arweave from 'arweave/node';
 
+
 const arweave = Arweave.init({
     host: 'arweave.net',// Hostname or IP address for a Arweave host
     port: 443,          // Port
@@ -16,55 +17,102 @@ const arweave = Arweave.init({
     logging: false,     // Enable network request logging
 });
 
+function concatTypedArrays(a, b) { // a, b TypedArray of same type
+    var c = new (a.constructor)(a.length + b.length);
+    c.set(a, 0);
+    c.set(b, a.length);
+    return c;
+}
+
+function concatBuffers(a, b) {
+    return concatTypedArrays(
+        new Uint8Array(a.buffer || a), 
+        new Uint8Array(b.buffer || b)
+    ).buffer;
+}
+
 export const MAX_CHUNK_SIZE = 256 * 1024;
 
-export const encryptFile = async (wallet, jwk, file_path, dest_path) => {
-    return new Promise((resolve, reject) => {
-        let crc_result = '';
+function Utf8ArrayToStr(array) {
+    var out, i, len, c;
+    var char2, char3;
 
+    out = "";
+    len = array.length;
+    i = 0;
+    while(i < len) {
+    c = array[i++];
+    switch(c >> 4)
+    { 
+      case 0: case 1: case 2: case 3: case 4: case 5: case 6: case 7:
+        // 0xxxxxxx
+        out += String.fromCharCode(c);
+        break;
+      case 12: case 13:
+        // 110x xxxx   10xx xxxx
+        char2 = array[i++];
+        out += String.fromCharCode(((c & 0x1F) << 6) | (char2 & 0x3F));
+        break;
+      case 14:
+        // 1110 xxxx  10xx xxxx  10xx xxxx
+        char2 = array[i++];
+        char3 = array[i++];
+        out += String.fromCharCode(((c & 0x0F) << 12) |
+                       ((char2 & 0x3F) << 6) |
+                       ((char3 & 0x3F) << 0));
+        break;
+    }
+    }
+
+    return out;
+}
+
+export const encryptFile = async (wallet, jwk, data, progressMessage) => {
+    return new Promise(async (resolve, reject) => {
         const key = wallet2PEM(jwk);
         const private_key = PEM2RSAKey(key.private); 
         const wallet_key = wallet2PEM(wallet);        
-        const writeableStream = fs.createWriteStream(dest_path, {encoding: null, highWaterMark: MAX_CHUNK_SIZE});
 
         const decode_key = encryptDataWithRSAKey(key.private, wallet_key.private);
 
-        writeableStream.write(Buffer.from(decode_key, 'binary'));
+        const encrypted_data = private_key.encryptWithProgressMessages(data, progressMessage);
 
-        fs.readFile(file_path, {encoding: null}, (err, data) => {
-            if (err) reject(err);
+        debugger;
 
-            const encrypted_data = private_key.encrypt(data);
+        const decrypted_data = private_key.decrypt(encrypted_data);
 
-            writeableStream.write(encrypted_data);
+        // const buffer = decode_key + encrypted_data;
 
-            writeableStream.close();
-            
-            resolve({
-                file_path: dest_path, 
-                key_size: Buffer.byteLength(decode_key, 'binary'), 
-                key: decode_key
-            });
-        });       
+        const buffer = arweave.utils.concatBuffers([Buffer.from(decode_key, 'binary'), encrypted_data]);
+        // const encr = concatBuffers(Buffer.from(decode_key, 'binary'), encrypted_data);
+
+        resolve({
+            key_size: Buffer.byteLength(decode_key, 'binary'), 
+            encrypted_data: buffer,
+            data: data,
+            key: decode_key
+        });
+     
     });
 }
 
-export const decryptFileData = async (wallet, transaction, blob, postMessage) => {
+export const decryptFileData = async (wallet, transaction, data, postMessage) => {
     return new Promise((resolve, reject) => {
-        blob.arrayBuffer().then(data => {
-            let crc_result = '';
-            var dataSizeInBytes = data.byteLength - transaction.key_size;
+        data = Buffer.from(data, 'binary');
+        let crc_result = '';
+        var dataSizeInBytes = data.byteLength - transaction.key_size;
 
-            getFileEncryptionKey(data, transaction, wallet).then(private_pem_key => {
-                const private_key = PEM2RSAKey(private_pem_key); 
-                
-                const data_to_decrypt = Buffer.from(data).slice(transaction.key_size);
+        getFileEncryptionKey(data, transaction, wallet).then(private_pem_key => {
+            const private_key = PEM2RSAKey(private_pem_key); 
+            
+            const data_to_decrypt = data.slice(transaction.key_size);
 
-                const decrypted_data = private_key.decrypt(data_to_decrypt);
+            debugger;
 
-                return resolve(decrypted_data); 
-            });
-        });      
+            const decrypted_data = private_key.decryptWithProgressMessages(data_to_decrypt, (msg) => {postMessage(msg)});
+
+            return resolve(decrypted_data); 
+        });
     });
 }
 
@@ -102,7 +150,7 @@ export const decryptDataWithWallet = (buff, wallet) => {
 
     const key = PEM2RSAKey(walletPEM.private);
 
-    return key.decrypt(buff, 'binary');
+    return key.decrypt(Buffer.from(buff, 'binary'), 'binary');
 }
 
 export const encryptDataWithRSAKey = (data, private_pem_key) => {

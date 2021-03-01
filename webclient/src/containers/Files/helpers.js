@@ -119,8 +119,6 @@ export const getFiles = async (address) => {
         const file_info = tx_rows[i];
         const child_matches = folders[''].children.filter((row) => row.file === file_info.file);
 
-        debugger;
-
         if(child_matches.length == 0) {
             let path_parts = [];
             if(file_info.path.indexOf('\\') != -1) {
@@ -277,20 +275,18 @@ export const getDownloadableFilesGQL = async (address) => {
         });
 
         if(current_persistence_state == 'available') {
-            let path_parts = [];
+            let path_parts = ['', available_row.file];
 
             if(available_row.file.indexOf('/') != -1) {
                 path_parts = available_row.file.split('/')
             }
             
-            if(path_parts.length > 1) {
-                if(folders.hasOwnProperty(path_parts[0])) {
-                    addToFolderChildrenOrUpdate(path_parts, 0, available_row, folders[path_parts[0]], 0);                
-                } else {
-                    folders[path_parts[0]] = createRootFolder(path_parts, 0, available_row);
-                }
-                
-            } 
+
+            if(folders.hasOwnProperty(path_parts[0])) {
+                addToFolderChildrenOrUpdate(path_parts, 0, available_row, folders[path_parts[0]], 0);                
+            } else {
+                folders[path_parts[0]] = createRootFolder(path_parts, 0, available_row);
+            }
         }    
     });
 
@@ -395,7 +391,7 @@ export const createPersistenceRecord = async (synced_file, deleted, wallet_jwk) 
     transaction.addTag('modified', synced_file.modified);
     transaction.addTag('hostname', synced_file.hostname);
     transaction.addTag('version', synced_file.version);
-    debugger;
+
     transaction.addTag('action_tx_id', synced_file.tx_id);
     
     if(deleted) {

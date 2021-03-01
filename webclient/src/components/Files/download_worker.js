@@ -2,28 +2,6 @@ import axios from 'axios';
 import { decryptFileData } from '../../crypto/files';
 
 export const downloadFile = async function(e) { // eslint-disable-line no-restricted-globals
-    // if (!e) return;
-
-    // const users = [];
-
-    // const userDetails = {
-    // 	name: 'Jane Doe',
-    // 	email: 'jane.doe@gmail.com',
-    // 	id: 1
-    // };
-
-    // for (let i = 0; i < 10000000; i++) {
-
-    // 	userDetails.id = i++
-    // 	userDetails.dateJoined = Date.now()
-
-    // 	users.push(userDetails);
-    // }
-
-    // postMessage(users);
-
-    
-
     const wallet = e[0]
     const file_info = e[1];    
     axios({
@@ -43,9 +21,12 @@ export const downloadFile = async function(e) { // eslint-disable-line no-restri
 
         if(file_info.domain == 'Private') {
             postMessage({action: 'decrypting', decrypting: true});
-            decryptFileData(wallet, file_info, data, postMessage).then(decrypted_data => {
+            data.arrayBuffer().then(buff => {
+                decryptFileData(wallet, file_info, buff, postMessage).then(decrypted_data => {
                     postMessage({action: 'download-complete', decrypting: false, data: new Blob([decrypted_data])});
-            });
+                });
+            })
+            
             
         } else {
             postMessage({action: 'download-complete', data: data, decrypting: false,});

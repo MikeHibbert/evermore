@@ -77,14 +77,14 @@ class Auth extends Component {
 
             <div className="row">
 
-              <div className="col-12 col-md-6 mt-4">
+              {/* <div className="col-12 col-md-6 mt-4">
                 <button type="submit" className="btn btn-primary btn-block transition-hover-top">
                   Sign In
                 </button>
-              </div>
+              </div> */}
 
               <div className="col-12 col-md-6 mt-4 text-align-end text-center-xs">
-              <a href="https://tokens.arweave.org/" target="_blank">Need some FREE AR tokens?</a>
+              <a href="https://tokens.arweave.org/" className="btn btn-primary btn-block transition-hover-top" target="_blank">Get your FREE AR wallet from Arweave.org</a>
               </div>
 
             </div>

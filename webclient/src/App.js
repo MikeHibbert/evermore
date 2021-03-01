@@ -273,7 +273,10 @@ class App extends Component {
                                                                   location={this.props.location}
                                                                   files={this.state.files} 
                                                                   wallet_address={this.state.wallet_address} 
-                                                                  jwk={this.state.jwk} />} />,
+                                                                  wallet_balance={this.state.balance}
+                                                                  jwk={this.state.jwk} 
+                                                                  addSuccessAlert={this.addSuccessAlert}
+                                                                  addErrorAlert={this.addErrorAlert} />} />,
       <Route key='archived' path="/archived" exact component={() => <DeletedView persistence_records={this.state.persistence_records} wallet_address={this.state.wallet_address} jwk={this.state.jwk} />} />,
       <Route key='search' path="/search" exact component={() => <SearchPage wallet_address={this.state.wallet_address} jwk={this.state.jwk} />} />,
       <Route key='logout' path="/logout" exact component={() => <Logout onLogout={this.disconnectWallet.bind(this)} addSuccessAlert={this.addSuccessAlert} expandContentArea={() => {this.expandContentArea()}} />} />
@@ -285,7 +288,7 @@ class App extends Component {
                         <div id="wrapper_content" className="d-flex flex-fill">
                           {side_menu}
                           <div id="middle" className="flex-fill">
-                          {routes}
+                            {routes}
                           </div>
                         </div>
                       </div>;
@@ -312,7 +315,7 @@ class App extends Component {
     }
 
     if(this.state.isAuthenticated && this.props.location.pathname === '/login') {
-      routes.push(<Redirect to='/' />);
+      routes.push(<Redirect to='/files' />);
     }
 
     

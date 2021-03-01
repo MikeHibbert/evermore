@@ -15,7 +15,7 @@ import worker from 'workerize-loader!./download_worker'; // eslint-disable-line 
 const DownloaderProgressBar = (props) => {
     const classNames = props.decrypting ? "progress-bar progress-bar-striped progress-bar-animated bg-success" : "progress-bar progress-bar-animated";
     return (
-        <div id="clipboard_4" className="mb-3">
+        <div className="col-12 mb-3">
             <div className="progress mb-3" style={{backgroundColor: 'transparent'}} >
                 <div className={classNames}
                      role="progressbar" 
@@ -59,11 +59,17 @@ class FileTableRow extends Component  {
             }
 
             if(msg.action == 'decrypting') {
-                that.setState({decrypting: msg.decrypting})
+                if(msg.hasOwnProperty('decrypting')) {
+                    that.setState({decrypting: msg.decrypting, progress: 0});
+                }
+                if(msg.hasOwnProperty('progress')) {
+                    that.setState({progress: msg.progress});
+                }
             }
 
             if(msg.action == 'download-complete' && !that.state.downloading) {
                 that.setState({decrypting: msg.decrypting})
+                debugger;
                 magicDownload(msg.data, that.props.file_info.name, that.props.file_info['Content-Type']);
             }
         })   
@@ -114,23 +120,33 @@ class FileTableRow extends Component  {
             toast(`${this.props.file_info.file} is now being archived`, { type: toast.TYPE.SUCCESS }); 
     }
 
+
+    bytesToSize(bytes) {
+        var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+        if (bytes == 0) return '0 Byte';
+        var i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+        return Math.round(bytes / Math.pow(1024, i), 2) + '' + sizes[i];
+     }
+
     render() {
 
         const parts = this.props.file_info.path.split("/");
         const filename = parts[parts.length - 1];
+        const file_size = this.bytesToSize(parseInt(this.props.file_info.file_size));
+        const viewblock_url = `https://viewblock.io/arweave/tx/${this.props.file_info.id}`;
 
         const last_modified = <Moment format={"DD/MM/YYYY HH:mm"}>{this.props.file_info.modified}</Moment>;
 
         let downloader = null;
         if(this.state.downloading) {
             downloader = <>
-                        <div>Downloading from the blockchain... <img style={{height: '32px'}} src="images/spinner-dark.svg" /></div>
+                        <div className="col-12">Downloading from the blockchain... <img style={{height: '32px'}} src="images/spinner-dark.svg" /></div>
                         <DownloaderProgressBar percent={this.state.progress} /></>;
         }
         if(this.state.decrypting) {
             downloader = <>
-                        <div>Decrypting file data... <img style={{height: '32px'}} src="images/spinner-dark.svg" /></div>
-                        <DownloaderProgressBar percent={100} decrypting={true} /></>;
+                        <div className="col-12">Decrypting file data... <img style={{height: '32px'}} src="images/spinner-dark.svg" /></div>
+                        <DownloaderProgressBar percent={this.state.progress} decrypting={true} /></>;
         }
 
         let download_option = null;
@@ -147,11 +163,14 @@ class FileTableRow extends Component  {
         return (
             <tr>
                 <td>
-                        {filename}
+                        {filename} 
                         {downloader}
                     <span className="d-block text-muted fs--13">FROM: {this.props.file_info.hostname}</span>
                     {/* <span className="d-block text-muted fs--13">VERSION: {this.props.file_info.version}</span> */}
 
+                </td>
+                <td>
+                    {file_size}
                 </td>
 
 
@@ -178,11 +197,18 @@ class FileTableRow extends Component  {
                             {download_option}
                             <div className="scrollable-vertical max-h-50vh" >
 
+                                <a className="dropdown-item text-truncate" style={{cursor:'pointer'}} href={viewblock_url} target="_blank">
+                                    <i className="fa fa-download"></i>
+                                    Transaction Details
+                                </a>
+                            </div>
+                            {/* <div className="scrollable-vertical max-h-50vh" >
+
                                 <a className="dropdown-item text-truncate" style={{cursor:'pointer'}} onClick={() => { this.archiveTransaction() }} >
                                     <i className="fa fa-download"></i>
                                     Archive
                                 </a>
-                            </div>
+                            </div> */}
 
                         </div>
 

@@ -1,62 +1,10 @@
+import settings from '../app-config';
+import { platform } from 'os';
 const fs = require('fs');
 const glob = require('glob');
 const path = require('path');
 const checkDiskSpace = require('check-disk-space');
 const { crc32 } = require('crc');
-// import regeneratorRuntime from "regenerator-runtime";
-// import "regenerator-runtime/runtime";
-import {AddFileToDownloads, GetSyncedFolders, GetExclusions} from '../db/helpers';
-import arweave from '../arweave-config';
-import {settings} from '../config';
-import { platform } from 'os';
-
-
-export const getFileUpdatedDate = (file_path) => {
-    const stats = fs.statSync(file_path);
-    return stats.mtime.getTime();
-}
-
-export const setFileUpdatedDatetime = async (file_path, timestamp) => {
-    const datetime = new Date(timestamp);
-    fs.utimesSync(file_path, datetime, datetime);
-}
-
-export const fileHasBeenModified = (file_path, modified) => {
-    const current_modified = getFileUpdatedDate(file_path);
-
-    if(current_modified > modified) {
-        return true;
-    }
-
-    return false;
-}
-
-export const getRalativePath = (path) => {
-    const sync_folders = GetSyncedFolders();
-
-    let relative_path = path;
-
-    for(let i in sync_folders) {
-        const sync_folder = sync_folders[i];
-        if(path.indexOf(sync_folder) != -1) {
-            relative_path = path.replace(sync_folder, '');
-        }
-    }
-
-    return relative_path;
-}
-
-export const getSystemPath = () => {
-    const sync_folders = GetSyncedFolders();
-
-    return path.normalize(sync_folders[0]);
-}
-
-export const isPublicFile = (file_path) => {
-    const system_path = getSystemPath();
-
-    return file_path.indexOf(path.join(system_path, 'Public')) != -1;    
-}
 
 export function addToFolderChildren(path_parts, index, file_info, path_obj) {
     if(index == path_parts.length - 1) {
@@ -83,94 +31,6 @@ export function addToFolderChildren(path_parts, index, file_info, path_obj) {
 
         }
     }
-}
-
-export const getOnlineFilesAndFoldersStructure = async (address) => {
-    const tx_ids = await arweave.arql({
-        op: "and",
-        expr1: {
-            op: "equals",
-            expr1: "from",
-            expr2: address
-        },
-        expr2: {
-            op: "equals",
-            expr1: "App",
-            expr2: settings.APP_NAME
-        }
-    });
-
-    const tx_rows = await Promise.all(tx_ids.map(async (tx_id) => {
-    
-        let tx_row = {id: tx_id, checked: true};
-        
-        var tx = await arweave.transactions.get(tx_id);
-        
-        tx.get('tags').forEach(tag => {
-            let key = tag.get('name', { decode: true, string: true });
-            let value = tag.get('value', { decode: true, string: true });
-            
-            if(key == "modified" || key == "version") {
-                tx_row[key] = parseInt(value);
-            } else {
-                tx_row[key] = value;
-            }
-            
-        });   
-
-        return tx_row
-    }));
-
-    const folders = {'':{ index: -1, id: "root", type: "folder", name: '', children: []}};    
-
-    for(let i in tx_rows) {
-        const file_info = tx_rows[i];
-
-        let path_parts = [];
-        if(file_info.path.indexOf('\\') != -1) {
-            path_parts = file_info.path.split('\\')
-        } 
-
-        if(file_info.path.indexOf('/') != -1) {
-            path_parts = file_info.path.split('/')
-        }
-        
-        if(path_parts.length > 1) {
-            if(folders.hasOwnProperty(path_parts[0])) {
-                addToFolderChildren(path_parts, 0, file_info, folders[path_parts[0]], 0);                
-            }           
-        }      
-    }
-
-    console.log(JSON.stringify(folders));
-
-    return folders;
-}
-
-const getDirectoriesAndFiles = function (src, callback) {
-    if(process.platform == "win32") {
-        src = src.split(":")[1].replace(/\\/g, '/');
-    }
-
-    return glob(src + '/**/*', callback);
-};
-
-export const getOfflineFilesAndFoldersStructure = (callback) => {
-    const sync_folders = GetSyncedFolders();
-
-    if(sync_folders.length == 0) callback([]);
-    
-    const glob_result = getDirectoriesAndFiles(sync_folders[0], (err, file_paths) => {
-        if (err) {
-            console.log('Error', err);
-        } 
-
-        debugger;
-
-        const path_infos = convertPathsToInfos(sync_folders[0], file_paths, true);
-
-        callback(path_infos);
-    });
 }
 
 export const convertPathsToInfos = (sync_folder, file_paths, is_root) => {
@@ -541,61 +401,6 @@ export const pathFoundInFolderPathInfos = (path, path_infos) => {
     return path_found;
 }
 
-
-export const pathExcluded = (file_path) => {
-    const exclusions = GetExclusions();
-    const sync_folders = GetSyncedFolders();
-
-    if(sync_folders.length == 0) {
-        return true; // if there are no sync folder then it cant be included!
-    }
-
-    const relative_path = path.normalize(file_path.replace(sync_folders[0], ''));
-    // check for matching full file name paths
-    if(pathFoundInPathInfos(relative_path, exclusions[''])) {
-        return true;
-    }
-
-    // check if path is in one of the excluded folders
-    if(pathFoundInFolderPathInfos(relative_path, exclusions[''])) {
-        return true;
-    }
-
-    return false;
-}
-
-export const updateInclusionsAndExclusionOverlayPaths = (notify_method) => {
-    const sync_folders = GetSyncedFolders();
-
-    if(sync_folders.length == 0) return;
-
-    getOfflineFilesAndFoldersStructure((offline_infos) => {
-        unregisterPaths(sync_folders[0], offline_infos[''], notify_method);
-    });
-}
-
-export const unregisterPaths = (sync_folder, path_infos, notify_method) => {
-    for(let i in path_infos.children) {
-        const pa = path_infos.children[i];
-        
-        const folder_path = path.join(path.normalize(sync_folder), pa.path);
-        notify_method(`UNREGISTER_PATH:${folder_path}\n`);
-
-        if(pa.type == 'folder') {
-            unregisterPaths(sync_folder, pa, notify_method);
-        }
-    }
-}
-
-
-export const systemHasEnoughDiskSpace = async (required_space) => {
-    const sync_folders = GetSyncedFolders();
-
-    const disk_space = await checkDiskSpace(sync_folders[0]);
-
-    return disk_space >= required_space;
-}
-
 export const createCRCFor = (file_path) => {
     return new Promise((resolve, reject) => {
         let crc_result = '';
@@ -617,62 +422,10 @@ export const createCRCFor = (file_path) => {
     });
 }
 
-export const createTempFolder = () => {
-    const sync_folders = GetSyncedFolders();
-
-    if(sync_folders.length > 0) {
-        const temp_folder = path.join(sync_folders[0], 'tmp');
-     
-        if(!fs.accessSync(temp_folder, fs.constants.F_OK)) {
-            fs.mkdirSync(temp_folder);
-        }
-    }
-}
-
-export const removeTempFolder = () => {
-    const sync_folders = GetSyncedFolders();
-
-    if(sync_folders.length > 0) {
-        const temp_folder = path.join(sync_folders[0], 'tmp');
-     
-        if(fs.accessSync(temp_folder, fs.constants.F_OK)) {
-            fs.unlinkSync(temp_folder);
-        }
-    }
-}
-
-export const compareLocalFileInfoWithOnlineFileInfo = (file_info, online_path_info) => {
-    // check if modified date is newer on local path_info
-    // const localCRC = createCRCFor(file_info.path);
-
-    if(file_info.modified <= online_path_info.modified) {
-        // if(localCRC != online_path_info.CRC) {
-            AddFileToDownloads(online_path_info); // download the online version as its newer
-        // }
-    }
-    // } else {
-    //     if(localCRC != online_path_info.CRC) {
-    //         AddPendingFile(file_info); // add the newer local version to the upload queue
-    //     }
-    // }
-}
-
 export const normalizePath = (file_path) => {
     if(process.platform == 'win32') {
         return file_path.split('\\').join('/')
     }
 
     return file_path
-}
-
-export const denormalizePath = (file_path) => {
-    const sync_folder = GetSyncedFolders()[0];
-
-    let denormalised_path = process.platform == 'win32' ? file_path.split('/').join('\\') : file_path;
-
-    if(denormalised_path.indexOf(sync_folder) == -1) {
-        denormalised_path = path.join(sync_folder, denormalised_path);
-    }
-    
-    return denormalised_path;
 }
