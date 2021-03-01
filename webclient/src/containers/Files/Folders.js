@@ -7,7 +7,7 @@ import {SaveUploader, RemoveUploader, addFolderInfoToPathInfos} from './helpers'
 import { Link } from 'react-router-dom';
 import AddFolderDialog from './AddFolderDialog';
 import {addToFolderChildrenOrUpdate} from './helpers';
-import worker from 'workerize-loader!./upload.worker';  
+import worker from 'workerize-loader!./upload.worker';  // eslint-disable-line import/no-webpack-loader-syntax
 import { toast } from 'react-toastify';
 import { sendUsagePayment, uploadFile } from '../../crypto/arweave-helpers';
 import Arweave from 'arweave/web';
