@@ -59,16 +59,31 @@ const PEM2RSAKey = PEM => {
 };
 
 axios({
-    url: `https://arweave.net/ShbRfe-1mpqg5IRrsOsFLQ1lvsKWttLuzDQ1pemcItU`,
+    url: `https://arweave.net/PsNPufdAcuisKyXfuKjKN6Kb2JdTdxfPrda3FKueIns`,
     responseType: 'arraybuffer'
 }).then(response => {
     let data = response.data;  
 
     console.log(typeof data);
 
+    getFileEncryptionKey(data, {key_size: 3584}, wallet).then(private_pem_key => {
+        console.log(private_pem_key);
+
+        const private_key = PEM2RSAKey(private_pem_key); 
+
+        debugger;
+        
+        const data_to_decrypt = data.slice(3584);
+
+        const decrypted_data = private_key.decrypt(data_to_decrypt);
+
+        
+        console.log(decrypted_data.toString());
+    });
+
     // let test_data = fs.readFileSync('community-logo.png.enc', {encoding: 'binary'});
 
-    const readStream = fs.createReadStream('test_data.txt', {encoding: null});
+    const readStream = fs.createReadStream('community-logo.png.enc', {encoding: null});
 
     const chunks = [];
     readStream.on('readable', () => {
@@ -80,6 +95,8 @@ axios({
         }
 
         const buff = Buffer.concat(chunks);
+
+        debugger;
 
         getFileEncryptionKey(buff, {key_size: 3584}, wallet).then(private_pem_key => {
             console.log(private_pem_key);
