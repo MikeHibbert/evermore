@@ -7,7 +7,7 @@ import {SaveUploader, RemoveUploader, addFolderInfoToPathInfos} from './helpers'
 import { Link } from 'react-router-dom';
 import AddFolderDialog from './AddFolderDialog';
 import {addToFolderChildrenOrUpdate} from './helpers';
-import worker from './upload.worker';  
+import worker from 'workerize-loader!./upload.worker';  // eslint-disable-line import/no-webpack-loader-syntax
 import { toast } from 'react-toastify';
 import { sendUsagePayment, uploadFile } from '../../crypto/arweave-helpers';
 import Arweave from 'arweave/web';
@@ -381,7 +381,7 @@ class FoldersView extends Component {
                                         <input style={{display: "none"}} ref="filename" type="file" name="uploader" onChange={(e) => { this.onUploadFileHandler(e)}}></input>
                                     
 									<div className="container py-6">
-                                        <div className="pull-left" style={{marginBottom: "10px"}}>
+                                        {/* <div className="pull-left" style={{marginBottom: "10px"}}>
                                             <div className="btn-group">
                                                 <button type="button" onClick={e => {this.onToggleOptions()}} className="btn btn-primary">Actions</button>
                                                 <button type="button" onClick={e => {this.onToggleOptions()}} className="btn btn-primary dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -403,7 +403,7 @@ class FoldersView extends Component {
                                                     </a>
                                                 </div>
                                             </div> 
-                                        </div> 
+                                        </div>  */}
 											<div className="table-responsive">
 												<table className="table table-framed">
 													<thead>

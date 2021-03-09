@@ -70,6 +70,14 @@ class Downloads extends Component {
                                     tx_id={windows_release} 
                                     filename="Evermore-macos-installer-x64-0.9.2.pkg" 
                                     setDownloading={(downloading) => { this.setState({downloading: downloading}); }} />;
+
+        macos_download_link = <><div className="cloud-btn pb-30">
+                                <ul>
+                                    <li>
+                                        <a style={{cursor: 'pointer'}} href='/Evermore-macos-installer-x64-0.9.2-1.pkg'>Download Mac OS X Installer</a>
+                                    </li>
+                                </ul>
+                            </div></>;
         
         return (
             <>
