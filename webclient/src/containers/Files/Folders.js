@@ -6,6 +6,7 @@ import settings from '../../app-config';
 import {SaveUploader, RemoveUploader, addFolderInfoToPathInfos} from './helpers';
 import { Link } from 'react-router-dom';
 import AddFolderDialog from './AddFolderDialog';
+import AddNFTDialog from './AddNFTDialog';
 import {addToFolderChildrenOrUpdate} from './helpers';
 import worker from 'workerize-loader!./upload.worker';  // eslint-disable-line import/no-webpack-loader-syntax
 import { toast } from 'react-toastify';
@@ -54,7 +55,8 @@ class FoldersView extends Component {
         optionsClasses: "dropdown-menu",
         uploadPercentComplete: 0,
         uploadingFile: false,
-        subfolder_dialog: false
+        subfolder_dialog: false,
+        nft_dialog: false
     }
 
     constructor(props) {
@@ -94,11 +96,9 @@ class FoldersView extends Component {
             if(msg.action == 'begin-upload' && !that.state.uploadingFile) {
                 that.setState({encrypting: false});
                 const file_info = msg.file_info;
-                let file_data = msg.encrypted_result.encrypted_data;
+                let file_data = Buffer.from(msg.encrypted_result.encrypted_data, 'binary');
                 
                 file_info['file_data'] = file_data;
-                
-                magicDownload(msg.encrypted_result.data, msg.file_info.name, 'application/text');
 
                 const data_cost = await arweave.transactions.getPrice(parseInt(file_info.file_size + msg.encrypted_result.key_size));
 
@@ -123,14 +123,73 @@ class FoldersView extends Component {
                             sendUsagePayment(msg.cost, that.props.jwk, arweave);
                         }
                     },
-                    (msg) => { that.props.addSuccessAlert(msg) },
-                    (msg) => { that.props.addErrorAlert(msg) }
+                    (msg) => { that.props.addSuccessAlert(msg); that.addFileInfoToFolders(file_info); },
+                    (msg) => { that.props.addErrorAlert(msg) },
+                    false
                 );
             }
 
             
         }) 
+
+        this.interval = setInterval(() => {
+          that.checkMiningStatus();                
+        }, 60 * 1000);
     }
+
+    removeFromFiles(file_info, ContractTXID) {
+        if(file_info.type == 'folder') {
+            let found = false;
+            for(let i in file_info.children) {
+                const child = file_info.children[i];
+
+                if(child.type == 'folder') {
+                    this.removeFromFiles(child, ContractTXID);
+                } else {
+                    if(child.Contract == ContractTXID) {
+                        found = true;
+                    }
+                }
+            }
+
+            if(found) {
+                const remaining = file_info.children.filter(child => child.Contract != ContractTXID);
+
+                file_info.children = remaining;
+            }
+        } 
+    }
+
+    checkMiningStatus() {
+        const submitted_files = JSON.parse(sessionStorage.getItem('evermore-files-to-be-mined'));
+        const that = this;
+        
+        if(submitted_files) {
+            const unconfirmed_files = [];
+            for(let i in submitted_files) {
+                const submitted_file = submitted_files[i];
+
+                try {
+                    arweave.transactions.getStatus(submitted_file.id).then(response => {
+                        if(response.hasOwnProperty('confirmed') && response.status === 200) {
+                            if(response.confirmed.number_of_confirmations > 4) {
+                                that.props.addSuccessAlert(`${submitted_file.name} has been successfully mined`);
+                            } else {
+                                unconfirmed_files.push(submitted_file);
+                            }
+                        } else {
+                            unconfirmed_files.push(submitted_file);
+                        }
+                    });
+                } catch(e) {
+                    console.log(e);
+                }
+            }
+
+            sessionStorage.setItem('evermore-files-to-be-mined', JSON.stringify(unconfirmed_files));
+        }
+    }
+    
 
     onSelectFolder(folder_name) {
         const previous_folders = [...this.state.previous_folders];
@@ -154,6 +213,7 @@ class FoldersView extends Component {
             file: file_handle.name, 
             file_size: file_handle.size.toString(),
             modified: file_handle.lastModified,
+            created: file_handle.lastModified,
             is_update: false,
             hostname: "EVERMORE WEBCLIENT",
             children: [], 
@@ -171,14 +231,16 @@ class FoldersView extends Component {
         }  
 
         const public_folders = this.state.previous_folders.filter(f => f == 'Public');
+        const nft_folders = this.state.previous_folders.filter(f => f == 'NFTs');
 
         let is_public = public_folders.length > 0 || this.state.folder_name == 'Public' ? true : false;
+        let is_nft = nft_folders.length > 0 || this.state.folder_name == 'NFTs' ? true : false;
 
         let jwk = null;
 
         const wallet_balance = parseFloat(this.props.wallet_balance);
 
-        if(!is_public) {
+        if(!is_public && !is_nft) {
             jwk = await arweave.wallets.generate(); // needed to be generated here so we can use 'arweave/web' version instead of 'arweave/node'
 
             this.upload_worker.encryptFileHandler([
@@ -188,19 +250,26 @@ class FoldersView extends Component {
                 wallet_balance
             ])
         } else {
-            this.setState({uploadingFile: true})
+            this.setState({uploadingFile: true});
+            const that = this;
             const reader = new FileReader();
             reader.onload = async function() {
                 let file_data = reader.result;
-                file_info['file_data'] = file_data;
+                file_info['file_data'] = Buffer.from(file_data, 'binary');
 
                 const data_cost = await arweave.transactions.getPrice(parseInt(file_info.file_size));
 
-                const that = this;
+                let nftName = null;
+                let nftDescription = null;
+
+                if(is_nft) {
+                    nftName = e.nftName;
+                    nftDescription = e.nftDescription;
+                }
 
                 await uploadFile(
-                    this.props.jwk,
-                    parseFloat(this.props.wallet_balance),
+                    that.props.jwk,
+                    parseFloat(that.props.wallet_balance),
                     file_info,
                     data_cost,
                     true,
@@ -213,14 +282,13 @@ class FoldersView extends Component {
             
                         if(msg.action == 'progress') {
                             that.setState({uploadPercentComplete: msg.progress});
-                        }
-
-                        if(msg.action == 'upload-complete' && !that.state.uploadingFile) {
-                            sendUsagePayment(msg.cost, that.props.jwk, arweave);
-                        }            
+                        }         
                     },
-                    (msg) => { that.props.addSuccessAlert(msg) },
-                    (msg) => { that.props.addErrorAlert(msg) }
+                    (msg) => { that.props.addSuccessAlert(msg); that.addFileInfoToFolders(file_info); },
+                    (msg) => { that.props.addErrorAlert(msg) },
+                    is_nft,
+                    nftName,
+                    nftDescription
                 );
             }
             reader.readAsBinaryString(file_info.file_handle);
@@ -229,6 +297,18 @@ class FoldersView extends Component {
         }
     }
 
+    addFileInfoToFolders(file_info) {
+        let files_to_be_mined = sessionStorage.getItem('evermore-files-to-be-mined');
+
+        if(files_to_be_mined) {
+            files_to_be_mined = JSON.parse(files_to_be_mined); 
+            files_to_be_mined.push({name: file_info.name, id: file_info.id});
+        } else {
+            files_to_be_mined = [{name: file_info.name, id: file_info.id}];
+        }
+
+        sessionStorage.setItem('evermore-files-to-be-mined', JSON.stringify(files_to_be_mined));
+    }
     
 
     createRows(file_info, file_rows, folder_rows) {
@@ -243,8 +323,10 @@ class FoldersView extends Component {
                         );
                     } else {
                         const public_folders = this.state.previous_folders.filter(f => f == 'Public');
+                        const nft_folders = this.state.previous_folders.filter(f => f == 'NFTs');
 
                         let is_public = public_folders.length > 0 || this.state.folder_name == 'Public' ? true : false;
+                        let is_nft = nft_folders.length > 0 || this.state.folder_name == 'NFTs' ? true : false;
 
                         file_rows.push(
                             <FileTableRow 
@@ -253,6 +335,7 @@ class FoldersView extends Component {
                                 wallet={this.props.jwk}
                                 downloadFile={(e) => {this.download(e, file_info)}}
                                 is_public={is_public}
+                                is_nft={is_nft}
                             />
                         );
                     }
@@ -290,16 +373,30 @@ class FoldersView extends Component {
         this.refs.filename.click();
     }
 
+    openNFTDialog(e) {
+        e.preventDefault();
+
+        this.setState({nft_dialog: true});
+        this.onToggleOptions();
+    }
+
     openSubFolderDialog(e) {
         e.preventDefault();
 
         this.setState({optionsStyle: null, optionsClasses: "dropdown-menu"});
 
         this.setState({subfolder_dialog: true});
+
+        this.onToggleOptions();
     }
 
     hideFolderDialog() {
         this.setState({subfolder_dialog: false});
+        this.onToggleOptions()
+    }
+
+    hideNFTDialog() {
+        this.setState({nft_dialog: false});
     }
 
     goBack(e) {
@@ -317,9 +414,10 @@ class FoldersView extends Component {
 
     render() {
         const file_rows = [];
-        const folder_rows = [];
+        let folder_rows = <img style={{height: '320px'}} src="images/spinner-dark.svg" />;
 
         if(this.props.files != null) {
+            folder_rows = [];
             this.createRows(this.props.files[""], file_rows, folder_rows);
         }
 
@@ -362,11 +460,62 @@ class FoldersView extends Component {
             </tr>;
         }
 
+        const nft_folders = this.state.previous_folders.filter(f => f == 'NFTs');
+        let is_nft = nft_folders.length > 0 || this.state.folder_name == 'NFTs' ? true : false;
+
+        let upload_option = <a className="dropdown-item active" onClick={(e) => this.openFileDialog(e)} href="#">
+                                <i className="fa fa-upload" aria-hidden="true"></i>
+                                Upload to this folder
+                            </a>;
+
+        let nft_info = null;
+        if(is_nft) {
+            upload_option = <a className="dropdown-item active" onClick={(e) => this.openNFTDialog(e)} href="#">
+                                <i className="fa fa-upload" aria-hidden="true"></i>
+                                Create New NFT
+                            </a>;
+
+            nft_info = <> 
+                    <div className="bg-white shadow-xs p-2 mb-4 rounded">
+                        <div className="clearfix bg-light p-2 rounded d-flex align-items-center">
+                            <span className="btn row-pill btn-sm bg-gradient-warning b-0 py-1 mb-0 float-start">
+                                <i className="fi fi-round-info-full"></i>
+                                Note
+                            </span>
+                            <span className="d-block px-2 text-muted text-truncate">
+                                To create an NFT select ACTIONS > Create New NFT. 
+                            </span>
+                       </div>
+                    </div>
+                    <div className="bg-white shadow-xs p-2 mb-4 rounded">
+                        <div className="clearfix bg-light p-2 rounded d-flex align-items-center">
+                            <span className="btn row-pill btn-sm bg-gradient-warning b-0 py-1 mb-0 float-start">
+                                <i className="fi fi-round-info-full"></i>
+                                Note
+                            </span>
+                            <span className="d-block px-2 text-muted text-truncate">
+                                To transfer ownership click the file link in the table below and choose "Transfer Ownership". The NFT will remain visible until the transfer has been mined on the blockchain
+                            </span>
+                        </div>
+                    </div>
+                </>;
+        }
+
+        let nft_dialog = null;
+        if(this.state.nft_dialog) {
+            nft_dialog = <AddNFTDialog 
+                hideFolderDialog={() => {this.hideNFTDialog()}}
+                onUploadFileHandler={(e) => this.onUploadFileHandler(e)}
+                previous_folders={[...this.state.previous_folders, this.state.folder_name]}
+                files={this.props.files}
+            />;
+        }
+
         return (
             <div className="row gutters-sm">
 
 						<div className="col-12 mb-3">
-
+                            {nft_info}
 
 							<div className="portlet">
 
@@ -393,10 +542,7 @@ class FoldersView extends Component {
                                                 </button>
                                                 <div className={this.state.optionsClasses}  x-placement="bottom-start">
                                                     <h6 className="dropdown-header"></h6>
-                                                    <a className="dropdown-item active" onClick={(e) => this.openFileDialog(e)} href="#">
-                                                        <i className="fa fa-upload" aria-hidden="true"></i>
-                                                        Upload to this folder
-                                                    </a>
+                                                    {upload_option}
                                                     <a className="dropdown-item active" onClick={(e) => this.openSubFolderDialog(e)} href="#">
                                                         <i className="fa fa-upload" aria-hidden="true"></i>
                                                         Add a subfolder
@@ -436,7 +582,9 @@ class FoldersView extends Component {
 
 									</div>
 
-                                    {subfolder_dialog}
+                                    {subfolder_dialog}      
+                                    {nft_dialog}
+
 								</div>
 
 							</div>

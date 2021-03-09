@@ -17,14 +17,18 @@ const DownloaderProgressBar = (props) => {
 } 
 
 export function magicDownload(data, fileName, ContentType) {
-    var blob = new Blob([data], {
-      type: 'application/octet-stream',
-    });
+    var blob = data;
+
+    if(typeof blob != Blob) {
+        blob = new Blob([data], {
+            type: ContentType,
+        });
+    }
 
     // create hidden link
     var element = document.createElement("a");
     document.body.appendChild(element);
-    element.setAttribute("href", window.URL.createObjectURL(blob, {type: 'application/octet-stream'}));
+    element.setAttribute("href", window.URL.createObjectURL(blob, {type: ContentType}));
     element.setAttribute("download", fileName);
 
     element.style.display = "";

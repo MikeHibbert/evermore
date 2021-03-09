@@ -73,18 +73,11 @@ export const encryptFile = async (wallet, jwk, data, progressMessage) => {
         const private_key = PEM2RSAKey(key.private); 
         const wallet_key = wallet2PEM(wallet);        
 
-        const decode_key = encryptDataWithRSAKey(key.private, wallet_key.private);
+        const decode_key = encryptDataWithRSAKey(Buffer.from(key.private, 'binary'), wallet_key.private);
 
-        const encrypted_data = private_key.encryptWithProgressMessages(data, progressMessage);
+        const encrypted_data = private_key.encryptWithProgressMessages(Buffer.from(data), (msg) => {progressMessage(msg)} );
 
-        debugger;
-
-        const decrypted_data = private_key.decrypt(encrypted_data);
-
-        // const buffer = decode_key + encrypted_data;
-
-        const buffer = arweave.utils.concatBuffers([Buffer.from(decode_key, 'binary'), encrypted_data]);
-        // const encr = concatBuffers(Buffer.from(decode_key, 'binary'), encrypted_data);
+        const buffer = arweave.utils.concatBuffers([decode_key, encrypted_data]);
 
         resolve({
             key_size: Buffer.byteLength(decode_key, 'binary'), 
@@ -106,9 +99,7 @@ export const decryptFileData = async (wallet, transaction, data, postMessage) =>
             const private_key = PEM2RSAKey(private_pem_key); 
             
             const data_to_decrypt = data.slice(transaction.key_size);
-
-            debugger;
-
+            
             const decrypted_data = private_key.decryptWithProgressMessages(data_to_decrypt, (msg) => {postMessage(msg)});
 
             return resolve(decrypted_data); 
@@ -119,7 +110,7 @@ export const decryptFileData = async (wallet, transaction, data, postMessage) =>
 export const getFileEncryptionKey = (data, transaction, wallet) => {
     return new Promise((resolve, reject) => {
         const key_data = data.slice(0, transaction.key_size);
-        resolve(decryptDataWithWallet(Buffer.from(key_data), wallet).toString('utf8'));
+        resolve(decryptDataWithWallet(Buffer.from(key_data, 'binary'), wallet).toString('utf8'));
     });
 }
 
@@ -150,12 +141,11 @@ export const decryptDataWithWallet = (buff, wallet) => {
 
     const key = PEM2RSAKey(walletPEM.private);
 
-    return key.decrypt(Buffer.from(buff, 'binary'), 'binary');
+    return key.decrypt(buff, 'binary');
 }
 
 export const encryptDataWithRSAKey = (data, private_pem_key) => {
-    const buff = Buffer.from(data, 'binary');
-    return PEM2RSAKey(private_pem_key).encrypt(buff, 'binary');
+    return PEM2RSAKey(private_pem_key).encrypt(data);
 }
 
 export const encryptDataWithRSAPrivateKey = (data, private_pem_key) => {

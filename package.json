@@ -79,8 +79,7 @@
     "tasklist": "^4.0.1",
     "utimes": "^4.0.2",
     "windows-shortcuts-appid": "^0.3.2",
-    "winston": "^3.3.3",
-    "xpc-connect": "^2.0.0"
+    "winston": "^3.3.3"
   },
   "devDependencies": {
     "@babel/cli": "^7.12.10",

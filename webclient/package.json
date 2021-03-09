@@ -7,28 +7,26 @@
     "@testing-library/jest-dom": "^4.2.4",
     "@testing-library/react": "^9.5.0",
     "@testing-library/user-event": "^7.2.1",
-    "arweave": "^1.9.1",
+    "arweave": "^1.10.11",
     "axios": "^0.21.1",
     "comlink": "^4.3.0",
-    "d3-format": "^1.4.4",
+    "d3-format": "^1.4.5",
     "history": "^5.0.0",
-    "moment": "^2.25.3",
+    "moment": "^2.29.1",
     "node-rsa": "git+https://github.com/MikeHibbert/node-rsa.git",
-    "react": "^16.13.1",
+    "react": "^16.14.0",
     "react-app-rewired": "^2.1.8",
     "react-desktop-notification": "^1.0.9",
-    "react-dom": "^16.13.1",
+    "react-dom": "^16.14.0",
     "react-ga": "^3.3.0",
     "react-inlinesvg": "^1.2.0",
     "react-js-pagination": "^3.0.3",
     "react-moment": "^0.9.7",
     "react-router-dom": "^5.2.0",
-    "react-scripts": "^3.4.3",
-    "react-toastify": "^6.0.0-rc.2-1",
-    "react-use-comlink": "^2.0.1",
+    "react-scripts": "^3.4.4",
+    "react-toastify": "^6.2.0",
     "serve": "^11.3.2",
-    "smartweave": "https://arweave.net/AM-u4X2po-3Tx7fma3lRonCfLwrjI42IALwDL_YFXBs",
-    "worker-loader": "^3.0.8",
+    "smartweave": "^0.4.27",
     "workerize-loader": "^1.3.0",
     "yargs-parser": "^18.1.3"
   },
@@ -54,7 +52,6 @@
     ]
   },
   "devDependencies": {
-    "@babel/preset-react": "^7.12.13",
-    "react-hot-loader": "^4.13.0"
+    "@babel/preset-react": "^7.12.13"
   }
 }

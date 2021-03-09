@@ -1,7 +1,7 @@
 import mime from 'mime-types';
 import axios from 'axios';
 import path from 'path';
-import { readContract, selectWeightedPstHolder  } from 'smartweave';
+import { readContract, selectWeightedPstHolder, interactWrite  } from 'smartweave';
 import fs from 'fs';
 import settings from '../app-config';
 import {
@@ -45,7 +45,10 @@ export const getWalletAddress = async (file_path, jwk, arweave) => {
     });
 }
 
-export const uploadFile = async (wallet_jwk, wallet_balance, file_info, data_cost, is_public, key_size, arweave, messageCallback, showSuccessNotification, showErrorNotification) => {                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
+export const uploadFile = async (
+    wallet_jwk, wallet_balance, file_info, data_cost, is_public, key_size, arweave, messageCallback, showSuccessNotification, showErrorNotification, 
+    isNFT=false, nftName=null, nftDescription=null
+    ) => {                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
     try {        
         const path_parts = file_info.path.split('/');
         const filename = path_parts[path_parts.length - 1];
@@ -55,7 +58,8 @@ export const uploadFile = async (wallet_jwk, wallet_balance, file_info, data_cos
         }, wallet_jwk);
 
         const total_winston_cost = parseInt(transaction.reward) + parseInt(data_cost);
-        const total_ar_cost = parseFloat(arweave.ar.winstonToAr(total_winston_cost));   
+        const total_data_cost = parseFloat(arweave.ar.winstonToAr(total_winston_cost));
+        const total_ar_cost = total_data_cost + parseFloat(calculatePSTPayment(total_data_cost));   
 
         if(wallet_balance < total_ar_cost) {
             showErrorNotification(`Your wallet does not contain enough AR to upload, ${total_ar_cost} AR is needed `)
@@ -63,16 +67,29 @@ export const uploadFile = async (wallet_jwk, wallet_balance, file_info, data_cos
             return;
         }
 
-        transaction.addTag('App-Name', settings.APP_NAME);
+        if(isNFT) {
+            const wallet_address = await arweave.wallets.jwkToAddress(wallet_jwk);
+            const nft_name = nftName;
+            const ticker = nft_name.split(' ').join('_').toUpperCase();
+            transaction.addTag('App-Name', "SmartWeaveContract");
+            transaction.addTag('Exchange', "Verto");
+            transaction.addTag('Action', "marketplace/create");
+            transaction.addTag('App-Version', "0.3.0");
+            transaction.addTag('Contract-Src', "I8xgq3361qpR8_DvqcGpkCYAUTMktyAgvkm6kGhJzEQ");
+            transaction.addTag('Init-State', `{"balances":{"${wallet_address}": 1},"name":"${nft_name}","ticker":"${ticker}","description":"${nftDescription} - Created with Evermore"}`);
+            transaction.addTag('Signing-Client', "Evermore Webclient");
+        } else {
+            transaction.addTag('App-Name', settings.APP_NAME);
+        }
+        
         transaction.addTag('Content-Type', mime.lookup(file_info.file));
         transaction.addTag('filename', filename);
-        transaction.addTag('file', file_info.file);
+        transaction.addTag('file', file_info.path);
         transaction.addTag('path', file_info.path);
         transaction.addTag('modified', file_info.modified);
         transaction.addTag('hostname', file_info.hostname);
 
-        const created = new Date(file_info.file_handle.created).getTime();
-        transaction.addTag('created', created);
+        transaction.addTag('created', file_info.created);
         transaction.addTag('version', file_info.version);
         // transaction.addTag('CRC', crc_for_data);
         transaction.addTag('file_size', file_info.file_size);
@@ -105,6 +122,13 @@ export const uploadFile = async (wallet_jwk, wallet_balance, file_info, data_cos
         messageCallback({action: 'uploading', uploading: false});
         messageCallback({action: 'upload-complete', cost: total_ar_cost});
 
+        file_info['id'] = transaction.id;
+
+        debugger;
+
+        sendUsagePayment(total_data_cost, wallet_jwk, arweave);
+
+        
 
         showSuccessNotification(`${file_info.path} uploaded and will be mined shortly.`);
     } catch (e) {
@@ -125,8 +149,10 @@ export const sendUsagePayment = async (transaction_cost, wallet_jwk, arweave) =>
     
     const tx = await arweave.createTransaction({ 
             target: holder, 
-            quantity: calculatePSTPayment(transaction_cost, settings.USAGE_PERCENTAGE)}
+            quantity: arweave.ar.arToWinston(calculatePSTPayment(transaction_cost))}
             , wallet_jwk);
+
+    tx.addTag('EVERMORE_TOKEN', 'COMMUNITY REWARD PAYMENT');
             
     await arweave.transactions.sign(tx, wallet_jwk);
     await arweave.transactions.post(tx);
@@ -134,8 +160,8 @@ export const sendUsagePayment = async (transaction_cost, wallet_jwk, arweave) =>
     return tx;
 }
 
-export const calculatePSTPayment = (transaction_cost, percentage) => {
-    const payment = Math.ceil(transaction_cost * percentage);
+export const calculatePSTPayment = (transaction_cost) => {
+    const payment = transaction_cost * settings.USAGE_PERCENTAGE;
 
     return payment.toString();
 }
@@ -430,4 +456,8 @@ export const getPersistenceRecordsFor = async (file_path, jwk, arweave) => {
 
         return final_rows;
     }
+}
+
+export const transferNFTOwnership = async (arweave, wallet_jwk, contractTXID, targetAddress) => {
+    await interactWrite(arweave, wallet_jwk, contractTXID, {functions: 'transfer', target: targetAddress});
 }

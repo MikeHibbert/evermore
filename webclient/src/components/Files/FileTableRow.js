@@ -7,7 +7,6 @@ import { toast } from 'react-toastify';
 import { createPersistenceRecord } from '../../containers/Files/helpers';
 import { magicDownload } from '../../containers/Home/Download';
 import { decryptFileData } from '../../crypto/files';
-import download_worker from './download_worker';
 // import WebWorkerEnabler from './WebWorkerEnabler';
 // import WebWorker from './WebWorker';
 import worker from 'workerize-loader!./download_worker'; // eslint-disable-line import/no-webpack-loader-syntax
@@ -69,7 +68,7 @@ class FileTableRow extends Component  {
 
             if(msg.action == 'download-complete' && !that.state.downloading) {
                 that.setState({decrypting: msg.decrypting})
-                debugger;
+
                 magicDownload(msg.data, that.props.file_info.name, that.props.file_info['Content-Type']);
             }
         })   
@@ -159,11 +158,16 @@ class FileTableRow extends Component  {
             </a>
         </div>;
         
+        let filename_url = filename;
+        if(this.props.is_nft) {
+            const url = `/file/${this.props.file_info.id}`;
+            filename_url = <Link to={url}>{filename}</Link>
+        }
 
         return (
             <tr>
                 <td>
-                        {filename} 
+                        {filename_url} 
                         {downloader}
                     <span className="d-block text-muted fs--13">FROM: {this.props.file_info.hostname}</span>
                     {/* <span className="d-block text-muted fs--13">VERSION: {this.props.file_info.version}</span> */}

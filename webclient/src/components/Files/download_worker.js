@@ -1,5 +1,5 @@
-import axios from 'axios';
-import { decryptFileData } from '../../crypto/files';
+const axios = require('axios');
+const { decryptFileData } = require('../../crypto/files');
 
 export const downloadFile = async function(e) { // eslint-disable-line no-restricted-globals
     const wallet = e[0]
@@ -23,7 +23,7 @@ export const downloadFile = async function(e) { // eslint-disable-line no-restri
             postMessage({action: 'decrypting', decrypting: true});
             data.arrayBuffer().then(buff => {
                 decryptFileData(wallet, file_info, buff, postMessage).then(decrypted_data => {
-                    postMessage({action: 'download-complete', decrypting: false, data: new Blob([decrypted_data])});
+                    postMessage({action: 'download-complete', decrypting: false, data: new Blob([decrypted_data]), file_info: file_info});
                 });
             })
             

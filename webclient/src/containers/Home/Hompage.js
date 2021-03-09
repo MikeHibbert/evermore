@@ -151,7 +151,31 @@ class HomePage extends Component {
             </div>
         </div>
 
-        <div className="service-section  pb-200" id="price-calculator">
+        
+
+        <div className="service-section pb-200" id="price-calculator">
+            <div className="container">
+                <div className="row">		
+                    <div className="offset-md-2 col-md-8">	
+                        <div className="bestsite-head text-center pt-200">
+                            <div className="section-title">
+                                <h2>Non-fungible tokens</h2>
+                            </div>
+                            <div className="section-content pb-40">
+                                <p>Evermore supports the creation of NFTs out of the box. Simply upload your digital asset to the 'NFTs' folder and supply a name and description and your done!</p>
+                                <p>Once you've sold your NFT you can transfer ownership to anyone with a valid Arweave wallet address. Simple as that!</p>
+                            </div>
+                            <div className="section-content pb-40">
+                                <p>You can make NFTs from anything you can upload... Images, Videos, Music the sky is the limit!</p>
+                            </div>
+                        </div>
+                    </div>	
+                    <div className="offset-md-2"></div>	
+                </div>
+            </div>	
+        </div>
+
+        <div className="pricing-section  pb-200" id="price-calculator">
             <div className="container">
                 <div className="row">		
                     <div className="offset-md-2 col-md-8">	
@@ -177,9 +201,8 @@ class HomePage extends Component {
                 </div>
             </div>	
         </div>
-
-
-        <div className="pricing-section pricing_4 pb-130" id="data-storage">
+        
+        <div className="service-section pricing_4 pb-130" id="data-storage">
             <div className="container">
                 <div className="row">
                 <div className="col-md-2"></div>		

@@ -1,4 +1,5 @@
 import arweave from '../../arweave-config';
+import {interactRead} from 'smartweave';
 import settings from '../../app-config';
 import { toast } from 'react-toastify';
 
@@ -174,13 +175,21 @@ const createRecentFilesCollection = (tx_rows) => {
     return final_rows;
 }
 
-export const getDownloadableFilesGQL = async (address) => {
+const getTransferredNFTs = (address, wallet) => {
+
+}
+
+export const getDownloadableFilesGQL = async (address, wallet) => {
     let hasNextPage = true;
     let cursor = '';
     const transactions = {};
 
     const folders = {"": {children:[]}}; 
-    folders[""] = {name: "", children: [], index: 0, type: "folder"};
+    folders[""] = {name: "", children: [
+        {name: "Public", children: [], index: 0, type: "folder"},
+        {name: "Photos", children: [], index: 0, type: "folder"},
+        {name: "NFTs", children: [], index: 0, type: "folder"}
+    ], index: 0, type: "folder"};
 
     while(hasNextPage) {
         const query = `{
@@ -190,7 +199,7 @@ export const getDownloadableFilesGQL = async (address) => {
                 tags: [
                 {
                     name: "App-Name",
-                    values: ["${settings.APP_NAME}"]
+                    values: ["${settings.APP_NAME}", "SmartWeaveContract", "SmartWeaveAction"]
                 }
                 ]
                 after: "${cursor}"
@@ -219,11 +228,11 @@ export const getDownloadableFilesGQL = async (address) => {
         });        
     
         if(response.status == 200) {
+            
             const data = response.data.data;
             for(let i in data.transactions.edges) {
                 const row = data.transactions.edges[i].node;
     
-                row['action'] = 'download';
                 row['tx_id'] = row.id;
     
                 for(let i in row.tags) {
@@ -237,7 +246,59 @@ export const getDownloadableFilesGQL = async (address) => {
                 }
     
                 if(row['Content-Type'] == "PERSISTENCE") continue;
+
+                if(row['App-Name'] == "SmartWeaveContract" || row['App-Name'] == "SmartWeaveAction") {
+                    
+                    if(row['App-Name'] == "SmartWeaveContract") {
+                        try {
+                            if(row.Contract == 'wmgaIhJa96fpeUXTBQtL1dHo78XdBVzk07Bl5fu8INA') {
+                                debugger;
+                            }
+                            const state = await interactRead(arweave, wallet, row.id, {function: 'balance'});
+                            if(state.balance == 0) {
+                                continue;
+                            }
+                        } catch(e) {
+                            console.log(e);
+                            continue;
+                        }
+                    } else {
+                        if(row['Action'] == 'Transfer') {
+                            try {
+                                
+                                const state = await interactRead(arweave, wallet, row.Contract, {function: 'balance'});
+
+                                if(state.balance != 1) {
+                                    continue;
+                                } else {
+                                    
+                                    const tx = await arweave.transactions.get(row.Contract);
+                                    
+                                    tx.get('tags').forEach(tag => {
+                                        let key = tag.get('name', { decode: true, string: true });
+                                        let value = tag.get('value', { decode: true, string: true });
+                                        
+                                        if(key == "modified" || key == "version" || key == "file_size") {
+                                            row[key] = parseInt(value);
+                                        } else {
+                                            row[key] = value;
+                                        }
+                                        
+                                    }); 
+                                }
+                            } catch(e) {
+                                debugger;
+                                console.log(e);
+                                continue;
+                            }
+                        } else {
+                            continue;
+                        }
+                    }
+                }
     
+                if(!row.hasOwnProperty('file')) continue;
+
                 if(transactions.hasOwnProperty(row['file'])) {
                     const existing_tx = transactions[row['file']];
                     if(existing_tx.modified < row.modified && row['Content-Type'] != 'PERSISTENCE') {
@@ -253,7 +314,7 @@ export const getDownloadableFilesGQL = async (address) => {
             hasNextPage = data.transactions.pageInfo.hasNextPage;
 
             if(hasNextPage) {
-                cursor = data.transactions.edges[data.data.transactions.edges.length - 1].cursor;
+                cursor = data.transactions.edges[data.transactions.edges.length - 1].cursor;
             }
         }        
     }
@@ -479,11 +540,11 @@ export const SaveUploader = (uploader) => {
 
     uploaders.push(uploader);
 
-    localStorage.setItem("Evermore-uploaders", JSON.stringify(uploaders))
+    sessionStorage.setItem("Evermore-uploaders", JSON.stringify(uploaders))
 }
 
 export const GetUploaders = () => {
-    let uploaders = localStorage.getItem("Evermore-uploaders")
+    let uploaders = sessionStorage.getItem("Evermore-uploaders")
 
     if(uploaders == undefined || uploaders == null) {
         return [];
@@ -497,7 +558,7 @@ export const RemoveUploader = (uploader) => {
 
     uploaders.push(uploader);
 
-    localStorage.setItem("Evermore-uploaders", JSON.stringify(uploaders))
+    sessionStorage.setItem("Evermore-uploaders", JSON.stringify(uploaders))
 }
 
 // export const setFileStatusAsDeleted = async (file_info) => {

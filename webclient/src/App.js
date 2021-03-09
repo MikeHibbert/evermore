@@ -7,6 +7,7 @@ import Login from './components/auth/Login';
 import Logout from './components/auth/Logout';
 import RecentActivity from './containers/Files/RecentActivity';
 import FoldersView from './containers/Files/Folders';
+import FileDetail from './containers/Files/FileDetail';
 import DeletedView from './containers/Files/Deleted';
 import SearchPage from './containers/Search/SearchPage';
 import HomePage from './containers/Home/Hompage';
@@ -61,7 +62,7 @@ class App extends Component {
     
     if(jwk !== null) {
       this.setState({isAuthenticated: true, wallet_address: wallet_address, jwk: jwk});
-      this.loadWallet(wallet_address);
+      this.loadWallet(wallet_address, jwk);
     }
 
     const isAuthenticated = sessionStorage.getItem('isAuthenticated');
@@ -79,26 +80,9 @@ class App extends Component {
       ReactGA.set({ page: location.pathname }); // Update the user's current page
       ReactGA.pageview(location.pathname); // Record a pageview for the given page
     });
-    // this.interval = setInterval(async function() {
-    //   debugger;
-    //   await checkPendingMessages();
-    //   const messages = await getMessages();
-        
-    //   if(messages.length > this.state.messages.length && this.state.messages.length > 0) {
-    //     const new_count = messages.length - this.state.messages.length;
-    //     this.setState({new_email_count: new_count});
-    //     this.addSuccessAlert("You have " + new_count + " new messages");
-    //   } 
 
-    //   const sent_messages = await getSentMessages();
-      
-    //   const pending_messages = getPendingMessages();
-
-    //   that.setState({messages: messages, sent_messages: sent_messages, pending_messages: pending_messages});         
-        
-    // }, 10 * 1000);
   }
-
+  
   componentDidUpdate(prevProps) {
     if(this.props.isAuthenticated !== undefined && this.props.isAuthenticated !== prevProps.isAuthenticated) {
       this.setState({isAuthenticated: this.props.isAuthenticated});
@@ -115,7 +99,7 @@ class App extends Component {
     }
   }
 
-  async loadWallet(wallet_address) {
+  async loadWallet(wallet_address, wallet) {
     const that = this;
 
     if(wallet_address) {
@@ -127,7 +111,7 @@ class App extends Component {
             that.setState(state);
         }); 
 
-        const files = await getDownloadableFilesGQL(wallet_address);
+        const files = await getDownloadableFilesGQL(wallet_address, wallet);
         
         // if(files.children.length > this.state.files.length && this.state.files.length > 0) {
         //   const new_count = files.length - this.state.files.length;
@@ -178,7 +162,7 @@ class App extends Component {
               sessionStorage.setItem('AR_Wallet', wallet_address);
               sessionStorage.setItem('AR_jwk', JSON.stringify(jwk));
           
-              that.loadWallet(wallet_address);
+              that.loadWallet(wallet_address, jwk);
 
               that.setState({isAuthenticated: true});
               sessionStorage.setItem('isAuthenticated', true);
@@ -277,6 +261,16 @@ class App extends Component {
                                                                   jwk={this.state.jwk} 
                                                                   addSuccessAlert={this.addSuccessAlert}
                                                                   addErrorAlert={this.addErrorAlert} />} />,
+      <Route key='file' path='/file/:id' component={() => <FileDetail 
+                                                                  match={this.props.match}
+                                                                  location={this.props.location}
+                                                                  files={this.state.files} 
+                                                                  wallet_address={this.state.wallet_address} 
+                                                                  wallet_balance={this.state.balance}
+                                                                  jwk={this.state.jwk} 
+                                                                  addSuccessAlert={this.addSuccessAlert}
+                                                                  addErrorAlert={this.addErrorAlert}
+                                                                />} />,
       <Route key='archived' path="/archived" exact component={() => <DeletedView persistence_records={this.state.persistence_records} wallet_address={this.state.wallet_address} jwk={this.state.jwk} />} />,
       <Route key='search' path="/search" exact component={() => <SearchPage wallet_address={this.state.wallet_address} jwk={this.state.jwk} />} />,
       <Route key='logout' path="/logout" exact component={() => <Logout onLogout={this.disconnectWallet.bind(this)} addSuccessAlert={this.addSuccessAlert} expandContentArea={() => {this.expandContentArea()}} />} />
