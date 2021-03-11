@@ -84,7 +84,7 @@ export const getWalletAddress = async (file_path) => {
     });
 }
 
-export const uploadFile = async (file_info, encrypt_file) => {
+export const uploadFile = async (file_info, encrypt_file, isNFT=false, nftName=null, nftDescription=null) => {
     const wallet_file = walletFileSet();
 
     if(!wallet_file || wallet_file.length == 0) return;
@@ -141,7 +141,22 @@ export const uploadFile = async (file_info, encrypt_file) => {
             return;
         }
 
-        transaction.addTag('App-Name', settings.APP_NAME);
+        if(isNFT) {
+            const wallet_address = await arweave.wallets.jwkToAddress(wallet_jwk);
+            const nft_name = nftName;
+            const ticker = nft_name.split(' ').join('_').toUpperCase();
+            transaction.addTag('App-Name', "SmartWeaveContract");
+            
+            transaction.addTag('Exchange', "Verto");
+            transaction.addTag('Action', "marketplace/create");
+            transaction.addTag('App-Version', "0.3.0");
+            transaction.addTag('Contract-Src', "I8xgq3361qpR8_DvqcGpkCYAUTMktyAgvkm6kGhJzEQ");
+            transaction.addTag('Init-State', `{"balances":{"${wallet_address}": 1},"name":"${nft_name}","ticker":"${ticker}","description":"${nftDescription} - Created with Evermore"}`);
+            transaction.addTag('Signing-Client', "Evermore Webclient");
+        } else {
+            transaction.addTag('App-Name', settings.APP_NAME);
+        }
+
         transaction.addTag('Content-Type', mime.lookup(file_info.file));
         transaction.addTag('filename', filename);
         transaction.addTag('file', file_info.file);
@@ -217,9 +232,11 @@ export const sendUsagePayment = async (transaction_cost) => {
 
     const tx = await arweave.createTransaction({ 
             target: holder, 
-            quantity: calculatePSTPayment(transaction_cost, settings.USAGE_PERCENTAGE)}
+            quantity: arweave.ar.arToWinston(calculatePSTPayment(transaction_cost, settings.USAGE_PERCENTAGE))}
             , jwk);
             
+    tx.addTag('EVERMORE_TOKEN', 'COMMUNITY REWARD PAYMENT');
+    
     await arweave.transactions.sign(tx, jwk);
     await arweave.transactions.post(tx);
     
