@@ -72,6 +72,7 @@ export const uploadFile = async (
             const nft_name = nftName;
             const ticker = nft_name.split(' ').join('_').toUpperCase();
             transaction.addTag('App-Name', "SmartWeaveContract");
+            
             transaction.addTag('Exchange', "Verto");
             transaction.addTag('Action', "marketplace/create");
             transaction.addTag('App-Version', "0.3.0");
@@ -82,6 +83,7 @@ export const uploadFile = async (
             transaction.addTag('App-Name', settings.APP_NAME);
         }
         
+        transaction.addTag('Application', settings.APP_NAME);
         transaction.addTag('Content-Type', mime.lookup(file_info.file));
         transaction.addTag('filename', filename);
         transaction.addTag('file', file_info.path);
@@ -120,7 +122,7 @@ export const uploadFile = async (
 
         messageCallback({uploading: false, progress: uploader.pctComplete});
         messageCallback({action: 'uploading', uploading: false});
-        messageCallback({action: 'upload-complete', cost: total_ar_cost});
+        messageCallback({action: 'upload-complete', tx_id: transaction.id});
 
         file_info['id'] = transaction.id;
 

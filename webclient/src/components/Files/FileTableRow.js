@@ -44,41 +44,15 @@ class FileTableRow extends Component  {
     }
 
     componentDidMount() {
-        this.download_worker = worker();
-        const that = this;
-        this.download_worker.addEventListener('message', (message) => {
-            const msg = message.data;
-
-            if(msg.action == 'downloading') {
-                that.setState({downloading: msg.downloading});
-            }
-
-            if(msg.action == 'progress') {
-                that.setState({progress: msg.progress});
-            }
-
-            if(msg.action == 'decrypting') {
-                if(msg.hasOwnProperty('decrypting')) {
-                    that.setState({decrypting: msg.decrypting, progress: 0});
-                }
-                if(msg.hasOwnProperty('progress')) {
-                    that.setState({progress: msg.progress});
-                }
-            }
-
-            if(msg.action == 'download-complete' && !that.state.downloading) {
-                that.setState({decrypting: msg.decrypting})
-
-                magicDownload(msg.data, that.props.file_info.name, that.props.file_info['Content-Type']);
-            }
-        })   
+         
     }
 
     toggleOptions() {
          if(!this.state.optionsDialogStyles) {
             const ref = this.ref.current;
             ref.focus();
-            const element_height = this.props.is_public ? 120 : 60;
+            const element_height = (this.props.is_public || this.props.is_nft) ? 120 : 120;
+
             const y = ref.offsetTop - element_height;
             const x = ref.offsetLeft - 120;
 
@@ -108,6 +82,35 @@ class FileTableRow extends Component  {
         this.toggleOptions();
 
         this.setState({downloading: true});
+
+        this.download_worker = worker();
+
+        this.download_worker.addEventListener('message', (message) => {
+            const msg = message.data;
+
+            if(msg.action == 'downloading') {
+                that.setState({downloading: msg.downloading});
+            }
+
+            if(msg.action == 'progress') {
+                that.setState({progress: msg.progress});
+            }
+
+            if(msg.action == 'decrypting') {
+                if(msg.hasOwnProperty('decrypting')) {
+                    that.setState({decrypting: msg.decrypting, progress: 0});
+                }
+                if(msg.hasOwnProperty('progress')) {
+                    that.setState({progress: msg.progress});
+                }
+            }
+
+            if(msg.action == 'download-complete' && !that.state.downloading) {
+                that.setState({decrypting: msg.decrypting})
+
+                magicDownload(msg.data, that.props.file_info.name, that.props.file_info['Content-Type']);
+            }
+        })  
 
         this.download_worker.downloadFile([this.props.wallet, this.props.file_info]);
             
@@ -146,6 +149,9 @@ class FileTableRow extends Component  {
             downloader = <>
                         <div className="col-12">Decrypting file data... <img style={{height: '32px'}} src="images/spinner-dark.svg" /></div>
                         <DownloaderProgressBar percent={this.state.progress} decrypting={true} /></>;
+        }
+        if(this.props.file_info.mining) {
+            downloader = <div className="col-12">Awaiting mining completion <img style={{height: '32px'}} src="images/spinner-dark.svg" /></div>
         }
 
         let download_option = null;

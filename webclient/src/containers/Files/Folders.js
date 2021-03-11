@@ -8,7 +8,7 @@ import { Link } from 'react-router-dom';
 import AddFolderDialog from './AddFolderDialog';
 import AddNFTDialog from './AddNFTDialog';
 import {addToFolderChildrenOrUpdate} from './helpers';
-import worker from 'workerize-loader!./upload.worker';  // eslint-disable-line import/no-webpack-loader-syntax
+import worker from './upload.worker';  // eslint-disable-line import/no-webpack-loader-syntax
 import { toast } from 'react-toastify';
 import { sendUsagePayment, uploadFile } from '../../crypto/arweave-helpers';
 import Arweave from 'arweave/web';
@@ -120,21 +120,18 @@ class FoldersView extends Component {
                         }
             
                         if(msg.action == 'upload-complete' && !that.state.uploadingFile) {
-                            sendUsagePayment(msg.cost, that.props.jwk, arweave);
+                            debugger;
+                            file_info['id'] = msg.tx_id;
+                            file_info['tx_id'] = msg.tx_id;
+                            that.addFileInfoToFolders(file_info);
                         }
                     },
-                    (msg) => { that.props.addSuccessAlert(msg); that.addFileInfoToFolders(file_info); },
+                    (msg) => { that.props.addSuccessAlert(msg); },
                     (msg) => { that.props.addErrorAlert(msg) },
                     false
                 );
-            }
-
-            
-        }) 
-
-        this.interval = setInterval(() => {
-          that.checkMiningStatus();                
-        }, 60 * 1000);
+            } 
+        });
     }
 
     removeFromFiles(file_info, ContractTXID) {
@@ -158,38 +155,7 @@ class FoldersView extends Component {
                 file_info.children = remaining;
             }
         } 
-    }
-
-    checkMiningStatus() {
-        const submitted_files = JSON.parse(sessionStorage.getItem('evermore-files-to-be-mined'));
-        const that = this;
-        
-        if(submitted_files) {
-            const unconfirmed_files = [];
-            for(let i in submitted_files) {
-                const submitted_file = submitted_files[i];
-
-                try {
-                    arweave.transactions.getStatus(submitted_file.id).then(response => {
-                        if(response.hasOwnProperty('confirmed') && response.status === 200) {
-                            if(response.confirmed.number_of_confirmations > 4) {
-                                that.props.addSuccessAlert(`${submitted_file.name} has been successfully mined`);
-                            } else {
-                                unconfirmed_files.push(submitted_file);
-                            }
-                        } else {
-                            unconfirmed_files.push(submitted_file);
-                        }
-                    });
-                } catch(e) {
-                    console.log(e);
-                }
-            }
-
-            sessionStorage.setItem('evermore-files-to-be-mined', JSON.stringify(unconfirmed_files));
-        }
-    }
-    
+    }   
 
     onSelectFolder(folder_name) {
         const previous_folders = [...this.state.previous_folders];
@@ -219,7 +185,8 @@ class FoldersView extends Component {
             children: [], 
             type: 'file', 
             checked: true, 
-            tx_id: null
+            tx_id: null,
+            mining: true
         };
 
         let path_parts = file_info.path.split('/');
@@ -282,9 +249,15 @@ class FoldersView extends Component {
             
                         if(msg.action == 'progress') {
                             that.setState({uploadPercentComplete: msg.progress});
-                        }         
+                        }       
+                        if(msg.action == 'upload-complete' && !that.state.uploadingFile) {
+                            debugger;
+                            file_info['id'] = msg.tx_id;
+                            file_info['tx_id'] = msg.tx_id;
+                            that.addFileInfoToFolders(file_info);
+                        }  
                     },
-                    (msg) => { that.props.addSuccessAlert(msg); that.addFileInfoToFolders(file_info); },
+                    (msg) => { that.props.addSuccessAlert(msg) },
                     (msg) => { that.props.addErrorAlert(msg) },
                     is_nft,
                     nftName,
@@ -298,18 +271,9 @@ class FoldersView extends Component {
     }
 
     addFileInfoToFolders(file_info) {
-        let files_to_be_mined = sessionStorage.getItem('evermore-files-to-be-mined');
-
-        if(files_to_be_mined) {
-            files_to_be_mined = JSON.parse(files_to_be_mined); 
-            files_to_be_mined.push({name: file_info.name, id: file_info.id});
-        } else {
-            files_to_be_mined = [{name: file_info.name, id: file_info.id}];
-        }
-
-        sessionStorage.setItem('evermore-files-to-be-mined', JSON.stringify(files_to_be_mined));
-    }
-    
+        debugger;
+        this.props.addToTransactionsToBeMined({name: file_info.name, id: file_info.id});
+    }    
 
     createRows(file_info, file_rows, folder_rows) {
         if(this.state.folder_name == file_info.name) {
@@ -336,6 +300,7 @@ class FoldersView extends Component {
                                 downloadFile={(e) => {this.download(e, file_info)}}
                                 is_public={is_public}
                                 is_nft={is_nft}
+                                is_mined={file_info.mined}
                             />
                         );
                     }
@@ -414,11 +379,53 @@ class FoldersView extends Component {
 
     render() {
         const file_rows = [];
-        let folder_rows = <img style={{height: '320px'}} src="images/spinner-dark.svg" />;
+        const folder_rows = [];
+        let table_display = <img style={{height: '320px'}} src="images/spinner-dark.svg" />;
+
+        let back_nav = null;
+        if(this.state.previous_folders.length > 0) {
+            back_nav = <tr>
+                <td>
+                    <Link to='/files' onClick={(e) => { this.goBack(e) }} >
+                        &lt;&lt; BACK
+                    </Link>
+                </td>
+                <td>
+                </td>
+                <td className="text-align-end">
+                </td>
+            </tr>;
+        }
 
         if(this.props.files != null) {
-            folder_rows = [];
-            this.createRows(this.props.files[""], file_rows, folder_rows);
+            
+            this.createRows(this.props.files[""], file_rows, folder_rows);  
+            table_display = <table className="table table-framed">
+                            <thead>
+                                <tr>
+                                    <th className="text-gray-500 font-weight-normal fs--14 min-w-300">FILE NAME</th>
+                                    <th className="text-gray-500 font-weight-normal fs--14 w--100 text-center">SIZE</th>
+                                    <th className="text-gray-500 font-weight-normal fs--14 w--100 text-center">LAST MODIFIED</th>
+                                    <th className="text-gray-500 font-weight-normal fs--14 w--60 text-align-end">&nbsp;</th>
+                                </tr>
+                            </thead>
+
+                            <tbody id="item_list">
+                                {back_nav}
+                                {folder_rows}
+                                {file_rows}
+                            </tbody>
+
+                            {/* <tfoot>
+                                <tr>
+                                    <th className="text-gray-500 font-weight-normal fs--14 min-w-300">FILE NAME</th>
+                                    <th className="text-gray-500 font-weight-normal fs--14 w--100 text-center">LAST MODIFIED</th>
+                                    <th className="text-gray-500 font-weight-normal fs--14 w--60 text-align-end">&nbsp;</th>
+                                </tr>   
+                            </tfoot> */}
+
+                        </table>;
+
         }
 
         let subfolder_dialog = null;
@@ -445,20 +452,7 @@ class FoldersView extends Component {
             uploaderBar = <UploaderProgressBar percent={this.state.progress} encypting={this.state.encrypting} />;
         }
 
-        let back_nav = null;
-        if(this.state.previous_folders.length > 0) {
-            back_nav = <tr>
-                <td>
-                    <Link to='/files' onClick={(e) => { this.goBack(e) }} >
-                        &lt;&lt; BACK
-                    </Link>
-                </td>
-                <td>
-                </td>
-                <td className="text-align-end">
-                </td>
-            </tr>;
-        }
+        
 
         const nft_folders = this.state.previous_folders.filter(f => f == 'NFTs');
         let is_nft = nft_folders.length > 0 || this.state.folder_name == 'NFTs' ? true : false;
@@ -511,6 +505,8 @@ class FoldersView extends Component {
             />;
         }
 
+        
+
         return (
             <div className="row gutters-sm">
 
@@ -551,31 +547,7 @@ class FoldersView extends Component {
                                             </div> 
                                         </div> 
 											<div className="table-responsive">
-												<table className="table table-framed">
-													<thead>
-														<tr>
-															<th className="text-gray-500 font-weight-normal fs--14 min-w-300">FILE NAME</th>
-                                                            <th className="text-gray-500 font-weight-normal fs--14 w--100 text-center">SIZE</th>
-															<th className="text-gray-500 font-weight-normal fs--14 w--100 text-center">LAST MODIFIED</th>
-                                                            <th className="text-gray-500 font-weight-normal fs--14 w--60 text-align-end">&nbsp;</th>
-														</tr>
-													</thead>
-
-													<tbody id="item_list">
-                                                        {back_nav}
-                                                        {folder_rows}
-														{file_rows}
-													</tbody>
-
-													{/* <tfoot>
-														<tr>
-                                                            <th className="text-gray-500 font-weight-normal fs--14 min-w-300">FILE NAME</th>
-															<th className="text-gray-500 font-weight-normal fs--14 w--100 text-center">LAST MODIFIED</th>
-                                                            <th className="text-gray-500 font-weight-normal fs--14 w--60 text-align-end">&nbsp;</th>
-														</tr>   
-													</tfoot> */}
-
-												</table>
+												{table_display}
 											</div>
 
                                             

@@ -41,7 +41,8 @@ class App extends Component {
     persistence_records: null,
     sent_messages: [],
     pending_messages: [],
-    new_email_count: 0
+    new_email_count: 0,
+    transactions_to_be_mined: []
   }
 
   interval = null;
@@ -54,6 +55,9 @@ class App extends Component {
     this.addSuccessAlert.bind(this);
     this.setMessages.bind(this);
     this.clearNewEmailCount.bind(this);
+    this.addToTransactionsToBeMined.bind(this);
+    this.removeFromTransactionsToBeMined.bind(this);
+    this.checkMiningStatus.bind(this);
   } 
 
   componentDidMount() {
@@ -69,18 +73,22 @@ class App extends Component {
 
     this.setState({isAuthenticated: isAuthenticated === 'true' ? true : false});
 
-    
-    if(this.props.isAuthenticated == undefined) {
-      return;
-    }
-
     const that = this;
+    this.interval = setInterval(() => {
+      // console.log('checkMiningStatus')
+      that.checkMiningStatus();                
+    }, 2 * 60 * 1000);
+
+    // if(this.props.isAuthenticated == undefined) {
+    //   return;
+    // }
+
+    
     
     this.props.history.listen(location => {
       ReactGA.set({ page: location.pathname }); // Update the user's current page
       ReactGA.pageview(location.pathname); // Record a pageview for the given page
     });
-
   }
   
   componentDidUpdate(prevProps) {
@@ -90,6 +98,8 @@ class App extends Component {
       if(this.props.isAuthenticated && !this.props.expand_content_area) {
         this.setState({contentStyle: {marginLeft: '0px'}});
       }
+
+
     }
   }
 
@@ -183,6 +193,45 @@ class App extends Component {
     toast(message, { type: toast.TYPE.ERROR });  
   }
 
+  addToTransactionsToBeMined(transaction_record) {
+    debugger;
+    const transactions_to_be_mined = [...this.state.transactions_to_be_mined];
+
+    const matches = transactions_to_be_mined.filter(tx => tx.id != transaction_record.id);
+
+    if(matches.length == 0) {
+      transactions_to_be_mined.push(transaction_record);
+    }    
+
+    this.setState({transactions_to_be_mined: transactions_to_be_mined});
+  }
+
+  removeFromTransactionsToBeMined(transaction_id) {
+    const transactions_to_be_mined = this.state.transactions_to_be_mined.filter(tx => tx.id != transaction_id);
+    this.setState({transactions_to_be_mined: transactions_to_be_mined});
+  }
+
+  checkMiningStatus() {
+    const that = this;
+
+    for(let i in this.state.transactions_to_be_mined) {
+        const submitted_file = this.state.transactions_to_be_mined[i];
+
+        try {
+            arweave.transactions.getStatus(submitted_file.id).then(response => {
+                if(response.hasOwnProperty('confirmed') && response.status === 200) {
+                    if(response.confirmed.number_of_confirmations > 4) {
+                        that.addSuccessAlert(`${submitted_file.name} has been successfully mined`);
+                        that.removeFromTransactionsToBeMined(submitted_file.id);
+                    }
+                } 
+            });
+        } catch(e) {
+            console.log(e);
+        }
+    }
+}
+
   disconnectWallet() {
       sessionStorage.removeItem('AR_Wallet');
       sessionStorage.removeItem('AR_jwk');
@@ -259,6 +308,9 @@ class App extends Component {
                                                                   wallet_address={this.state.wallet_address} 
                                                                   wallet_balance={this.state.balance}
                                                                   jwk={this.state.jwk} 
+                                                                  addToTransactionsToBeMined={(transaction_record) => {this.addToTransactionsToBeMined(transaction_record)}}
+                                                                  removeFromTransactionsToBeMined={(tx_id) => {this.removeFromTransactionsToBeMined(tx_id)}}
+                                                                  transactions_to_be_mined={this.state.transactions_to_be_mined}
                                                                   addSuccessAlert={this.addSuccessAlert}
                                                                   addErrorAlert={this.addErrorAlert} />} />,
       <Route key='file' path='/file/:id' component={() => <FileDetail 

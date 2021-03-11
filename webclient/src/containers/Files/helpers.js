@@ -287,7 +287,6 @@ export const getDownloadableFilesGQL = async (address, wallet) => {
                                     }); 
                                 }
                             } catch(e) {
-                                debugger;
                                 console.log(e);
                                 continue;
                             }
@@ -359,7 +358,7 @@ export function addToFolderChildrenOrUpdate(path_parts, index, file_info, path_o
         const matched = path_obj.children.filter(child => child.path == file_info.path);
 
         if(matched.length == 0) {
-            const fi = {...file_info, name: path_parts[index], index: index, type: 'file'};
+            const fi = {...file_info, name: path_parts[index], index: index, type: 'file', mining: false};
             return path_obj.children.push(fi);
         } else {
             const match = matched[0];

@@ -72,8 +72,6 @@ class AddNFTDialog extends Component {
         e['nftName'] = this.state.name;
         e['nftDescription'] = this.state.description;
 
-        debugger;
-
         this.closeDialog();
 
         this.props.onUploadFileHandler(e);        
