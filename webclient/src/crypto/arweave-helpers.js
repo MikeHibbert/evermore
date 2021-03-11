@@ -83,7 +83,7 @@ export const uploadFile = async (
             transaction.addTag('App-Name', settings.APP_NAME);
         }
         
-        transaction.addTag('Application', settings.APP_NAME);
+        transaction.addTag('Application', "Evermore");
         transaction.addTag('Content-Type', mime.lookup(file_info.file));
         transaction.addTag('filename', filename);
         transaction.addTag('file', file_info.path);
