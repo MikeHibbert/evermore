@@ -152,11 +152,12 @@ export const uploadFile = async (file_info, encrypt_file, isNFT=false, nftName=n
             transaction.addTag('App-Version', "0.3.0");
             transaction.addTag('Contract-Src', "I8xgq3361qpR8_DvqcGpkCYAUTMktyAgvkm6kGhJzEQ");
             transaction.addTag('Init-State', `{"balances":{"${wallet_address}": 1},"name":"${nft_name}","ticker":"${ticker}","description":"${nftDescription} - Created with Evermore"}`);
-            transaction.addTag('Signing-Client', "Evermore Webclient");
+            transaction.addTag('Signing-Client', "Evermore Desktop");
         } else {
             transaction.addTag('App-Name', settings.APP_NAME);
         }
 
+        transaction.addTag('Application', "Evermore");
         transaction.addTag('Content-Type', mime.lookup(file_info.file));
         transaction.addTag('filename', filename);
         transaction.addTag('file', file_info.file);
@@ -236,7 +237,7 @@ export const sendUsagePayment = async (transaction_cost) => {
             , jwk);
             
     tx.addTag('EVERMORE_TOKEN', 'COMMUNITY REWARD PAYMENT');
-    
+
     await arweave.transactions.sign(tx, jwk);
     await arweave.transactions.post(tx);
     

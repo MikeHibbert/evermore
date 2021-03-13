@@ -65,7 +65,7 @@ async function report_users() {
                 hasNextPage = data.transactions.pageInfo.hasNextPage;
 
                 if(hasNextPage) {
-                    cursor = data.transactions.edges[data.data.transactions.edges.length - 1].cursor;
+                    cursor = data.transactions.edges[data.transactions.edges.length - 1].cursor;
                 }
             } else {
                 hasNextPage = false;
@@ -80,6 +80,7 @@ async function report_users() {
     const owners_list = Object.keys(owners);
 
     console.log(`${owners_list.length} users and ${transactionsCount} txs`);
+    console.log(owners_list);
 }
 
 
