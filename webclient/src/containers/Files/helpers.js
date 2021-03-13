@@ -179,10 +179,23 @@ const getTransferredNFTs = (address, wallet) => {
 
 }
 
+escapeText = function (str) {
+    return str
+        .replace(/[\\]/g, '')
+        .replace(/[\/]/g, '')
+        .replace(/[\b]/g, '')
+        .replace(/[\f]/g, '')
+        .replace(/[\n]/g, '')
+        .replace(/[\r]/g, '')
+        .replace(/[\t]/g, '');
+};
+
 export const getDownloadableFilesGQL = async (address, wallet) => {
     let hasNextPage = true;
     let cursor = '';
     const transactions = {};
+
+    address = '0wR4OTF4p-dtQUB3yGYG5QoG_37m8XyiK05yfRQYwh8';
 
     const folders = {"": {children:[]}}; 
     folders[""] = {name: "", children: [
@@ -227,8 +240,7 @@ export const getDownloadableFilesGQL = async (address, wallet) => {
             variables: {}
         });        
     
-        if(response.status == 200) {
-            
+        if(response.status == 200) {            
             const data = response.data.data;
             for(let i in data.transactions.edges) {
                 const row = data.transactions.edges[i].node;
@@ -237,6 +249,10 @@ export const getDownloadableFilesGQL = async (address, wallet) => {
     
                 for(let i in row.tags) {
                     const tag = row.tags[i];
+
+                    if(tag.name == 'Init-State') {
+                        tag.value = escapeText(tag.value);
+                    }
     
                     if(tag.name == 'version' || tag.name == 'modified' || tag.name == 'created' || tag.name == 'key_size') {
                         row[tag.name] = parseInt(tag.value);
@@ -244,6 +260,8 @@ export const getDownloadableFilesGQL = async (address, wallet) => {
                         row[tag.name] = tag.value;
                     }
                 }
+
+                
     
                 if(row['Content-Type'] == "PERSISTENCE") continue;
 
@@ -251,9 +269,7 @@ export const getDownloadableFilesGQL = async (address, wallet) => {
                     
                     if(row['App-Name'] == "SmartWeaveContract") {
                         try {
-                            if(row.Contract == 'wmgaIhJa96fpeUXTBQtL1dHo78XdBVzk07Bl5fu8INA') {
-                                debugger;
-                            }
+                            debugger;
                             const state = await interactRead(arweave, wallet, row.id, {function: 'balance'});
                             if(state.balance == 0) {
                                 continue;
@@ -301,6 +317,145 @@ export const getDownloadableFilesGQL = async (address, wallet) => {
                 if(transactions.hasOwnProperty(row['file'])) {
                     const existing_tx = transactions[row['file']];
                     if(existing_tx.modified < row.modified && row['Content-Type'] != 'PERSISTENCE') {
+                        transactions[row['file']] = row;
+                    }
+                } else {
+                    if(row['Content-Type'] != 'PERSISTENCE') {
+                        transactions[row['file']] = row;
+                    }
+                }
+            }
+    
+            hasNextPage = data.transactions.pageInfo.hasNextPage;
+
+            if(hasNextPage) {
+                cursor = data.transactions.edges[data.transactions.edges.length - 1].cursor;
+            }
+        }        
+    }
+
+    hasNextPage = true;
+    cursor = '';
+
+    while(hasNextPage) {
+        const query = `{
+            transactions(
+                first: 100
+                owners: ["${address}"]
+                tags: [
+                {
+                    name: "Application",
+                    values: ["Evermore"]
+                }
+                ]
+                after: "${cursor}"
+                ) {
+                pageInfo {
+                    hasNextPage
+                }
+                edges {
+                    cursor
+                    node {
+                        id
+                        tags {
+                            name
+                            value
+                        }
+                    }
+                }
+                
+              }
+        }`;
+    
+        const response = await arweave.api.request().post(settings.GRAPHQL_ENDPOINT, {
+            operationName: null,
+            query: query,
+            variables: {}
+        });       
+    
+        if(response.status == 200) {
+            const data = response.data.data;
+            
+            for(let i in data.transactions.edges) {
+                const row = data.transactions.edges[i].node;
+    
+                row['tx_id'] = row.id;
+    
+                for(let i in row.tags) {
+                    const tag = row.tags[i];
+    
+                    if(tag.name == 'version' || tag.name == 'modified' || tag.name == 'created' || tag.name == 'key_size') {
+                        row[tag.name] = parseInt(tag.value);
+                    } else {
+                        row[tag.name] = tag.value;
+                    }
+                }
+    
+                if(row['Content-Type'] == "PERSISTENCE") continue;
+
+                if(row['App-Name'] == "SmartWeaveContract" || row['App-Name'] == "SmartWeaveAction") {
+                    
+                    if(row['App-Name'] == "SmartWeaveContract") {
+                        try {
+                            const state = await interactRead(arweave, wallet, row.id, {function: 'balance'});
+                            if(state.balance == 0) {
+                                continue;
+                            }
+
+                            const existing_tx = transactions[row['file']];
+                            if(existing_tx.created > row.created && row['Content-Type'] != 'PERSISTENCE') {
+                                transactions[row['file']] = row;
+                            }
+
+                        } catch(e) {
+                            console.log(e);
+                            continue;
+                        }
+                    } else {
+                        if(row['Action'] == 'Transfer') {
+                            try {
+                                
+                                const state = await interactRead(arweave, wallet, row.Contract, {function: 'balance'});
+
+                                if(state.balance != 1) {
+                                    continue;
+                                } else {
+                                    
+                                    const tx = await arweave.transactions.get(row.Contract);
+                                    
+                                    tx.get('tags').forEach(tag => {
+                                        let key = tag.get('name', { decode: true, string: true });
+                                        let value = tag.get('value', { decode: true, string: true });
+                                        
+                                        if(key == "modified" || key == "version" || key == "file_size") {
+                                            row[key] = parseInt(value);
+                                        } else {
+                                            row[key] = value;
+                                        }
+                                        
+                                    }); 
+
+                                    const existing_tx = transactions[row['file']];
+                                    if(existing_tx.created > row.created && row['Content-Type'] != 'PERSISTENCE') {
+                                        transactions[row['file']] = row;
+                                    }
+                                }
+                            } catch(e) {
+                                console.log(e);
+                                continue;
+                            }
+                        } else {
+                            continue;
+                        }
+                    }
+                }
+                
+                if(!row.hasOwnProperty('file')) continue;
+
+                if(transactions.hasOwnProperty(row['file'])) {
+                    
+                    const existing_tx = transactions[row['file']];
+                    if(existing_tx.created > row.created && row['Content-Type'] != 'PERSISTENCE') {
                         transactions[row['file']] = row;
                     }
                 } else {
