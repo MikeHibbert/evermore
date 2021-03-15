@@ -188,7 +188,7 @@ export const escapeText = function (str) {
         .replace(/[\n]/g, '')
         .replace(/[\r]/g, '')
         .replace(/[\t]/g, '')
-        .replace('"', "'");
+        .replace(/['"]+/g, "`");
 };
 
 export const getDownloadableFilesGQL = async (address, wallet) => {

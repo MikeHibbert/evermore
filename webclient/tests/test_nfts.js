@@ -39,7 +39,7 @@ function sanitizeJSON(unsanitized){
 const graphqlQuery =  `{
     transactions(
         first: 100
-        owners: ["0wR4OTF4p-dtQUB3yGYG5QoG_37m8XyiK05yfRQYwh8"]
+        owners: ["VdXCJdKquMZuGK1W0Yi6zk-8HO-UC85vtMhWUOroY9g"]
         tags: [
         {
             name: "App-Name",
@@ -72,7 +72,7 @@ arweave.api.request().post('https://arweave.net/graphql', {
 }).then(response => {
 
     const data = response.data.data;
-    debugger;
+
     console.log(response);
 }); 
 
@@ -105,11 +105,11 @@ arweave.api.request().post('https://arweave.net/graphql', {
 //     });
 
 //     // const contractTXID = 'wmgaIhJa96fpeUXTBQtL1dHo78XdBVzk07Bl5fu8INA';
-//     const contractTXID = 'GuxZWXNG6MsABf8pmp2qS2UftOx6CQoTHjee9sPJLjk';
+    const contractTXID = 'qH4DgADHRUkaBADFFXHEa6_ldCa9RCfgq4VYpJ50AO4';
 
-//     readContract(arweave, contractTXID).then(state => {
-//         console.log(state);
-//     });
+    readContract(arweave, contractTXID).then(state => {
+        console.log(state);
+    });
 
 //     interactRead(arweave, wallet1, contractTXID, {function: 'balance'}).then(response => {
 //         console.log(response);
