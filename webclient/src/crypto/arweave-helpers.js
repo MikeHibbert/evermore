@@ -14,8 +14,10 @@ import {
     encryptFile,
     decryptFileData,
     encryptDataWithRSAKey,
-    getFileEncryptionKey
+    getFileEncryptionKey, 
 } from './files';
+import {escapeText} from '../containers/Files/helpers';
+
 // import { utimes } from 'utimes';
 // import arweave from '../arweave-config';
 
@@ -69,7 +71,8 @@ export const uploadFile = async (
 
         if(isNFT) {
             const wallet_address = await arweave.wallets.jwkToAddress(wallet_jwk);
-            const nft_name = nftName;
+            const nft_name = escapeText(nftName);
+            const description = escapeText(nftDescription);
             const ticker = nft_name.split(' ').join('_').toUpperCase();
             transaction.addTag('App-Name', "SmartWeaveContract");
             
@@ -77,7 +80,7 @@ export const uploadFile = async (
             transaction.addTag('Action', "marketplace/create");
             transaction.addTag('App-Version', "0.3.0");
             transaction.addTag('Contract-Src', "I8xgq3361qpR8_DvqcGpkCYAUTMktyAgvkm6kGhJzEQ");
-            transaction.addTag('Init-State', `{"balances":{"${wallet_address}": 1},"name":"${nft_name}","ticker":"${ticker}","description":"${nftDescription} - Created with Evermore"}`);
+            transaction.addTag('Init-State', `{"balances":{"${wallet_address}": 1},"name":"${nft_name}","ticker":"${ticker}","description":"${description} - Created with Evermore"}`);
             transaction.addTag('Signing-Client', "Evermore Webclient");
         } else {
             transaction.addTag('App-Name', settings.APP_NAME);

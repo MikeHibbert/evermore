@@ -179,7 +179,7 @@ const getTransferredNFTs = (address, wallet) => {
 
 }
 
-escapeText = function (str) {
+export const escapeText = function (str) {
     return str
         .replace(/[\\]/g, '')
         .replace(/[\/]/g, '')
@@ -187,15 +187,14 @@ escapeText = function (str) {
         .replace(/[\f]/g, '')
         .replace(/[\n]/g, '')
         .replace(/[\r]/g, '')
-        .replace(/[\t]/g, '');
+        .replace(/[\t]/g, '')
+        .replace('"', "'");
 };
 
 export const getDownloadableFilesGQL = async (address, wallet) => {
     let hasNextPage = true;
     let cursor = '';
     const transactions = {};
-
-    address = '0wR4OTF4p-dtQUB3yGYG5QoG_37m8XyiK05yfRQYwh8';
 
     const folders = {"": {children:[]}}; 
     folders[""] = {name: "", children: [
@@ -269,7 +268,6 @@ export const getDownloadableFilesGQL = async (address, wallet) => {
                     
                     if(row['App-Name'] == "SmartWeaveContract") {
                         try {
-                            debugger;
                             const state = await interactRead(arweave, wallet, row.id, {function: 'balance'});
                             if(state.balance == 0) {
                                 continue;
