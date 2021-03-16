@@ -525,7 +525,7 @@ class FoldersView extends Component {
                                     
                                         <input style={{display: "none"}} ref="filename" type="file" name="uploader" onChange={(e) => { this.onUploadFileHandler(e)}}></input>
                                     
-									<div className="container py-6">
+									<div className="container py-6 ml-0 mr-0">
                                         <div className="pull-left" style={{marginBottom: "10px"}}>
                                             <div className="btn-group">
                                                 <button type="button" onClick={e => {this.onToggleOptions()}} className="btn btn-primary">Actions</button>

@@ -120,6 +120,7 @@ class Downloads extends Component {
                                 <div className="collapse navbar-collapse main-menu" id="navbarSupportedContent">
                                 <ul className="navbar-nav nav ml-auto"> 
                                         <li className="nav-item p-nav">{ <Link to='/' className="nav-link nav-menu">Home</Link>  }</li>   
+                                        <li className="nav-item p-nav"><Link to='login' className="nav-link nav-menu">Login</Link></li>
                                         { /* <li className="nav-item p-nav"><a href="/contact" className="nav-link nav-menu">Contact</a></li> */ }
                                     </ul> 
                                 </div>
@@ -145,6 +146,15 @@ class Downloads extends Component {
                                     <h2>Get started for FREE</h2>
                                     <p>To get you started we'll provide you with a crypto wallet and some AR Coin which is enough to upload {upload_amount} of data for FREE.</p>
                                     <p>Get started by downloading our FREE software which will take care of saving your data then get you started with your wallet and crypto!</p>
+                                    <h2>Web dApp</h2>
+                                    <p>For quick and easy upload or access to your data and NFTs from any web connected device you can use our web dApp</p>
+                                    <div className="cloud-btn pb-50">
+                                        <ul>
+                                            <li>
+                                            <Link to='login' className="nav-link nav-menu">Login To Evermore</Link>
+                                            </li>
+                                        </ul>
+                                    </div>
                                     <h2>Downloads</h2>
                                     <p>Download one of our desktop apps to begin saving your data to the blockchain.<br/><br/>
 

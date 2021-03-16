@@ -91,7 +91,9 @@ class FileDetail extends Component {
         if(this.props.files && txid) {
             const file_info = this.getFileInfo(this.props.files[''], txid);
 
-            const nft_state = JSON.parse(escapeText(file_info['Init-State']));
+            debugger;
+
+            const nft_state = JSON.parse(file_info['Init-State']);
 
             const embed_url = `https://arweave.net/${txid}`;
 
