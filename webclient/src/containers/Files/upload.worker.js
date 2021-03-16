@@ -1,5 +1,4 @@
 const fs = require('fs');
-const { getWalletBalance } = require('../../crypto/arweave-helpers');
 const { toast } = require('react-toastify');
 const {
     encryptFile

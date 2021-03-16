@@ -2,7 +2,7 @@ import { render } from '@testing-library/react';
 import React from 'react';
 import { Component } from 'react';
 import { removePathInfosWithChecked } from '../../fsHandling/helpers';
-import { addFolderInfoToPathInfos } from './helpers';
+import { addFolderInfoToPathInfos, escapeText } from './helpers';
 
 class AddNFTDialog extends Component {
     state = {
@@ -64,7 +64,7 @@ class AddNFTDialog extends Component {
 
         const state = {...this.state};
 
-        state[item] = value;
+        state[item] = escapeText(value);
         this.setState(state);
     }
 

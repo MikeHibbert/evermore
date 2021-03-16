@@ -3,6 +3,7 @@ import Arweave from 'arweave/web';
 import { readContract, interactWrite  } from 'smartweave';
 import TransferNFTDialog from './TransferNFTDialog';
 import { Link } from 'react-router-dom';
+import {escapeText} from './helpers';
 
 const arweave = Arweave.init({
     host: 'arweave.net',// Hostname or IP address for a Arweave host
@@ -90,7 +91,7 @@ class FileDetail extends Component {
         if(this.props.files && txid) {
             const file_info = this.getFileInfo(this.props.files[''], txid);
 
-            const nft_state = JSON.parse(file_info['Init-State']);
+            const nft_state = JSON.parse(escapeText(file_info['Init-State']));
 
             const embed_url = `https://arweave.net/${txid}`;
 
