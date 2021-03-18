@@ -167,7 +167,7 @@ export const sendUsagePayment = async (transaction_cost, wallet_jwk, arweave) =>
 }
 
 export const calculatePSTPayment = (transaction_cost) => {
-    const payment = Math.ceil(transaction_cost * settings.USAGE_PERCENTAGE);
+    const payment = transaction_cost * settings.USAGE_PERCENTAGE;
     debugger;
 
     return payment.toString();
