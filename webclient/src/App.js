@@ -12,6 +12,8 @@ import DeletedView from './containers/Files/Deleted';
 import SearchPage from './containers/Search/SearchPage';
 import HomePage from './containers/Home/Hompage';
 import Downloads from './containers/Home/Downloads';
+import NFTs from './containers/NFT/NFTs';
+import NFTDetail from './containers/NFT/NFTDetail';
 import {getDownloadableFilesGQL} from './containers/Files/helpers';
 import {getName} from './components/Message/helpers';
 import arweave from './arweave-config';
@@ -302,6 +304,7 @@ class App extends Component {
 
     let routes = [
       <Route key='home' path="/" exact component={() => <RecentActivity files={this.state.files} wallet_address={this.state.wallet_address} jwk={this.state.jwk} />} />,
+      <Route key='nfts' path="/nfts" exact component={() => <NFTs wallet_address={this.state.wallet_address} jwk={this.state.jwk} />} />,
       <Route key='files' path="/files" exact component={() => <FoldersView 
                                                                   location={this.props.location}
                                                                   files={this.state.files} 
@@ -344,6 +347,11 @@ class App extends Component {
     if(this.state.isAuthenticated == false) {
       routes = [
         <Route key='home' path="/" exact component={() => <HomePage wallet_address={this.state.wallet_address} jwk={this.state.jwk} />} />,
+        <Route key='nfts' path="/nfts" exact component={() => <NFTs wallet_address={this.state.wallet_address} jwk={this.state.jwk} />} />,
+        <Route key='nft-detail' path="/nft-detail/:id" exact component={() => <NFTDetail
+                                                                                location={this.props.location} 
+                                                                                wallet_address={this.state.wallet_address} 
+                                                                                jwk={this.state.jwk} />} />,
         <Route key='downloads' path="/downloads" exact component={() => <Downloads wallet_address={this.state.wallet_address} jwk={this.state.jwk} />} />,
         <Route key='login' path="/login" exact component={() => <Login expandContentArea={() => {this.expandContentArea()}} setWalletAddress={this.setWalletAddress.bind(this)} />} />,
       ];

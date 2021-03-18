@@ -61,6 +61,7 @@ export const uploadFile = async (
 
         const total_winston_cost = parseInt(transaction.reward) + parseInt(data_cost);
         const total_data_cost = parseFloat(arweave.ar.winstonToAr(total_winston_cost));
+        debugger;
         const total_ar_cost = total_data_cost + parseFloat(calculatePSTPayment(total_data_cost));   
 
         if(wallet_balance < total_ar_cost) {
@@ -154,7 +155,7 @@ export const sendUsagePayment = async (transaction_cost, wallet_jwk, arweave) =>
     
     const tx = await arweave.createTransaction({ 
             target: holder, 
-            quantity: arweave.ar.arToWinston(calculatePSTPayment(transaction_cost))}
+            quantity: arweave.ar.arToWinston(calculatePSTPayment(parseInt(transaction_cost)))}
             , wallet_jwk);
 
     tx.addTag('EVERMORE_TOKEN', 'COMMUNITY REWARD PAYMENT');
@@ -166,7 +167,8 @@ export const sendUsagePayment = async (transaction_cost, wallet_jwk, arweave) =>
 }
 
 export const calculatePSTPayment = (transaction_cost) => {
-    const payment = transaction_cost * settings.USAGE_PERCENTAGE;
+    const payment = Math.ceil(transaction_cost * settings.USAGE_PERCENTAGE);
+    debugger;
 
     return payment.toString();
 }

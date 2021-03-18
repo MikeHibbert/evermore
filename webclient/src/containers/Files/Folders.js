@@ -100,7 +100,9 @@ class FoldersView extends Component {
                 
                 file_info['file_data'] = file_data;
 
-                const data_cost = await arweave.transactions.getPrice(parseInt(file_info.file_size + msg.encrypted_result.key_size));
+                const data_cost = await arweave.transactions.getPrice(parseInt(parseInt(file_info.file_size) + parseInt(msg.encrypted_result.key_size)));
+
+                debugger;
 
                 await uploadFile(
                     this.props.jwk,

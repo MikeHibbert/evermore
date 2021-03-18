@@ -6835,4 +6835,7 @@ footer {
   cursor: pointer;
 }
 
+.collapsed-banner {
+  min-height: 0% !important;
+}
 /*# sourceMappingURL=style.css.map */

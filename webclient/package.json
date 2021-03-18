@@ -11,6 +11,7 @@
     "axios": "^0.21.1",
     "comlink": "^4.3.0",
     "d3-format": "^1.4.5",
+    "dirty-json": "^0.9.2",
     "history": "^5.0.0",
     "moment": "^2.29.1",
     "node-rsa": "git+https://github.com/MikeHibbert/node-rsa.git",
