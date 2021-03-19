@@ -85,6 +85,48 @@ class App extends Component {
     //   return;
     // }
 
+    const query = {
+      query: `query {
+                    transactions(
+                      owners:["${wallet_address}"]
+                      tags: {
+                        name: "App-Name",
+                        values: ["Evermore-User-Registration"]
+                      }
+                    ) {
+                        edges {
+                            node {
+                                id
+                            }
+                        }
+                    }
+                }`,
+              };
+
+    arweave.api.request().post('https://arweave.net/graphql', query).then(async response => {
+      const { data } = response.data;
+
+      
+      
+      if(data.transactions.edges.length == 0) {
+        const transaction = await arweave.createTransaction({
+            data: "REGISTERED NEW USER"
+        }, jwk);
+
+        debugger;
+
+        transaction.addTag("App-Name", "Evermore-User-Registration");
+
+        await arweave.transactions.sign(transaction, jwk);
+
+        console.log(transaction.id)
+
+        await arweave.transactions.post(transaction);
+      } else {
+        debugger;
+      }
+    })
+    
     
     
     this.props.history.listen(location => {
@@ -124,6 +166,7 @@ class App extends Component {
         }); 
 
         const files = await getDownloadableFilesGQL(wallet_address, wallet);
+        
         
         // if(files.children.length > this.state.files.length && this.state.files.length > 0) {
         //   const new_count = files.length - this.state.files.length;

@@ -60,7 +60,7 @@ class UserMenu extends Component {
                   <i className="fi w--15 fi-close"></i>
                 </span>
 
-                <span className="fs--14 d-none d-sm-inline-block font-weight-medium">{this.props.username}</span>
+                <span className="fs--14 d-none d-sm-inline-block font-weight-medium">{this.props.wallet_address}</span>
               </a>
 
               <div  className={this.state.navClasses.join(' ')} >
