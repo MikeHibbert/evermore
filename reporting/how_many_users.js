@@ -84,51 +84,53 @@ async function get_24_hour_qulaifying_data_transactions() {
     while (!completed) {
       // Create the query to search for all ardrive transactions.
       let transactions = await query_for_desktop_data_uploads(firstPage, cursor);
-      
-      if(transactions == undefined) completed =true;
 
-      const { edges } = transactions;
-      edges.forEach((edge) => {
-        cursor = edge.cursor;
-        const { node } = edge;
-        const { data } = node;
-        const { owner } = node;
-        const { block } = node;
-        if (block !== null) {
-          let timeStamp = new Date(block.timestamp * 1000);
-          // We only want results from last 24 hours, defined by milliseconds since epoch
-          if (yesterday.getTime() <= timeStamp.getTime()) {
-            // We only want data transactions
-            if (parseInt(data.size) >= 0) { // more than one GB uploaded
-              // Does this wallet address exist in our array?
-              let objIndex = weightedList.findIndex((obj => obj.address === owner.address));
-              if (objIndex >= 0) {
-              // If it exists, then we increment the existing data amount
-                // console.log ("Existing wallet found %s with %s data", weightedList[objIndex].address, weightedList[objIndex].weight);
-                // console.log("Adding ", data.size);
-                weightedList[objIndex].count += 1;
-                weightedList[objIndex].dataSize += parseInt(data.size);
-                weightedList[objIndex].txs.push(node.id);
-              } 
-              else {
-                // Else we add a new user into our Astatine List
-                // console.log("Adding new wallet ", owner.address);
-                let user = {
-                  address: owner.address,
-                  txs: [node.id],
-                  count: 1,
-                  dataSize: parseInt(data.size)
-                };
-                weightedList.push(user);
+      try {
+        const { edges } = transactions;
+        edges.forEach((edge) => {
+          cursor = edge.cursor;
+          const { node } = edge;
+          const { data } = node;
+          const { owner } = node;
+          const { block } = node;
+          if (block !== null) {
+            let timeStamp = new Date(block.timestamp * 1000);
+            // We only want results from last 24 hours, defined by milliseconds since epoch
+            if (yesterday.getTime() <= timeStamp.getTime()) {
+              // We only want data transactions
+              if (parseInt(data.size) >= 0) { // more than one GB uploaded
+                // Does this wallet address exist in our array?
+                let objIndex = weightedList.findIndex((obj => obj.address === owner.address));
+                if (objIndex >= 0) {
+                // If it exists, then we increment the existing data amount
+                  // console.log ("Existing wallet found %s with %s data", weightedList[objIndex].address, weightedList[objIndex].weight);
+                  // console.log("Adding ", data.size);
+                  weightedList[objIndex].count += 1;
+                  weightedList[objIndex].dataSize += parseInt(data.size);
+                  weightedList[objIndex].txs.push(node.id);
+                } 
+                else {
+                  // Else we add a new user into our Astatine List
+                  // console.log("Adding new wallet ", owner.address);
+                  let user = {
+                    address: owner.address,
+                    txs: [node.id],
+                    count: 1,
+                    dataSize: parseInt(data.size)
+                  };
+                  weightedList.push(user);
+                }
               }
             }
+            else {
+              // The blocks are too old, and we dont care about them
+              completed = true;
+            }
           }
-          else {
-            // The blocks are too old, and we dont care about them
-            completed = true;
-          }
-        }
-      })
+        })
+      } catch (e) {
+        completed = true;
+      }
       count++;
 
       if(count >  LIMIT_THRESHOLD) {
@@ -370,7 +372,7 @@ get_24_hour_nft_transactions().then(nft_users => {
         console.log(`Todays allocation is ${total_token_shares} shares of ${total_daily_token_distribution_amount} which is ${tokens_per_allocation} tokens per qualifying transaction`);
         console.log(`New Users: ${new_users_found.length} NFTs: ${nft_users_payments} (> 1GB Uploads): ${qualifying_data_users.length}`);
 
-        const DRY_RUN = true;
+        const DRY_RUN = false;
         if(!DRY_RUN) {
           fs.writeFileSync('existing_users.json', JSON.stringify(existing_users));
         }
