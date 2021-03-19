@@ -351,6 +351,7 @@ class App extends Component {
         <Route key='nft-detail' path="/nft-detail/:id" exact component={() => <NFTDetail
                                                                                 location={this.props.location} 
                                                                                 wallet_address={this.state.wallet_address} 
+                                                                                addSuccessAlert={this.addSuccessAlert}
                                                                                 jwk={this.state.jwk} />} />,
         <Route key='downloads' path="/downloads" exact component={() => <Downloads wallet_address={this.state.wallet_address} jwk={this.state.jwk} />} />,
         <Route key='login' path="/login" exact component={() => <Login expandContentArea={() => {this.expandContentArea()}} setWalletAddress={this.setWalletAddress.bind(this)} />} />,

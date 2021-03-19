@@ -27,7 +27,7 @@ export function getContentElementBasedOnType(nft, initialStateTag, height="300px
 export default function NFTThumbnail(props) {
     const initialStateTag = props.nft.processed_tags['Init-State'];
     const contentElement = getContentElementBasedOnType(props.nft, initialStateTag);
-    const detailLink = <Link to={{pathname: `/nft-detail/${props.nft.id}`, id: props.nft.id, nft: props.nft}} params={{id: props.nft.id}}>See Details</Link>
+    const detailLink = <Link to={{pathname: `/nft-detail/${props.nft.id}`, id: props.nft.id, nft: props.nft}} className="btn btn-primary btn-soft mb-3 mt-20" params={{id: props.nft.id}}>More Details</Link>
     return (<>
         <div className="col-12 col-sm-6 col-md-3 col-lg-3 teacher-single" >
             <div className="teacher-body">

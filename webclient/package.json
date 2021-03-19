@@ -25,6 +25,7 @@
     "react-moment": "^0.9.7",
     "react-router-dom": "^5.2.0",
     "react-scripts": "^3.4.4",
+    "react-social-sharing": "^3.3.0",
     "react-toastify": "^6.2.0",
     "serve": "^11.3.2",
     "smartweave": "^0.4.27",

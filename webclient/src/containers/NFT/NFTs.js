@@ -197,11 +197,16 @@ class NFTs extends Component {
         }
 
         let seeMoreSection = null;
+        let nextMoreSection = null;
         if(this.state.hasNextPage) {
-            debugger;
+
             seeMoreSection = <div class=" col-12 col-md-12 col-lg-12 d-flex justify-content-center">
                                 <a onClick={(e) => this.seeMore(e)} title="" class="view-more-btn g-btn">See More</a>
                             </div>;
+
+            nextMoreSection = <div class=" col-12 col-md-12 col-lg-12 d-flex justify-content-center mb-30">
+                                    <a onClick={(e) => this.seeMore(e)} title="" class="view-more-btn g-btn">Next Page</a>
+                                </div>;
         }
 
         return (<>
@@ -264,17 +269,19 @@ class NFTs extends Component {
         <div className="service-section teachers_2 pb-200" id="price-calculator">
             <div className="container">
                 <div className="row">       
-                    <div className=" col-md-8">  
+                    {/* <div className=" col-md-8">  
                         <div class="search-banner pr-30 pb-70 pt-40">
                             <input class="form-control search-inner" type="text" placeholder="Search your domain here" />			
                             <div class="search-submit">
                                 <input type="submit" className="btn btn-default" value="Search" />
                             </div>
                         </div>
-                    </div>  
+                    </div>   */}
                     <div className="offset-md-2"></div> 
                     <div className="row">		
                         {spinner}
+
+     
                         {nfts}
 
                         {seeMoreSection}

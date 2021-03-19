@@ -4,11 +4,18 @@ import Moment from 'react-moment';
 import arweave from '../../arweave-config';
 import { render } from '@testing-library/react';
 import {getContentElementBasedOnType} from './NFTThumbnail';
+import { Twitter, Facebook, Telegram, Reddit, Linkedin, Mail } from 'react-social-sharing'
 const dJSON = require('dirty-json');
 
 export default class NFTDetail extends Component {
     state = {
         nft: null
+    }
+
+    constructor(props) {
+        super(props);
+
+        this.copyToClipboard.bind(this);
     }
 
     async getNFT(id) {
@@ -85,16 +92,25 @@ export default class NFTDetail extends Component {
         }
     }
 
+    copyToClipboard(e) {
+        this.refs.owner.select();
+        document.execCommand('copy');
+        e.target.focus();
+
+        this.props.addSuccessAlert('Owners ID successfully copied to clipboad');
+    }
+
     render() {
 
         let nft_detail = null;
         let owner = null;
+        let share_link = null;
 
         if(this.state.nft) {
             const contentElement = getContentElementBasedOnType(this.state.nft, this.state.nft.processed_tags['Init-State'], "100%", "100%")
             const name = this.state.nft.processed_tags['Init-State'].name;
             const description = this.state.nft.processed_tags['Init-State'].description.replace('- Created with Evermore', '');
-            debugger;
+
             nft_detail = <div className="col-12 col-sm-12 col-md-8 col-lg-8">
                             <div className="single_blog">
                                 <div className="blog_banner">
@@ -106,7 +122,7 @@ export default class NFTDetail extends Component {
 
                                     <div className="page_info pt-20">
                                         <ul className="post_view_comment">
-                                            <li><i className="flaticon-calendar"><Moment data={this.state.nft.processed_tags.created} format="ddd MMM YYYY HH:mm:ss"></Moment></i></li>
+                                            <li><i className="flaticon-calendar">Minted: <Moment data={this.state.nft.processed_tags.created} format="ddd MMM YYYY HH:mm:ss"></Moment></i></li>
                                         </ul>
                                         <div className="share">
                                             <i className="flaticon-share"></i>
@@ -117,7 +133,7 @@ export default class NFTDetail extends Component {
                         </div>    
                         
             owner = this.state.nft.owner.address;
-                        
+            share_link = `https://evermoredata.store/#/nft-detail/${this.state.nft.id}`;
         }
 
         return (<>
@@ -191,10 +207,31 @@ export default class NFTDetail extends Component {
                                 </div>
                                 <div className="tags-items">
                                     <p>{owner}</p>
+                                    
+                                    <input ref="owner" type="text" value={owner} style={{display: 'none'}}></input>
+                                    <button type="button" onClick={(e) => { this.copyToClipboard(e) }} className="btn btn-primary btn-soft mb-3 mt-20" data-toggle="modal" data-target="#exampleModalSm">
+                                        <i class="fi fi-mollecules"></i>
+                                        Copy to clipboad
+                                    </button>
+                                </div>
+                            </div>  
+                            <div className="follow_us widget_single pt-40">
+                            <hr />
+                                <div className="items-title">
+                                    <h3 className="title">Share</h3>
+                                </div>
+                                <div className="tags-items">
+                                    <Twitter link={share_link} /> 
+                                    <Facebook link={share_link} />
+                                    <Telegram link={share_link} />
+                                    <Linkedin link={share_link} /> 
+                                    <Reddit link={share_link} /> 
+                                    <Mail link={share_link} /> 
                                 </div>
                             </div>  
 
                         </div>
+                        
                     </div>
                 </div>
            
