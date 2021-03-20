@@ -122,9 +122,7 @@ class App extends Component {
         console.log(transaction.id)
 
         await arweave.transactions.post(transaction);
-      } else {
-        debugger;
-      }
+      } 
     })
     
     

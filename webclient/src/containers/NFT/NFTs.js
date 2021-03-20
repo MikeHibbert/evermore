@@ -61,7 +61,7 @@ class NFTs extends Component {
               transactions(
                 sort: HEIGHT_DESC
                 tags: [{ name: "Application", values: ["Evermore"]}, {name: "App-Name", values:["SmartWeaveContract"]}]
-                first: 20
+                first: 100
                 after: "${cursor}"
               ) {
                 pageInfo {
