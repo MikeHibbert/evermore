@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import arweave from '../../arweave-config';
 import CostCalculator from '../../components/Files/Calculator';
 import Moment from 'react-moment';
+import CookieConsent from "react-cookie-consent";
 
 const scrollToRef = (ref) => window.scrollTo(0, ref.current.offsetTop)   
 
@@ -44,6 +45,9 @@ class HomePage extends Component {
             <link rel="stylesheet" href="css/style.css"></link>
             <link rel="stylesheet" href="css/responsive.css"></link>
             <link rel="stylesheet" href="css/master.css"></link>
+            <CookieConsent
+            buttonStyle={{ color: "#4e503b", fontSize: "13px", backgroundColor: '#00dffc' }}
+            >This website uses cookies to enhance the user experience.</CookieConsent>
             <header className="banner-area" id="intro">
         
             <div className="shape-header">

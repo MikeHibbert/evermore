@@ -1,15 +1,17 @@
 import React, {Component} from 'react';
 import Moment from 'react-moment';
+import mime from 'mime-types';
 import axios from 'axios';
+import Web3 from 'web3';
 import { Link } from 'react-router-dom';
 import arweave from '../../arweave-config';
 import { toast } from 'react-toastify';
 import { createPersistenceRecord } from '../../containers/Files/helpers';
 import { magicDownload } from '../../containers/Home/Download';
 import { decryptFileData } from '../../crypto/files';
-// import WebWorkerEnabler from './WebWorkerEnabler';
-// import WebWorker from './WebWorker';
+import { publishToETH, wasPublished } from '../../containers/NFT/helpers';
 import worker from 'workerize-loader!./download_worker'; // eslint-disable-line import/no-webpack-loader-syntax
+const dJSON = require('dirty-json');
 
 const DownloaderProgressBar = (props) => {
     const classNames = props.decrypting ? "progress-bar progress-bar-striped progress-bar-animated bg-success" : "progress-bar progress-bar-animated";
@@ -33,25 +35,48 @@ class FileTableRow extends Component  {
         downloading: false,
         is_public: false,
         progress: 0,
-        decrypting: false
+        decrypting: false,
+        is_published_to_eth: false,
+        web3: null
     }
 
     constructor(props) {
         super(props);
 
         this.toggleOptions.bind(this);
+        this.handlePublishToETH.bind(this);
         this.ref = React.createRef();
     }
 
     componentDidMount() {
-         
+        if(this.props.is_nft) {
+            try {
+                wasPublished(this.props.file_info.id).then(transactions => {
+                    if(transactions.edges.length > 0) {
+                        // this.setState({is_published_to_eth: true});
+                        const published_metadata_tx_id = transactions.edges[0].node.id;
+                        this.props.file_info['published_metadata_tx_id'] = published_metadata_tx_id;
+                    }
+                })
+            } catch(e) {
+                
+            }
+            
+        }
+        
+        if(window.ethereum) {
+            this.setState({web3: new Web3(window.ethereum)});
+
+        } else if(window.web3) {
+            this.setState({web3: new Web3(window.web3.currentProvider)});
+        }
     }
 
     toggleOptions() {
          if(!this.state.optionsDialogStyles) {
             const ref = this.ref.current;
             ref.focus();
-            const element_height = (this.props.is_public || this.props.is_nft) ? 120 : 120;
+            const element_height = (this.props.is_public || this.props.is_nft) ? 220 : 120;
 
             const y = ref.offsetTop - element_height;
             const x = ref.offsetLeft - 120;
@@ -117,9 +142,44 @@ class FileTableRow extends Component  {
     }
 
     async archiveTransaction() {
-            await createPersistenceRecord(this.props.file_info, true, this.props.wallet_jwk);
+            await createPersistenceRecord(this.props.file_info, true, this.props.wallet);
     
             toast(`${this.props.file_info.file} is now being archived`, { type: toast.TYPE.SUCCESS }); 
+    }
+
+    isPublishableMediumType(nft) {
+        let contentTypeTag = nft['Content-Type'];
+        if(!nft.hasOwnProperty('Content-Type')) {
+            contentTypeTag = mime.lookup(nft.file);
+        } else {
+            contentTypeTag = nft['Content-Type'];
+        }
+      
+        if(contentTypeTag.indexOf('image') != -1) {
+            return true;
+        } 
+      
+        if(contentTypeTag.indexOf('audio') != -1) {
+            return false;
+        }  
+      
+        if(contentTypeTag.indexOf('video') != -1) {
+            return true;
+        }
+
+        return false;
+    } 
+
+    async handlePublishToETH() {
+        this.toggleOptions();
+
+        const accounts = await window.ethereum.enable();
+        
+        debugger;
+        const file_info = {...this.props.file_info};
+        file_info['Init-State'] = dJSON.parse(file_info['Init-State'])
+        
+        await publishToETH(accounts[0], file_info, this.props.wallet, this.state.web3);
     }
 
 
@@ -131,11 +191,12 @@ class FileTableRow extends Component  {
      }
 
     render() {
-
         const parts = this.props.file_info.path.split("/");
         const filename = parts[parts.length - 1];
         const file_size = this.bytesToSize(parseInt(this.props.file_info.file_size));
         const viewblock_url = `https://viewblock.io/arweave/tx/${this.props.file_info.id}`;
+        const nft_url = `https://evermoredata.store/#/nft-detail/${this.props.file_info.id}`;
+        const nft_transfer_url = `https://evermoredata.store/#/file/${this.props.file_info.id}`;
 
         const last_modified = <Moment format={"DD/MM/YYYY HH:mm"}>{this.props.file_info.modified}</Moment>;
 
@@ -165,9 +226,48 @@ class FileTableRow extends Component  {
         </div>;
         
         let filename_url = filename;
+        let nft_options = null;
         if(this.props.is_nft) {
             const url = `/file/${this.props.file_info.id}`;
             filename_url = <Link to={url}>{filename}</Link>
+
+            let publish_to_eth_link = null;
+            if(!this.state.is_published_to_eth && this.isPublishableMediumType(this.props.file_info)) {
+                publish_to_eth_link = <div className="scrollable-vertical max-h-50vh" >
+
+                                        <a className="dropdown-item text-truncate" onClick={() => {this.handlePublishToETH()}}>
+                                            <i className="fa fa-arrows-h"></i>
+                                            Publish to ETH
+                                        </a>
+                                    </div>;
+            } else if(this.isPublishableMediumType(this.props.file_info)) {
+                const published_metadata_url = `https://arweave.net/${this.props.file_info.published_metadata_tx_id}`;
+                publish_to_eth_link = <div className="scrollable-vertical max-h-50vh" >
+
+                                        <a className="dropdown-item text-truncate" href={published_metadata_url} target='_blank'>
+                                            <i className="fa fa-info"></i>
+                                            View ETH Metadata
+                                        </a>
+                                    </div>;
+            }
+
+            nft_options = <>
+                <div className="scrollable-vertical max-h-50vh" >
+
+                    <a className="dropdown-item text-truncate" style={{cursor:'pointer'}} href={nft_url} target="_blank">
+                        <i className="fa fa-eye "></i>
+                        NFT Details
+                    </a>
+                </div>
+                <div className="scrollable-vertical max-h-50vh" >
+
+                    <Link to={url} className="dropdown-item text-truncate">
+                        <i className="fa fa-arrows-h"></i>
+                        Transfer options
+                    </Link>
+                </div>
+                {publish_to_eth_link}
+            </>
         }
 
         return (
@@ -204,14 +304,16 @@ class FileTableRow extends Component  {
 
                         <div className={this.state.optionsDialogCss} style={this.state.optionsDialogStyles} x-placement="bottom-start">
                             
-                            {download_option}
+                            {nft_options}
                             <div className="scrollable-vertical max-h-50vh" >
 
                                 <a className="dropdown-item text-truncate" style={{cursor:'pointer'}} href={viewblock_url} target="_blank">
-                                    <i className="fa fa-download"></i>
+                                    <i className="fa fa-info"></i>
                                     Transaction Details
                                 </a>
                             </div>
+                            
+                            {download_option}
                             {/* <div className="scrollable-vertical max-h-50vh" >
 
                                 <a className="dropdown-item text-truncate" style={{cursor:'pointer'}} onClick={() => { this.archiveTransaction() }} >

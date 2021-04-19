@@ -36,7 +36,6 @@ class FolderTableRow extends Component  {
 
     onSelectFolder(e) {
         e.preventDefault();
-
         this.props.onSelectFolder(this.props.file_info.name);
     }
 

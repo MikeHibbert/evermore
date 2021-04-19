@@ -14,6 +14,7 @@ import { sendUsagePayment, uploadFile } from '../../crypto/arweave-helpers';
 import Arweave from 'arweave/web';
 import mime from 'mime-types';
 import { magicDownload } from '../Home/Download';
+import { getNFTFileInfos } from '../Files/helpers';
 
 const arweave = Arweave.init({
     host: 'arweave.net',// Hostname or IP address for a Arweave host
@@ -47,20 +48,23 @@ const UploaderProgressBar = (props) => {
 
 
 class FoldersView extends Component {
-    state = {
-        folder_name: "",
-        previous_folders: [],
-        paths: null,
-        optionsStyle: null,
-        optionsClasses: "dropdown-menu",
-        uploadPercentComplete: 0,
-        uploadingFile: false,
-        subfolder_dialog: false,
-        nft_dialog: false
-    }
 
     constructor(props) {
         super(props);
+
+        this.state = {
+            folder_name: "",
+            previous_folders: [],
+            paths: null,
+            optionsStyle: null,
+            optionsClasses: "dropdown-menu",
+            uploadPercentComplete: 0,
+            uploadingFile: false,
+            subfolder_dialog: false,
+            nft_dialog: false,
+            files: props.files,
+            loading: props.files != null ? false : true
+        };
 
         this.onSelectFolder.bind(this);
         this.onToggleOptions.bind(this);
@@ -68,8 +72,17 @@ class FoldersView extends Component {
         this.hideFolderDialog.bind(this);
     }
 
-    componentDidMount() {
-        
+    async componentDidMount() {
+
+        if (typeof window.ethereum !== 'undefined') {
+            const ethereum = window.ethereum;
+
+            if(ethereum.isMetaMask) {
+                console.log('MetaMask is installed!');
+            }
+            
+        }
+
         this.upload_worker = new worker();
         const that = this;
         
@@ -160,10 +173,25 @@ class FoldersView extends Component {
         } 
     }   
 
-    onSelectFolder(folder_name) {
+    async onSelectFolder(folder_name) {
         const previous_folders = [...this.state.previous_folders];
         previous_folders.push(this.state.folder_name);
         this.setState({folder_name: folder_name, previous_folders: previous_folders});
+        const that = this;
+
+        if(folder_name == 'NFTs') {
+            this.setState({loading: true});
+
+            getNFTFileInfos(this.props.wallet_address, this.props.jwk).then(file_infos => {
+                const files = {...this.state.files};
+                const nft_folder_index = files[''].children.findIndex(file_info => file_info.name == 'NFTs' && file_info.type == 'folder');
+                files[''].children[nft_folder_index] = {...file_infos[''].children[0]};
+                that.setState({files: files, loading: false});
+            });         
+            
+        } 
+
+        
     }
 
     async onUploadFileHandler(e) {
@@ -274,11 +302,11 @@ class FoldersView extends Component {
     }
 
     addFileInfoToFolders(file_info) {
-        debugger;
         this.props.addToTransactionsToBeMined({name: file_info.name, id: file_info.id});
     }    
 
     createRows(file_info, file_rows, folder_rows) {
+
         if(this.state.folder_name == file_info.name) {
             if(file_info.children.length > 0) {
                 for(let i in file_info.children) {
@@ -367,7 +395,7 @@ class FoldersView extends Component {
         this.setState({nft_dialog: false});
     }
 
-    goBack(e) {
+    async goBack(e) {
         e.preventDefault();
 
         if(this.state.previous_folders.length != 0 || this.state.previous_folder != "") {
@@ -400,9 +428,9 @@ class FoldersView extends Component {
             </tr>;
         }
 
-        if(this.props.files != null) {
+        if(!this.state.loading) {
             
-            this.createRows(this.props.files[""], file_rows, folder_rows);  
+            this.createRows(this.state.files[""], file_rows, folder_rows);  
             table_display = <table className="table table-framed">
                             <thead>
                                 <tr>
@@ -472,6 +500,7 @@ class FoldersView extends Component {
                                 Create New NFT
                             </a>;
 
+            const nft_profile_url = `/nfts/${this.props.wallet_address}`;
             nft_info = <> 
                     <div className="bg-white shadow-xs p-2 mb-4 rounded">
                         <div className="clearfix bg-light p-2 rounded d-flex align-items-center">
@@ -484,7 +513,7 @@ class FoldersView extends Component {
                             </span>
                        </div>
                     </div>
-                    <div className="bg-white shadow-xs p-2 mb-4 rounded">
+                    {/* <div className="bg-white shadow-xs p-2 mb-4 rounded">
                         <div className="clearfix bg-light p-2 rounded d-flex align-items-center">
                             <span className="btn row-pill btn-sm bg-gradient-warning b-0 py-1 mb-0 float-start">
                                 <i className="fi fi-round-info-full"></i>
@@ -494,7 +523,18 @@ class FoldersView extends Component {
                                 To transfer ownership click the file link in the table below and choose "Transfer Ownership". The NFT will remain visible until the transfer has been mined on the blockchain
                             </span>
                         </div>
-                    </div>
+                    </div> */}
+                    {/* <div className="bg-white shadow-xs p-2 mb-4 rounded">
+                        <div className="clearfix bg-light p-2 rounded d-flex align-items-center">
+                            <span className="btn row-pill btn-sm bg-gradient-warning b-0 py-1 mb-0 float-start">
+                                <i className="fi fi-round-info-full"></i>
+                                NEW!
+                            </span>
+                            <span className="d-block px-2 text-muted text-truncate">
+                                You can now share your NFT profile <Link to={nft_profile_url} target="_blank">View Now</Link>
+                            </span>
+                        </div>
+                    </div> */}
                 </>;
         }
 

@@ -12,22 +12,25 @@ const arweave = Arweave.init(
     }
 );
 
-const EVERMORE_TOKEN_TX_ID = '1TFZeEewEgUpqT5i2dsZSIRKJq3h1C7ZVi-gE8G-W6U';
-const wallet_str = fs.readFileSync('/home/mike/Documents/Arweave/arweave-keyfile-h-Bgr13OWUOkRGWrnMT0LuUKfJhRss5pfTdxHmNcXyw.json');
-const wallet = JSON.parse(wallet_str);
+const EMD_CONTRACT_ADDRESS = '1TFZeEewEgUpqT5i2dsZSIRKJq3h1C7ZVi-gE8G-W6U';
+const EDST_CONTRACT_ADDRESS = 'AVTqjPQGCCXim7Nl_gn3HMjE4k0Zi_eTFRJCNEVXZxw';
 
-// targets = [
-//     {address: 'R9PL9jt-mZoV6XcNjJD2uB2ajiFTC7PYZ_iyySzzz6U', qty: 1500}
-// ];
+const wallet_path = '/home/mike/Documents/Arweave/arweave-keyfile-h-Bgr13OWUOkRGWrnMT0LuUKfJhRss5pfTdxHmNcXyw.json'
+const wallet = JSON.parse(fs.readFileSync(wallet_path));
 
-// for(let i in targets) {
-//     const target = targets[i];
+readContract(arweave, EMD_CONTRACT_ADDRESS).then(response => {
+    debugger;
+    Object.keys(response.balances).forEach(owner_address => {
+        const balance = response.balances[owner_address];
 
-//     interactWrite(arweave, wallet, EVERMORE_TOKEN_TX_ID, {function: 'transfer', qty: target.qty, target: target.address}).then(response => {
-//         console.log(response);
-//     });
-// }
+        console.log(`${owner_address} : ${balance}`);
 
-interactRead(arweave, wallet, EVERMORE_TOKEN_TX_ID, {function: 'balance'}).then(response => {
-    console.log(response);
-})
+        interactWrite(arweave, wallet, EDST_CONTRACT_ADDRESS, {function: 'transfer', qty: balance, target: owner_address}).then(response => {
+            console.log(`Allocated ${balance} to ${owner_address} - ${response}`);
+        }); 
+    })
+});
+
+// interactRead(arweave, wallet, EVERMORE_TOKEN_TX_ID, {function: 'balance'}).then(response => {
+//     console.log(response);
+// })

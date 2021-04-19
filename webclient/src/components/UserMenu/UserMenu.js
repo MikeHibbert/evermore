@@ -65,7 +65,7 @@ class UserMenu extends Component {
 
               <div  className={this.state.navClasses.join(' ')} >
                 <a className="prefix-icon-ignore dropdown-footer dropdown-custom-ignore font-weight-medium pt-3 pb-3">Balance: <small className="d-block text-muted">{this.props.current_balance} AR</small></a>
-
+                <a className="prefix-icon-ignore dropdown-footer dropdown-custom-ignore font-weight-medium pt-3 pb-3">Evermore Tokens: <small className="d-block text-muted">{this.props.evermore_balance} EDST</small></a>
                 <div className="dropdown-divider mb-0"></div>
                 <Link to='/logout' className="prefix-icon-ignore dropdown-footer dropdown-custom-ignore font-weight-medium pt-3 pb-3"><i className="fi fi-power float-start"></i> Log Out</Link>
     

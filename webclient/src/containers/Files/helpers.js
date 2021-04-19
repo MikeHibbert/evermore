@@ -1,7 +1,10 @@
 import arweave from '../../arweave-config';
-import {interactRead} from 'smartweave';
+import {interactRead, readContract} from 'smartweave';
 import settings from '../../app-config';
 import { toast } from 'react-toastify';
+import { reject } from 'async';
+import { wasPublished } from '../../containers/NFT/helpers';
+import { set } from 'react-ga';
 
 
 export function createRootFolder(path_parts, index, file_info) {
@@ -189,6 +192,8 @@ export const escapeText = function (str) {
         .replace(/[\r]/g, '')
         .replace(/[\t]/g, '');
 };
+
+
 
 export const getDownloadableFilesGQL = async (address, wallet) => {
     let hasNextPage = true;
@@ -504,6 +509,521 @@ export const getDownloadableFilesGQL = async (address, wallet) => {
 
     return folders;
 }
+
+export const getDownloadableFilesGQLLazy = async (address, wallet) => {
+    let hasNextPage = true;
+    let cursor = '';
+    const transactions = {};
+
+    const folders = {"": {children:[]}}; 
+    folders[""] = {name: "", children: [
+        {name: "Public", children: [], index: 0, type: "folder"},
+        {name: "Photos", children: [], index: 0, type: "folder"},
+        {name: "NFTs", children: [], index: 0, type: "folder"}
+    ], index: 0, type: "folder"};
+
+    while(hasNextPage) {
+        const query = `{
+            transactions(
+                sort: HEIGHT_DESC
+                first: 100
+                owners: ["${address}"]
+                tags: [
+                {
+                    name: "App-Name",
+                    values: ["${settings.APP_NAME}"]
+                }
+                ]
+                after: "${cursor}"
+                ) {
+                pageInfo {
+                    hasNextPage
+                }
+                edges {
+                    cursor
+                    node {
+                        id
+                        tags {
+                            name
+                            value
+                        }
+                    }
+                }
+                
+              }
+        }`;
+    
+        const response = await arweave.api.request().post(settings.GRAPHQL_ENDPOINT, {
+            operationName: null,
+            query: query,
+            variables: {}
+        });        
+    
+        if(response.status == 200) {            
+            const data = response.data.data;
+            data.transactions.edges.forEach(async edge => {
+                const row = edge.node;
+    
+                row['tx_id'] = row.id;
+    
+                for(let i in row.tags) {
+                    const tag = row.tags[i];
+    
+                    if(tag.name == 'version' || tag.name == 'modified' || tag.name == 'created' || tag.name == 'key_size') {
+                        row[tag.name] = parseInt(tag.value);
+                    } else {
+                        row[tag.name] = tag.value;
+                    }
+                }
+    
+                if(row['Content-Type'] == "PERSISTENCE") return null;
+    
+                if(!row.hasOwnProperty('file')) return null;
+
+                if(transactions.hasOwnProperty(row['file'])) {
+                    const existing_tx = transactions[row['file']];
+                    if(existing_tx.modified < row.modified && row['Content-Type'] != 'PERSISTENCE') {
+                        transactions[row['file']] = row;
+                    }
+                } else {
+                    if(row['Content-Type'] != 'PERSISTENCE') {
+                        transactions[row['file']] = row;
+                    }
+                }
+            });
+    
+            hasNextPage = data.transactions.pageInfo.hasNextPage;
+
+            if(hasNextPage) {
+                cursor = data.transactions.edges[data.transactions.edges.length - 1].cursor;
+            }
+        }        
+    }
+    
+    
+    const persistence_records = await getPersistenceRecords(address);
+
+    Object.keys(transactions).forEach(file_name => {
+        const available_row = transactions[file_name];
+        const persistence_matches = persistence_records.filter(pr => pr.action_tx_id == available_row.id);
+
+        let current_persistence_state = 'available';
+
+        persistence_matches.forEach(pm => {
+            if(pm.action == 'delete') {
+                current_persistence_state = 'deleted';
+            } else {
+                current_persistence_state = 'available';
+            }
+        });
+
+        if(current_persistence_state == 'available') {
+            let path_parts = ['', available_row.file];
+
+            if(available_row.file.indexOf('/') != -1) {
+                path_parts = available_row.file.split('/')
+            }
+            
+
+            if(folders.hasOwnProperty(path_parts[0])) {
+                addToFolderChildrenOrUpdate(path_parts, 0, available_row, folders[path_parts[0]], 0);                
+            } else {
+                folders[path_parts[0]] = createRootFolder(path_parts, 0, available_row);
+            }
+        }    
+    });
+
+    return folders;
+}
+
+export const getNFTFileInfos = async (wallet_address, wallet) => {
+    const now = new Date().getTime() - 5 * 60 * 1000;
+    
+
+    const folders = {"": {children:[]}}; 
+    folders[""] = {name: "", children: [
+        {name: "NFTs", children: [], index: 0, type: "folder"}
+    ], index: 0, type: "folder"};
+
+    const transactions = {};
+
+    let hasNextPage = true;
+    let cursor = '';    
+    while(hasNextPage) {
+        const query = `{
+            transactions(
+                first: 100
+                owners: ["${wallet_address}"]
+                tags: [
+                {
+                    name: "Application",
+                    values: ["Evermore"]
+                },
+                {
+                    name: "App-Name",
+                    values: ["SmartWeaveContract"]
+                }
+                ]
+                after: "${cursor}"
+                ) {
+                pageInfo {
+                    hasNextPage
+                }
+                edges {
+                    cursor
+                    node {
+                        id
+                        tags {
+                            name
+                            value
+                        }
+                    }
+                }
+                
+            }
+        }`;
+
+        const response = await arweave.api.request().post(settings.GRAPHQL_ENDPOINT, {
+            operationName: null,
+            query: query,
+            variables: {}
+        });  
+        
+        if(response.status == 200) {
+            const data = response.data.data;
+            
+            for(let i in data.transactions.edges) {
+                const edge = data.transactions.edges[i];
+                const row = edge.node;                    
+    
+                row['tx_id'] = row.id;
+    
+                row.tags.forEach(tag => {
+    
+                    if(tag.name == 'version' || tag.name == 'modified' || tag.name == 'created' || tag.name == 'key_size') {
+                        row[tag.name] = parseInt(tag.value);
+                        // if(row.created < now) return reject();
+                        if(tag.name == 'modified') {
+                            row['created'] = row['modified'];
+                        }
+                    } else {
+                        row[tag.name] = tag.value;
+                    }
+                });
+
+                if(row.id === undefined) return null;
+
+                const existing_tx = transactions[row['file']];
+                if(existing_tx == undefined) {
+                    transactions[row['file']] = row;
+                } else if (existing_tx.created > row.created) {
+                    transactions[row['file']] = row;
+                }                  
+
+                if(!row.hasOwnProperty('file')) return null;
+
+                const actions_query = `{
+                    transactions(
+                        first: 100
+                        tags: [
+                        {
+                            name: "Application",
+                            values: ["Evermore"]
+                        },
+                        {
+                            name: "App-Name",
+                            values: ["SmartWeaveAction"]
+                        }
+                        ,
+                        {
+                            name: "Contract",
+                            values: ["${row.id}"]
+                        }
+                        ]
+                        ) {
+                        edges {
+                            cursor
+                            node {
+                                id
+                                tags {
+                                    name
+                                    value
+                                }
+                            }
+                        }
+                        
+                    }
+                }`;
+    
+                const actions_response = await arweave.api.request().post(settings.GRAPHQL_ENDPOINT, {
+                    operationName: null,
+                    query: actions_query,
+                    variables: {}
+                })
+    
+                let balance = 1;
+                if(actions_response.status == 200) {
+                    const actions_data = actions_response.data.data;
+    
+                    for(let k in actions_data.transactions.edges) { 
+                        const node = actions_data.transactions.edges[k].node;
+                        const input = JSON.parse(node.tags.filter(tag => tag.name === 'Input')[0].value);
+
+                        if(input.function == 'transfer' && input.target == wallet_address) {
+                            balance = 1;
+                        } else {
+                            balance = 0;
+                        }
+   
+                        
+                    }
+                }
+    
+                
+
+                if(transactions.hasOwnProperty(row['file'])) {
+                    
+                    const existing_tx = transactions[row['file']];
+                    if(existing_tx.created > row.created && row['Content-Type'] != 'PERSISTENCE') {
+                        transactions[row['file']] = row;
+                    }
+
+                    if(balance == 0) {
+                        delete transactions[row['file']];
+                    }
+                } else {
+                    if(row['Content-Type'] != 'PERSISTENCE') {
+                        transactions[row['file']] = row;
+                    }
+                }
+            }
+    
+            hasNextPage = data.transactions.pageInfo.hasNextPage;
+
+            if(hasNextPage) {
+                cursor = data.transactions.edges[data.transactions.edges.length - 1].cursor;
+            }
+        }        
+    }
+
+    hasNextPage = true;
+    cursor = '';  
+    while(hasNextPage) {
+        const target_actions_query = `{
+            transactions(
+                sort: HEIGHT_DESC
+                first: 100
+                tags: [
+                {
+                    name: "Application",
+                    values: ["Evermore"]
+                },
+                {
+                    name: "App-Name",
+                    values: ["SmartWeaveAction"]
+                },
+                {
+                    name: "target",
+                    values: ["${wallet_address}"]
+                }
+                ]
+                ) {
+                pageInfo {
+                    hasNextPage
+                }
+                edges {
+                    cursor
+                    node {
+                        id
+                        tags {
+                            name
+                            value
+                        }
+                    }
+                }
+                
+            }
+        }`;
+
+        const target_actions_response = await arweave.api.request().post(settings.GRAPHQL_ENDPOINT, {
+            operationName: null,
+            query: target_actions_query,
+            variables: {}
+        });
+
+        const target_actions_data = target_actions_response.data.data;
+
+        if(target_actions_response.status == 200) {
+            
+
+            for(let j in target_actions_data.transactions.edges) { 
+                const node = target_actions_data.transactions.edges[j].node;
+                const contractTag = node.tags.filter(tag => tag.name === "Contract")[0];
+
+                
+
+                const actions_query = `{
+                    transactions(
+                        sort: HEIGHT_DESC
+                        first: 10
+                        tags: [
+                        {
+                            name: "Application",
+                            values: ["Evermore"]
+                        },
+                        {
+                            name: "App-Name",
+                            values: ["SmartWeaveAction"]
+                        }
+                        ,
+                        {
+                            name: "Contract",
+                            values: ["${contractTag.value}"]
+                        }
+                        ]
+                        ) {
+                        edges {
+                            cursor
+                            node {
+                                id
+                                tags {
+                                    name
+                                    value
+                                }
+                            }
+                        }
+                        
+                    }
+                }`;
+    
+                const actions_response = await arweave.api.request().post(settings.GRAPHQL_ENDPOINT, {
+                    operationName: null,
+                    query: actions_query,
+                    variables: {}
+                })
+    
+                
+                if(actions_response.status == 200) {
+                    let balance = 1;
+  
+                    const actions_data = actions_response.data.data;
+    
+                    for(let k in actions_data.transactions.edges) { 
+                        const node = actions_data.transactions.edges[k].node;
+                        const input = JSON.parse(node.tags.filter(tag => tag.name === 'Input')[0].value);
+
+                        if(input.function == 'transfer' && input.target == wallet_address) {
+                            balance = 1;
+                        } else {
+                            balance = 0;
+                        }
+
+                        
+                    }
+
+                    
+
+                    const tx = await getTransactionGQL(contractTag.value);
+                    
+
+                    tx.tags.forEach(tag => {
+
+                        if(tag.name == 'version' || tag.name == 'modified' || tag.name == 'created' || tag.name == 'key_size') {
+                            tx[tag.name] = parseInt(tag.value);
+                            // if(row.created < now) return reject();
+                            if(tag.name == 'modified') {
+                                tx['created'] = tx['modified'];
+                            }
+                        } else {
+                            tx[tag.name] = tag.value;
+                        }
+                    });
+
+                    if(!tx.hasOwnProperty('file')) continue;
+
+                    
+
+                    if(balance == 1) {
+                        transactions[tx.file] = tx;
+                    } else {
+                        if(transactions.hasOwnProperty(tx.file)) {
+                            delete transactions[tx.file];
+                        }
+                    }
+                }
+    
+                
+            }
+        
+
+            
+        }
+
+        hasNextPage = target_actions_data.transactions.pageInfo.hasNextPage;
+
+        if(hasNextPage) {
+            cursor = target_actions_data.transactions.edges[target_actions_data.transactions.edges.length - 1].cursor;
+        }
+
+    }
+
+    Object.keys(transactions).forEach(file_name => {
+        const available_row = transactions[file_name];
+
+        let path_parts = ['', available_row.file];
+
+        if(available_row.file.indexOf('/') != -1) {
+            path_parts = available_row.file.split('/')
+        }
+        
+
+        if(folders.hasOwnProperty(path_parts[0])) {
+            addToFolderChildrenOrUpdate(path_parts, 0, available_row, folders[path_parts[0]], 0);                
+        } else {
+            folders[path_parts[0]] = createRootFolder(path_parts, 0, available_row);
+        }
+    });
+
+    return folders;
+}
+
+const getTransactionGQL = async (tx_id) => {
+    const query = `
+    query {
+        transactions(
+            sort: HEIGHT_DESC
+            ids: ["${tx_id}"]
+        ) {
+            edges {
+                cursor
+                node {
+                    id
+                    tags {
+                        name
+                        value
+                    }
+                }
+            }
+        }
+    }`;
+
+    const response = await arweave.api.request().post(settings.GRAPHQL_ENDPOINT, {
+        operationName: null,
+        query: query,
+        variables: {}
+    });
+
+    if(response.status == 200) {
+        return response.data.data.transactions.edges.length > 0 ? response.data.data.transactions.edges[0].node : {tags:[]};
+    }
+
+    return {tags:[]}
+} 
+
+export const getNFTContracts = () => {
+
+}
+
 
 export function addToFolderChildrenOrUpdate(path_parts, index, file_info, path_obj) {
     if(index == path_parts.length - 1) {

@@ -66,7 +66,10 @@ class FileDetail extends Component {
             ]
         );
 
-        const submitted_txs = JSON.parse(sessionStorage.getItem('evermore-files-to-be-mined'));
+        let submitted_txs = JSON.parse(sessionStorage.getItem('evermore-files-to-be-mined'));
+
+        if(!submitted_txs) submitted_txs = [];
+
         submitted_txs.push({
             id: response_id,
             name: `Transfer of ${title}`
@@ -75,8 +78,6 @@ class FileDetail extends Component {
 
         this.closeTransferDialog();
         this.props.addSuccessAlert("The transfer process has begun. Please allow at least 15mins for the transfer to be mined.");
-
-        debugger;
 
         this.props.history.push("/files");
     }
@@ -90,8 +91,6 @@ class FileDetail extends Component {
 
         if(this.props.files && txid) {
             const file_info = this.getFileInfo(this.props.files[''], txid);
-
-            debugger;
 
             const nft_state = JSON.parse(file_info['Init-State']);
 
@@ -167,9 +166,10 @@ class FileDetail extends Component {
 
 
             if(this.state.transferDialogOpen) {
+                debugger;
                 transfer_dialog = <TransferNFTDialog 
                                     closeTransferDialog={() => { this.closeTransferDialog() }}
-                                    transferNFT={(target) => { this.transferNFT(file_info.name, file_info.Contract, target)}}
+                                    transferNFT={(target) => { this.transferNFT(file_info.name, file_info.id, target)}}
                                 />;
             }
         }

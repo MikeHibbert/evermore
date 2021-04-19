@@ -1,3 +1,4 @@
+import { Helmet } from 'react-helmet';
 import React, {Component} from 'react';
 import { Route, Redirect, withRouter } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
@@ -14,9 +15,11 @@ import HomePage from './containers/Home/Hompage';
 import Downloads from './containers/Home/Downloads';
 import NFTs from './containers/NFT/NFTs';
 import NFTDetail from './containers/NFT/NFTDetail';
-import {getDownloadableFilesGQL} from './containers/Files/helpers';
+import {getDownloadableFilesGQL, getDownloadableFilesGQLLazy} from './containers/Files/helpers';
 import {getName} from './components/Message/helpers';
 import arweave from './arweave-config';
+import { readContract, interactRead  } from 'smartweave';
+import settings from './app-config';
 import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
 import { getPersistenceRecords } from './containers/Files/helpers';
@@ -36,6 +39,7 @@ class App extends Component {
     contentToggled: false,
     contentStyle: {marginLeft: '0px'},
     balance: 0,
+    evermore_balance: 0,
     wallet_address: null,
     aside_classes: "aside-start aside-primary font-weight-light aside-hide-xs d-flex flex-column h-auto",
     aside_open: false,
@@ -103,27 +107,31 @@ class App extends Component {
                 }`,
               };
 
-    arweave.api.request().post('https://arweave.net/graphql', query).then(async response => {
-      const { data } = response.data;
+    if(this.state.isAuthenticated) {
+      arweave.api.request().post('https://arweave.net/graphql', query).then(async response => {
+        const { data } = response.data;
 
-      
-      
-      if(data.transactions.edges.length == 0) {
-        const transaction = await arweave.createTransaction({
-            data: "REGISTERED NEW USER"
-        }, jwk);
+        
+        
+        if(data.transactions.edges.length == 0) {
+          const transaction = await arweave.createTransaction({
+              data: "REGISTERED NEW USER"
+          }, jwk);
 
-        debugger;
+          debugger;
 
-        transaction.addTag("App-Name", "Evermore-User-Registration");
+          transaction.addTag("App-Name", "Evermore-User-Registration");
 
-        await arweave.transactions.sign(transaction, jwk);
+          await arweave.transactions.sign(transaction, jwk);
 
-        console.log(transaction.id)
+          console.log(transaction.id)
 
-        await arweave.transactions.post(transaction);
-      } 
-    })
+          await arweave.transactions.post(transaction);
+        } 
+      })
+    }
+
+    
     
     
     
@@ -158,12 +166,18 @@ class App extends Component {
         arweave.wallets.getBalance(wallet_address).then((balance) => {
             let ar = arweave.ar.winstonToAr(balance);
 
-            const state = {balance: ar};
+            interactRead(arweave, wallet, settings.CONTRACT_ADDRESS, {function: 'balance', target: wallet_address}).then(response => {
+              const state = {evermore_balance: response.balance, balance: ar};
 
-            that.setState(state);
+              that.setState(state);
+            });
+
+            
         }); 
 
-        const files = await getDownloadableFilesGQL(wallet_address, wallet);
+        
+
+        const files = await getDownloadableFilesGQLLazy(wallet_address, wallet);
         
         
         // if(files.children.length > this.state.files.length && this.state.files.length > 0) {
@@ -185,6 +199,8 @@ class App extends Component {
         });
     }     
   }
+
+  
 
   newMessages(messages) {
     const new_messages = [];
@@ -329,6 +345,7 @@ class App extends Component {
           isAuthenticated={this.state.isAuthenticated} 
           history={this.props.history} 
           current_balance={this.state.balance}
+          evermore_balance={this.state.evermore_balance}
           wallet_address={this.state.wallet_address}
           username={this.state.username}
           toggleAside={() => this.toggleAside() }
@@ -345,7 +362,7 @@ class App extends Component {
 
     let routes = [
       <Route key='home' path="/" exact component={() => <RecentActivity files={this.state.files} wallet_address={this.state.wallet_address} jwk={this.state.jwk} />} />,
-      <Route key='nfts' path="/nfts" exact component={() => <NFTs wallet_address={this.state.wallet_address} jwk={this.state.jwk} />} />,
+      <Route key='nfts' path="/nfts/:id" exact component={() => <NFTs wallet_address={this.state.wallet_address} location={this.props.location} jwk={this.state.jwk} />} />,
       <Route key='files' path="/files" exact component={() => <FoldersView 
                                                                   location={this.props.location}
                                                                   files={this.state.files} 
@@ -360,6 +377,7 @@ class App extends Component {
       <Route key='file' path='/file/:id' component={() => <FileDetail 
                                                                   match={this.props.match}
                                                                   location={this.props.location}
+                                                                  history={this.props.history}
                                                                   files={this.state.files} 
                                                                   wallet_address={this.state.wallet_address} 
                                                                   wallet_balance={this.state.balance}
@@ -388,7 +406,7 @@ class App extends Component {
     if(this.state.isAuthenticated == false) {
       routes = [
         <Route key='home' path="/" exact component={() => <HomePage wallet_address={this.state.wallet_address} jwk={this.state.jwk} />} />,
-        <Route key='nfts' path="/nfts" exact component={() => <NFTs wallet_address={this.state.wallet_address} jwk={this.state.jwk} />} />,
+        <Route key='nfts' path="/nfts/:id" exact component={() => <NFTs wallet_address={this.state.wallet_address} location={this.props.location} jwk={this.state.jwk} />} />,
         <Route key='nft-detail' path="/nft-detail/:id" exact component={() => <NFTDetail
                                                                                 location={this.props.location} 
                                                                                 wallet_address={this.state.wallet_address} 
@@ -417,6 +435,14 @@ class App extends Component {
     
 
     return (<>
+      <Helmet>
+          <title>Evermore - Your data in the blockchain ... Forever</title>
+          <link rel="canonical" href="https://evermoredata.store" />
+          <meta
+            name="description"
+            content="Evermore - Your data in the blockchain, online file storage, FREE access to your data without any subscriptions"
+          />
+      </Helmet>
       {page_content}
       </>      
     );

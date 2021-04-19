@@ -4,8 +4,36 @@ import Moment from 'react-moment';
 import arweave from '../../arweave-config';
 import { render } from '@testing-library/react';
 import {getContentElementBasedOnType} from './NFTThumbnail';
-import { Twitter, Facebook, Telegram, Reddit, Linkedin, Mail } from 'react-social-sharing'
+import { Twitter, Facebook, Telegram, Reddit, Linkedin, Mail } from 'react-social-sharing';
+import Seo from './Seo';
+
 const dJSON = require('dirty-json');
+
+function getSeoHeaders(nft) {
+    const initalState = nft.processed_tags['Init-State'];
+    let image_url = "https://arweave.net/c1mNDCo3Mh1PdimUr5OEYyVdbgOowXV2Ct_JN5irnRE";
+    const keywords = `nft nfts ${initalState.name} ${initalState.description}`.split(' ');
+
+    const contentTypeTag = nft.processed_tags['Content-Type'];
+
+    if(contentTypeTag.indexOf('image') != -1) {
+        image_url = `https://arweave.net/${nft.id}`;
+        
+        return <Seo nft={nft} meta={initalState.description} image={image_url} title={initalState.name} description={initalState.description} id={nft.id} keywords={keywords} />
+    } else {
+        console.log(contentTypeTag)
+    }
+
+    if(contentTypeTag.indexOf('audio') != -1) {
+        keywords.push('audio');
+        return <Seo nft={nft} meta={initalState.description} image={image_url} title={initalState.name} description={initalState.description}  id={nft.id} keywords={keywords} />
+    }
+
+    if(contentTypeTag.indexOf('video') != -1) {
+        keywords.push('video');
+        return <Seo nft={nft} meta={initalState.description} image={image_url} title={initalState.name} description={initalState.description}  id={nft.id} keywords={keywords} />   
+    }
+}
 
 export default class NFTDetail extends Component {
     state = {
@@ -68,28 +96,25 @@ export default class NFTDetail extends Component {
 
         const that = this;
 
-        if(this.props.location.hasOwnProperty('nft')) {
-            this.setState({nft: this.props.location.nft});
-        } else {
-            const id = this.props.location.pathname.split('/')[2];
-            const processed_tags = {};
-            this.getNFT(id).then(transaction => {
-                const edge = transaction.edges[0];
-                const nft = edge.node;
+        const id = this.props.location.pathname.split('/')[2];
+        const processed_tags = {};
+        this.getNFT(id).then(transaction => {
+            const edge = transaction.edges[0];
+            const nft = edge.node;
 
-                for(let i in nft.tags) {
-                    const tag = nft.tags[i];
-                    if(tag.name == 'Init-State') {
-                        processed_tags[tag.name] = dJSON.parse(tag.value);
-                    } else {
-                        processed_tags[tag.name] = tag.value;
-                    }
+            for(let i in nft.tags) {
+                const tag = nft.tags[i];
+                if(tag.name == 'Init-State') {
+                    processed_tags[tag.name] = dJSON.parse(tag.value);
+                } else {
+                    processed_tags[tag.name] = tag.value;
                 }
+            }
 
-                nft['processed_tags'] = processed_tags;
-                that.setState({nft: nft});
-            }) 
-        }
+            nft['processed_tags'] = processed_tags;
+            that.setState({nft: nft});
+        }) 
+        
     }
 
     copyToClipboard(e) {
@@ -105,11 +130,14 @@ export default class NFTDetail extends Component {
         let nft_detail = null;
         let owner = null;
         let share_link = null;
+        let seo = null;
 
         if(this.state.nft) {
-            const contentElement = getContentElementBasedOnType(this.state.nft, this.state.nft.processed_tags['Init-State'], "100%", "100%")
+            const contentElement = getContentElementBasedOnType(this.state.nft, this.state.nft.processed_tags['Init-State'])
             const name = this.state.nft.processed_tags['Init-State'].name;
             const description = this.state.nft.processed_tags['Init-State'].description.replace('- Created with Evermore', '');
+            const created = new Date(parseInt(this.state.nft.processed_tags.created));
+
 
             nft_detail = <div className="col-12 col-sm-12 col-md-8 col-lg-8">
                             <div className="single_blog">
@@ -122,7 +150,7 @@ export default class NFTDetail extends Component {
 
                                     <div className="page_info pt-20">
                                         <ul className="post_view_comment">
-                                            <li><i className="flaticon-calendar">Minted: <Moment data={this.state.nft.processed_tags.created} format="ddd MMM YYYY HH:mm:ss"></Moment></i></li>
+                                            <li><i className="flaticon-calendar">Minted: <Moment date={created} format="ddd D MMM YYYY HH:mm:ss"></Moment></i></li>
                                         </ul>
                                         <div className="share">
                                             <i className="flaticon-share"></i>
@@ -134,9 +162,11 @@ export default class NFTDetail extends Component {
                         
             owner = this.state.nft.owner.address;
             share_link = `https://evermoredata.store/#/nft-detail/${this.state.nft.id}`;
+            seo = getSeoHeaders(this.state.nft);
         }
 
         return (<>
+            {seo}
             <link rel="stylesheet" href="css/style.css"></link>
                 <link rel="stylesheet" href="css/responsive.css"></link>
                 <link rel="stylesheet" href="css/master.css"></link>
@@ -158,7 +188,7 @@ export default class NFTDetail extends Component {
                                 <div className="top-area-right text-right">
                                     <div className="right-header-top">
                                         <ul>
-                                            <li><Link to='login'><i className="fa fa-user header-top-icon"></i>login</Link></li>
+                                            <li><Link to='/login'><i className="fa fa-user header-top-icon"></i>login</Link></li>
                                             { /* <li><Link to='support'><i className="fa fa-headphones header-top-icon"></i>support</Link></li> */ }
                                         </ul>
                                     </div>
@@ -210,7 +240,7 @@ export default class NFTDetail extends Component {
                                     
                                     <input ref="owner" type="text" value={owner} style={{display: 'none'}}></input>
                                     <button type="button" onClick={(e) => { this.copyToClipboard(e) }} className="btn btn-primary btn-soft mb-3 mt-20" data-toggle="modal" data-target="#exampleModalSm">
-                                        <i class="fi fi-mollecules"></i>
+                                        <i className="fi fi-mollecules"></i>
                                         Copy to clipboad
                                     </button>
                                 </div>

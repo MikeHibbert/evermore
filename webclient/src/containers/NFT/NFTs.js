@@ -1,9 +1,12 @@
 
 import React, {Component} from 'react';
 import arweave from '../../arweave-config';
+import settings from '../../app-config';
+import {readContract} from 'smartweave';
 import { Link } from 'react-router-dom';
 import Moment from 'react-moment';
 import NFTThumbnail from './NFTThumbnail';
+import { act } from 'react-dom/test-utils';
 const dJSON = require('dirty-json');
 
 const escapeText = function (str) {
@@ -35,10 +38,12 @@ class NFTs extends Component {
     }
 
     componentDidMount() {
+        const id = this.props.location.pathname.split('/')[2];
+        
         document.body.classList.add('home-version-four');
         document.body.id = "home-version-four";
         const that = this;
-        this.getNFTSearch(null).then(nft_results => {
+        this.getNFTSearch(id).then(nft_results => {
             that.setState({nfts: nft_results.nfts, cursor: nft_results.cursor, hasNextPage: nft_results.hasNextPage, loading: false});
         });
     }
@@ -54,13 +59,23 @@ class NFTs extends Component {
         });
     }
 
-    async queryForNFTs(firstPage, cursor) {
+    async queryForNFTs(wallet_address, firstPage, cursor) {
         try {
             const query = {
               query: `query {
               transactions(
+                owners:["${wallet_address}"]
                 sort: HEIGHT_DESC
-                tags: [{ name: "Application", values: ["Evermore"]}, {name: "App-Name", values:["SmartWeaveContract"]}]
+                tags: [
+                    {
+                        name: "Application",
+                        values: ["Evermore"]
+                    },
+                    {
+                        name: "App-Name",
+                        values: ["SmartWeaveContract", "SmartWeaveAction"]
+                    }
+                ]
                 first: 100
                 after: "${cursor}"
               ) {
@@ -101,68 +116,60 @@ class NFTs extends Component {
         }
     }
 
-    async getNFTSearch(search, cursor="") {
-        let completed = false;
-        let nfts = [];
-        let firstPage = 2147483647; // Max size of query for GQL
-        let timeStamp = new Date();
-        let yesterday = new Date(timeStamp);
-        yesterday.setDate(yesterday.getDate() - 6);
-
-        // Create the query to search for all ardrive transactions.
-        let transactions = await this.queryForNFTs(firstPage, cursor);
-        
-        const { edges } = transactions;
-
-        let last_cursor = cursor;
-        edges.forEach((edge) => {
-            last_cursor = edge.cursor;
-            const { node } = edge;
-            const { data } = node;
-            const { owner } = node;
-            const { block } = node;
-            if (block !== null) {
-                let timeStamp = new Date(block.timestamp * 1000);
-
-                if (yesterday.getTime() <= timeStamp.getTime()) {
-                    if(search) {
-                        console.log(node);
-                        debugger;
-                    } else {
-                        nfts.push(node);
-                    }                        
-                } else {
-                    // The blocks are too old, and we dont care about them
-                    completed = true;
-                }
-            }
-        });
-
-        
-        for(let i in nfts) {
-            const nft = nfts[i];
-            const tags = {};
-           
-            for(let j in nft.tags) {
-                const tag = nft.tags[j];
-                if(tag.name == 'Init-State') {
-                    try {
-                        
-                        tags[tag.name] = dJSON.parse(tag.value);
-                    } catch (e) {
-                        const parts = tag.value.split(':')
-                        debugger;
-                    }
-                    
-                } else {
-                    tags[tag.name] = tag.value;
-                }
-            }
+    getNFTSearch(id, cursor="") {
+        return new Promise(async (resolve, reject) => {
             
-            nft['processed_tags'] = tags;
-        }
+            const transactions = {};
+    
+            const folders = {"": {children:[]}}; 
+            folders[""] = {name: "", children: [
+                {name: "NFTs", children: [], index: 0, type: "folder"}
+            ], index: 0, type: "folder"};
 
-        return {nfts:nfts, cursor: last_cursor, hasNextPage: transactions.pageInfo.hasNextPage};
+            let { promises, hasNextPage, cursor } = await getSmartContractNFTs(id);
+
+            resolve(Promise.allSettled(promises).catch(errors => {
+                console.log(errors);
+            }));
+        }).then(transactions_results => {
+            
+            const transactions = {};
+            transactions_results.forEach(result => {
+                if(result.status == 'fulfilled') {
+                    transactions[result.value.id] = result.value;
+                }
+            });
+
+            return transactions;
+
+        }).then(async transactions => {
+            const results = await getSmartContractTransfers(id);
+
+            const not_owned = await Promise.allSettled(results.promises).catch(e => {
+                console.log(e);
+            });
+
+            not_owned.forEach(action => {
+                if(action.status == 'fulfilled' && action.value != undefined) {
+                    if(action.value.state.balances[id] == 0) {
+                        delete transactions[action.value.Contract];
+                    }
+                }
+            });
+
+            return {transactions: transactions, hasNextPage: results.hasNextPage, cursor: results.cursor}
+
+        }).then(results => {
+            const nfts = [];
+
+            Object.keys(results.transactions).forEach(file_name => {
+                const available_row = results.transactions[file_name];
+    
+                nfts.push(available_row);
+            });
+
+            return ({nfts: nfts, hasNextPage: results.hasNextPage, cursor: results.cursor});
+        });
     }
 
     seeMore(e) {
@@ -200,12 +207,12 @@ class NFTs extends Component {
         let nextMoreSection = null;
         if(this.state.hasNextPage) {
 
-            seeMoreSection = <div class=" col-12 col-md-12 col-lg-12 d-flex justify-content-center">
-                                <a onClick={(e) => this.seeMore(e)} title="" class="view-more-btn g-btn">See More</a>
+            seeMoreSection = <div className=" col-12 col-md-12 col-lg-12 d-flex justify-content-center">
+                                <a onClick={(e) => this.seeMore(e)} title="" className="view-more-btn g-btn">See More</a>
                             </div>;
 
-            nextMoreSection = <div class=" col-12 col-md-12 col-lg-12 d-flex justify-content-center mb-30">
-                                    <a onClick={(e) => this.seeMore(e)} title="" class="view-more-btn g-btn">Next Page</a>
+            nextMoreSection = <div className=" col-12 col-md-12 col-lg-12 d-flex justify-content-center mb-30">
+                                    <a onClick={(e) => this.seeMore(e)} title="" className="view-more-btn g-btn">Next Page</a>
                                 </div>;
         }
 
@@ -270,9 +277,9 @@ class NFTs extends Component {
             <div className="container">
                 <div className="row">       
                     {/* <div className=" col-md-8">  
-                        <div class="search-banner pr-30 pb-70 pt-40">
-                            <input class="form-control search-inner" type="text" placeholder="Search your domain here" />			
-                            <div class="search-submit">
+                        <div className="search-banner pr-30 pb-70 pt-40">
+                            <input className="form-control search-inner" type="text" placeholder="Search your domain here" />			
+                            <div className="search-submit">
                                 <input type="submit" className="btn btn-default" value="Search" />
                             </div>
                         </div>
@@ -346,3 +353,279 @@ class NFTs extends Component {
 }
 
 export default NFTs;
+
+async function getSmartContractTransfers(id) {
+    let hasNextPage = true;
+    let cursor = '';
+    const promises = [];
+    while (hasNextPage) {
+        const query = `{
+                    transactions(
+                        first: 100
+                        owners: ["${id}"]
+                        tags: [
+                        {
+                            name: "Application",
+                            values: ["Evermore"]
+                        },
+                        {
+                            name: "App-Name",
+                            values: ["SmartWeaveAction"]
+                        }
+                        ]
+                        after: "${cursor}"
+                        ) {
+                        pageInfo {
+                            hasNextPage
+                        }
+                        edges {
+                            cursor
+                            node {
+                                id
+                                tags {
+                                    name
+                                    value
+                                }
+                            }
+                        }
+                        
+                    }
+                }`;
+
+        const response = await arweave.api.request().post(settings.GRAPHQL_ENDPOINT, {
+            operationName: null,
+            query: query,
+            variables: {}
+        });
+
+
+        if (response.status == 200) {
+
+            const data = response.data.data;
+
+            data.transactions.edges.forEach(edge => {
+                const promise = new Promise((resolve, reject) => {
+                    const row = edge.node;
+
+                    row['tx_id'] = row.id;
+
+                    const processed_tags = {};
+
+                    row.tags.forEach(tag => {
+
+
+                        if (tag.name == 'version' || tag.name == 'modified' || tag.name == 'created' || tag.name == 'key_size') {
+                            processed_tags[tag.name] = parseInt(tag.value);
+                            if (tag.name == 'modified') {
+                                processed_tags['created'] = row['modified'];
+                            }
+                        } else {
+                            processed_tags[tag.name] = tag.value;
+                            if (tag.name == 'Init-State') {
+                                processed_tags[tag.name] = dJSON.parse(tag.value);
+                            }
+                        }
+                    });
+
+                    row['processed_tags'] = processed_tags;
+
+
+                    if (row.processed_tags['Action'] == 'Transfer') {
+                        resolve(
+                            readContract(arweave, row.processed_tags.Contract).then(state => {
+                                if (!state.balances.hasOwnProperty(id)) {
+                                    return reject();
+                                }
+                                if (state.balances[id] != 0) {
+                                    row['state'] = state;
+
+                                    return arweave.transactions.get(row.id).then(tx => {
+
+                                        tx.get('tags').forEach(tag => {
+                                            let key = tag.get('name', { decode: true, string: true });
+                                            let value = tag.get('value', { decode: true, string: true });
+
+                                            if (key == "modified" || key == "version" || key == "file_size") {
+                                                row[key] = parseInt(value);
+                                            } else {
+                                                row[key] = value;
+                                            }
+
+                                        });
+
+                                        return row;
+                                    }).catch(e => {
+                                        console.log(e);
+                                        return reject(e);
+                                    });
+                                }
+                            })
+                        );
+
+
+                    } else {
+                        return reject();
+                    }
+                });
+
+                promises.push(promise);
+            });
+
+            hasNextPage = data.transactions.pageInfo.hasNextPage;
+
+            if (hasNextPage) {
+                cursor = data.transactions.edges[data.transactions.edges.length - 1].cursor;
+            }
+        }
+    }
+
+    return { promises, hasNextPage, cursor };
+}
+
+async function getSmartContractNFTs(id) {
+    let hasNextPage = true;
+    let cursor = '';
+    const promises = [];
+    while (hasNextPage) {
+        const query = `{
+                    transactions(
+                        first: 100
+                        owners: ["${id}"]
+                        tags: [
+                        {
+                            name: "Application",
+                            values: ["Evermore"]
+                        },
+                        {
+                            name: "App-Name",
+                            values: ["SmartWeaveContract"]
+                        }
+                        ]
+                        after: "${cursor}"
+                        ) {
+                        pageInfo {
+                            hasNextPage
+                        }
+                        edges {
+                            cursor
+                            node {
+                                id
+                                tags {
+                                    name
+                                    value
+                                }
+                            }
+                        }
+                        
+                    }
+                }`;
+
+        const response = await arweave.api.request().post(settings.GRAPHQL_ENDPOINT, {
+            operationName: null,
+            query: query,
+            variables: {}
+        });
+
+
+        if (response.status == 200) {
+
+            const data = response.data.data;
+
+            data.transactions.edges.forEach(edge => {
+                const promise = new Promise((resolve, reject) => {
+                    const row = edge.node;
+
+                    row['tx_id'] = row.id;
+
+                    const processed_tags = {};
+
+                    row.tags.forEach(tag => {
+
+
+                        if (tag.name == 'version' || tag.name == 'modified' || tag.name == 'created' || tag.name == 'key_size') {
+                            processed_tags[tag.name] = parseInt(tag.value);
+                            if (tag.name == 'modified') {
+                                processed_tags['created'] = row['modified'];
+                            }
+                        } else {
+                            processed_tags[tag.name] = tag.value;
+                            if (tag.name == 'Init-State') {
+                                processed_tags[tag.name] = dJSON.parse(tag.value);
+                            }
+                        }
+                    });
+
+                    row['processed_tags'] = processed_tags;
+
+                    if (row.processed_tags['App-Name'] == "SmartWeaveContract" || row.processed_tags['App-Name'] == "SmartWeaveAction") {
+
+                        if (row.processed_tags['App-Name'] == "SmartWeaveContract") {
+
+                            return readContract(arweave, row.id).then(state => {
+                                if (!state.balances.hasOwnProperty(id)) {
+                                    return reject();
+                                }
+                                if (state.balances[id] != 0) {
+                                    return resolve(row);
+                                }
+                            }).catch(e => {
+                                return reject(e);
+                            });
+
+                        } else {
+                            if (row.processed_tags['Action'] == 'Transfer') {
+                                return readContract(arweave, row.processed_tags.Contract).then(state => {
+                                    if (!state.balances.hasOwnProperty(id)) {
+                                        return reject();
+                                    }
+                                    if (state.balances[id] != 0) {
+
+                                        resolve(arweave.transactions.get(row.processed_tags.Contract).then(tx => {
+
+                                            tx.get('tags').forEach(tag => {
+                                                let key = tag.get('name', { decode: true, string: true });
+                                                let value = tag.get('value', { decode: true, string: true });
+
+                                                if (key == "modified" || key == "version" || key == "file_size") {
+                                                    row[key] = parseInt(value);
+                                                } else {
+                                                    row[key] = value;
+                                                }
+
+                                            });
+
+                                            return row;
+                                        }).catch(e => {
+                                            debugger;
+                                            console.log(e);
+                                            return reject(e);
+                                        }));
+                                    }
+                                }).catch(e => {
+                                    return reject(e);
+                                });;
+
+
+                            } else {
+                                return reject();
+                            }
+                        }
+                    }
+                });
+
+                promises.push(promise);
+            });
+
+            hasNextPage = data.transactions.pageInfo.hasNextPage;
+
+            if (hasNextPage) {
+                cursor = data.transactions.edges[data.transactions.edges.length - 1].cursor;
+            }
+
+
+        }
+
+
+    }
+    return { promises, hasNextPage, cursor };
+}
