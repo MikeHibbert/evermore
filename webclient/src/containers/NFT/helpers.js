@@ -6,7 +6,7 @@ import { toast } from 'react-toastify';
 
 const PUBLIC_KEY = process.env.PUBLIC_KEY;
 const PRIVATE_KEY = process.env.PRIVATE_KEY;
-const NFT_DEBUG = true;
+const NFT_DEBUG = false;
 const NFT_CONTRACT_ADDRESS = NFT_DEBUG ? "0xcD77551246F275Af229bE93C1953357C577d2700" : "0xC29A432CD0A9fa202117Ed53FaD040b5Ccc48D35";
 console.log(`NFT_CONTRACT_ADDRESS = ${NFT_CONTRACT_ADDRESS}`);
 const contract = require("./artifacts/contracts/EvermoreNFT.sol/EvermoreNFT.json"); 
