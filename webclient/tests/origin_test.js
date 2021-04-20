@@ -51,7 +51,49 @@ async function UpdateRecord(previousTX) {
     console.log(orginTag.value);
 }
 
-async function getChildRecords(tx_id) {
+async function getOriginRecords() {
+    const query = { query: `query 
+        {
+            transactions(
+                sort: HEIGHT_ASC
+                tags: [
+                {
+                    name: "App-Name",
+                    values: ["OriginTest"]
+                },
+                {
+                    name: "version_number",
+                    values: ["1"]
+                }
+                ]
+                after: ""
+                ) {
+                pageInfo {
+                    hasNextPage
+                }
+                edges {
+                    cursor
+                    node {
+                        id
+                        tags {
+                            name
+                            value
+                        }
+                    }
+                }
+        
+            }
+        }
+    `};
+
+    const response = await arweave.api.request().post('https://arweave.net/graphql', query);
+
+    if(response.status == 200) {
+        return response.data.data.transactions.edges;
+    }
+}
+
+async function getAllInOriginGroup(origin) {
     const query = { query: `query 
         {
             transactions(
@@ -63,7 +105,7 @@ async function getChildRecords(tx_id) {
                 },
                 {
                     name: "origin",
-                    values: ["${tx_id}"]
+                    values: ["${origin}"]
                 }
                 ]
                 after: ""
@@ -96,13 +138,45 @@ async function getChildRecords(tx_id) {
 async function main() {
     // createOriginal();
 
-    const edges = await getChildRecords("41f8300f-0473-42fc-a6e5-c747a7d4a8d8");
+    const origin_edges = await getOriginRecords();
 
-    const previousTX = edges[edges.length - 1].node;
+    const latest_versions = {};
+    for(let i in origin_edges) {
+        const node = origin_edges[i].node;
+        const versionTag = node.tags.filter(tag => tag.name == 'version_number')[0];
+        const originTag = node.tags.filter(tag => tag.name == 'origin')[0];
 
-    await UpdateRecord(previousTX);
+        const version = parseInt(versionTag.value);
 
-    console.log(edges)
+        node['version_number'] = version;
+
+        latest_versions[originTag.value] = node;
+
+        const other_versions = await getAllInOriginGroup(originTag.value);
+
+        for(let j in other_versions) {
+            const other_version = other_versions[j].node;
+
+            const otherVersionTag = other_version.tags.filter(tag => tag.name == 'version_number')[0];
+            const otherOriginTag = node.tags.filter(tag => tag.name == 'origin')[0];
+            
+            const other_version_number = parseInt(otherVersionTag.value);
+
+            if(latest_versions[otherOriginTag.value].version_number < other_version_number) {
+                other_version['version_number'] = other_version_number;
+                latest_versions[otherOriginTag.value] = other_version;
+            }
+        }
+
+    }
+
+    console.log(latest_versions);
+
+    const previousTX = origin_edges[origin_edges.length - 1].node;
+
+    // await UpdateRecord(previousTX);
+
+    console.log(origin_edges)
 }
 
 main();
