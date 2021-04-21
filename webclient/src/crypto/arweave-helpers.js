@@ -78,7 +78,7 @@ export const uploadFile = async (
             transaction.addTag('App-Name', "SmartWeaveContract");
             
             transaction.addTag('Exchange', "Verto");
-            transaction.addTag('Action', "marketplace/create");
+            transaction.addTag('Action', "marketplace/Create");
             transaction.addTag('App-Version', "0.3.0");
             transaction.addTag('Contract-Src', "I8xgq3361qpR8_DvqcGpkCYAUTMktyAgvkm6kGhJzEQ");
             transaction.addTag('Init-State', `{"balances":{"${wallet_address}": 1},"name":"${nft_name}","ticker":"${ticker}","description":"${description} - Created with Evermore"}`);
