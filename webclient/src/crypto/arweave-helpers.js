@@ -131,10 +131,6 @@ export const uploadFile = async (
         file_info['id'] = transaction.id;
 
         sendUsagePayment(total_data_cost, wallet_jwk, arweave);
-        
-        if(isNFT) {
-            arweave.api.request().get(`https://v2.cache.verto.exchange/fetch/${transaction.id}`);
-        }
 
         showSuccessNotification(`${file_info.path} uploaded and will be mined shortly.`);
     } catch (e) {

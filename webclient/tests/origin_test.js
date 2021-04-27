@@ -1,5 +1,6 @@
 const fs = require('fs');
 const Arweave = require('arweave');
+const axios = require('axios');
 
 const { v4 } = require('uuid');
 
@@ -138,43 +139,45 @@ async function getAllInOriginGroup(origin) {
 async function main() {
     // createOriginal();
 
-    const origin_edges = await getOriginRecords();
+    // const origin_edges = await getOriginRecords();
 
-    const latest_versions = {};
-    for(let i in origin_edges) {
-        const node = origin_edges[i].node;
-        const versionTag = node.tags.filter(tag => tag.name == 'version_number')[0];
-        const originTag = node.tags.filter(tag => tag.name == 'origin')[0];
+    // const latest_versions = {};
+    // for(let i in origin_edges) {
+    //     const node = origin_edges[i].node;
+    //     const versionTag = node.tags.filter(tag => tag.name == 'version_number')[0];
+    //     const originTag = node.tags.filter(tag => tag.name == 'origin')[0];
 
-        const version = parseInt(versionTag.value);
+    //     const version = parseInt(versionTag.value);
 
-        node['version_number'] = version;
+    //     node['version_number'] = version;
 
-        latest_versions[originTag.value] = node;
+    //     latest_versions[originTag.value] = node;
 
-        const other_versions = await getAllInOriginGroup(originTag.value);
+    //     const other_versions = await getAllInOriginGroup(originTag.value);
 
-        for(let j in other_versions) {
-            const other_version = other_versions[j].node;
+    //     for(let j in other_versions) {
+    //         const other_version = other_versions[j].node;
 
-            const otherVersionTag = other_version.tags.filter(tag => tag.name == 'version_number')[0];
-            const otherOriginTag = node.tags.filter(tag => tag.name == 'origin')[0];
+    //         const otherVersionTag = other_version.tags.filter(tag => tag.name == 'version_number')[0];
+    //         const otherOriginTag = node.tags.filter(tag => tag.name == 'origin')[0];
             
-            const other_version_number = parseInt(otherVersionTag.value);
+    //         const other_version_number = parseInt(otherVersionTag.value);
 
-            if(latest_versions[otherOriginTag.value].version_number < other_version_number) {
-                other_version['version_number'] = other_version_number;
-                latest_versions[otherOriginTag.value] = other_version;
-            }
-        }
+    //         if(latest_versions[otherOriginTag.value].version_number < other_version_number) {
+    //             other_version['version_number'] = other_version_number;
+    //             latest_versions[otherOriginTag.value] = other_version;
+    //         }
+    //     }
 
-    }
+    // }
 
-    console.log(latest_versions);
+    // console.log(latest_versions);
 
-    const previousTX = origin_edges[origin_edges.length - 1].node;
+    // const previousTX = origin_edges[origin_edges.length - 1].node;
 
     // await UpdateRecord(previousTX);
+
+    const response = await axios.get(`https://arweave.net/tx/I8xgq3361qpR8_DvqcGpkCYAUTMktyAgvkm6kGhJzEQ/status`);
 
     console.log(origin_edges)
 }

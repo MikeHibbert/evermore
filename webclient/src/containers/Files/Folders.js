@@ -8,7 +8,8 @@ import { Link } from 'react-router-dom';
 import AddFolderDialog from './AddFolderDialog';
 import AddNFTDialog from './AddNFTDialog';
 import {addToFolderChildrenOrUpdate} from './helpers';
-import worker from './upload.worker';  // eslint-disable-line import/no-webpack-loader-syntax
+import upload_worker from './upload.worker';  // eslint-disable-line import/no-webpack-loader-syntax
+import confirmation_worker from './confirmation.worker';  // eslint-disable-line import/no-webpack-loader-syntax
 import { toast } from 'react-toastify';
 import { sendUsagePayment, uploadFile } from '../../crypto/arweave-helpers';
 import Arweave from 'arweave/web';
@@ -83,7 +84,7 @@ class FoldersView extends Component {
             
         }
 
-        this.upload_worker = new worker();
+        this.upload_worker = new upload_worker();
         const that = this;
         
         this.upload_worker.addEventListener('message', async (message) => {
@@ -115,8 +116,6 @@ class FoldersView extends Component {
 
                 const data_size = parseInt(file_info.file_size) + parseInt(msg.encrypted_result.key_size);
                 const data_cost = await arweave.transactions.getPrice(data_size);
-
-                debugger;
 
                 await uploadFile(
                     this.props.jwk,
@@ -234,6 +233,8 @@ class FoldersView extends Component {
         let is_public = public_folders.length > 0 || this.state.folder_name == 'Public' ? true : false;
         let is_nft = nft_folders.length > 0 || this.state.folder_name == 'NFTs' ? true : false;
 
+        file_info['is_nft'] = is_nft;
+
         let jwk = null;
 
         const wallet_balance = parseFloat(this.props.wallet_balance);
@@ -302,6 +303,14 @@ class FoldersView extends Component {
     }
 
     addFileInfoToFolders(file_info) {
+        if(!this.hasOwnProperty('confirmation_workers')) {
+            this.confirmation_workers = [];
+        }
+        const worker = new confirmation_worker();
+
+        worker.confirmTransactionMinedStatus([file_info]);
+        this.confirmation_workers.push(worker)
+
         this.props.addToTransactionsToBeMined({name: file_info.name, id: file_info.id});
     }    
 
