@@ -159,3 +159,18 @@ const mintNFT = async (tokenURI, eth_address, web3) => {
   }
   
 }
+
+
+export const combinableNFT = (nft) => {
+  const contentTypeTag = nft['Content-Type'];
+  
+  if(contentTypeTag.indexOf('image') != -1) {
+    return true;
+  } 
+
+  if(contentTypeTag.indexOf('audio') != -1) {
+    return true;
+  } 
+
+  return false;
+}

@@ -387,7 +387,7 @@ class App extends Component {
         addSuccessAlert={this.addSuccessAlert}
         addErrorAlert={this.addErrorAlert}
       />} />,
-      <Route key='merge' path='/merge' exact component={() => <MergeNFT wallet_address={this.state.wallet_address} jwk={this.state.jwk} />} />,
+      <Route key='merge' path='/merge' exact component={() => <MergeNFT wallet_address={this.state.wallet_address} jwk={this.state.jwk} files={this.state.files} />} />,
       <Route key='archived' path="/archived" exact component={() => <DeletedView persistence_records={this.state.persistence_records} wallet_address={this.state.wallet_address} jwk={this.state.jwk} />} />,
       <Route key='search' path="/search" exact component={() => <SearchPage wallet_address={this.state.wallet_address} jwk={this.state.jwk} />} />,
       <Route key='logout' path="/logout" exact component={() => <Logout onLogout={this.disconnectWallet.bind(this)} addSuccessAlert={this.addSuccessAlert} expandContentArea={() => { this.expandContentArea() }} />} />

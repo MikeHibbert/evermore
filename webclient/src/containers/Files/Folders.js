@@ -506,11 +506,16 @@ class FoldersView extends Component {
 
         let nft_info = null;
         if (is_nft) {
-            upload_option =
+            upload_option = <>
                 <a className="dropdown-item active" onClick={(e) => this.openNFTDialog(e)} href="#">
                     <i className="fa fa-upload" aria-hidden="true"></i>
                     Upload New NFT
                 </a>
+                <Link to='merge' className="dropdown-item active">
+                    <i className="fa fa-upload" aria-hidden="true"></i>
+                    Combine NFTs
+                </Link>
+            </>;
             const nft_profile_url = `/nfts/${this.props.wallet_address}`;
             nft_info = <>
                 <div className="bg-white shadow-xs p-2 mb-4 rounded">
