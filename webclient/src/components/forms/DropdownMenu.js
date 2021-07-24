@@ -6,13 +6,22 @@ export default class DropdownMenu extends Component {
         selected: {
             name: "Select item",
             value: null
-        }
+        },
+        dropdown_css: "dropdown bootstrap-select form-control bs-select",
+        dropdown_menu_css: "dropdown-menu"
     }
 
     constructor() {
         super();
 
         this.onClickSelection.bind(this);
+        this.onToggleDropdown.bind(this);
+    }
+
+    componentDidMount() {
+        if(this.props.first_selection) {
+            this.setState({selected: this.props.first_selection})
+        }
     }
 
     onClickSelection(value, name) {
@@ -20,10 +29,22 @@ export default class DropdownMenu extends Component {
         if(this.props.onClickSelection) {
             this.props.onClickSelection({name: name, value: value});
         }
+
+        this.onToggleDropdown(null);
     }
 
     onToggleDropdown(e) {
-        
+        if(this.state.dropdown_css == "dropdown bootstrap-select form-control bs-select") {
+            this.setState({
+                dropdown_css: "dropdown bootstrap-select form-control bs-select show",
+                dropdown_menu_css: "dropdown-menu show"
+            })
+        } else {
+            this.setState({
+                dropdown_css: "dropdown bootstrap-select form-control bs-select",
+                dropdown_menu_css: "dropdown-menu"
+            })
+        }
     }
 
     render() {
@@ -53,18 +74,18 @@ export default class DropdownMenu extends Component {
 
         return <>
         <div className="dropdown">
-            <div className="dropdown bootstrap-select form-control bs-select">
+            <div className={this.state.dropdown_css}>
                 <select id="select_options" className="form-control bs-select js-bselectified" data-style="select-form-control border" tabindex="null">
                     {options}
                 </select>
-                <button type="button" tabindex="-1" className="btn dropdown-toggle select-form-control border" data-toggle="dropdown" role="combobox" aria-owns="bs-select-1" aria-haspopup="listbox" aria-expanded="false" data-id="select_options" title="Option 1">
+                <button type="button" tabindex="-1" className="btn dropdown-toggle select-form-control border" onClick={(e) => { this.onToggleDropdown(e) }}>
                     <div className="filter-option">
                         <div className="filter-option-inner">
                             <div className="filter-option-inner-inner">{this.state.selected.name}</div>
                         </div> 
                     </div>
                 </button>
-                <div className="dropdown-menu" style={{maxHeight: "178.75px", overflow: "hidden", minHeight: "0px;"}}>
+                <div className={this.state.dropdown_menu_css} style={{maxHeight: "178.75px", overflow: "hidden", minHeight: "0px;"}}>
                     <div className="inner show" role="listbox" id="bs-select-1" tabindex="-1" aria-activedescendant="bs-select-1-0" style={{maxHeight: "170.75px", overflowY: "auto", minHeight: "0px;"}}>
                         <ul className="dropdown-menu inner show" role="presentation" style={{marginTop: "0px", marginBottom: "0px;"}}>
                             {selection_list_items}
