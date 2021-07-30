@@ -1,11 +1,11 @@
-import React, { Component, useEffect, useState } from 'react';
+import React, { useEffect, useState, memo } from 'react';
 import DropdownMenu from '../../components/forms/DropdownMenu';
 import { combinableNFT } from './helpers';
 import { getNFTFileInfos } from '../Files/helpers';
 import NFTCombineControl from './NFTCombineControl';
 const dJSON = require('dirty-json');
 
-export default function MergeNFT(props)  {
+const MergeNFT = memo(props =>  {
     const [nfts, setNFTs] = useState([]);
     const [selection_one, setSelectionOne] = useState({url: null});
     const [further_selections, setFurtherSelections] = useState([]);
@@ -83,10 +83,11 @@ export default function MergeNFT(props)  {
 
 
     let combine_options = further_selections.map(selection => {
-        return <NFTCombineControl selection={selection} items={selection_one_options} />;
+        const key = `combine-control-${selection.index}`;
+        return <NFTCombineControl key={key} selection={selection} items={selection_one_options} />;
     });
 
-    
+    // console.log('Render MergeNFT')
     return(
         <div className="row gutters-sm">
 
@@ -125,4 +126,6 @@ export default function MergeNFT(props)  {
 
     );
 
-}
+});
+
+export default MergeNFT;

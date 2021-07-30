@@ -436,7 +436,7 @@ class App extends Component {
     }
 
 
-
+    // console.log('Render App')
     return (<>
       <Helmet>
         <title>Evermore - Your data in the blockchain ... Forever</title>
