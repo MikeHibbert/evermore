@@ -24,6 +24,12 @@ export default class DropdownMenu extends Component {
         }
     }
 
+    componentDidUpdate(prevProps) {
+        if(this.props.first_selection != prevProps.first_selection) {
+            this.setState({selected: this.props.first_selection})
+        }
+    }
+
     onClickSelection(value, name) {
         this.setState({selected: {name: name, value: value}});
         if(this.props.onClickSelection) {
@@ -56,11 +62,16 @@ export default class DropdownMenu extends Component {
         if(this.props.value_feild) value_feild = this.props.value_feild;
         if(this.props.name_feild) name_feild = this.props.name_feild;
 
-        const options = this.props.items.map(item => {
+        let options = this.props.items.map(item => {
             return <option value={item[value_feild]}>{item[name_feild]}</option>
-        })
+        });
 
-        const selection_list_items = this.props.items.map(item => {
+        options = [
+            <option value={this.props.first_selection[value_feild]}>{this.props.first_selection[name_feild]}</option>,
+            ...options
+        ]
+
+        let selection_list_items = this.props.items.map(item => {
             return <li className="selected active">
                         <a 
                             role="option" 
@@ -70,7 +81,19 @@ export default class DropdownMenu extends Component {
                             <span className="text">{item[name_feild]}</span>
                         </a>
                     </li>
-        })
+        });
+
+        selection_list_items = [
+            <li className="selected active">
+                <a 
+                    role="option" 
+                    className="dropdown-item active selected" 
+                >
+                    <span className="text">{this.props.first_selection[name_feild]}</span>
+                </a>
+            </li>,
+            ...selection_list_items
+        ]
 
         return <>
         <div className="dropdown">

@@ -2,13 +2,14 @@ import React, { Component, useEffect, useState } from 'react';
 import DropdownMenu from '../../components/forms/DropdownMenu';
 import { combinableNFT } from './helpers';
 import { getNFTFileInfos } from '../Files/helpers';
+import NFTCombineControl from './NFTCombineControl';
 const dJSON = require('dirty-json');
 
 export default function MergeNFT(props)  {
     const [nfts, setNFTs] = useState([]);
-    const [selection_one, setSelectionOne] = useState(null);
+    const [selection_one, setSelectionOne] = useState({url: null});
     const [further_selections, setFurtherSelections] = useState([]);
-    const [loading_base, setLoadingBase] = useState(false);
+    const [loading_base, setLoadingBase] = useState(true);
 
     useEffect(() => {(
         async () => {
@@ -25,25 +26,36 @@ export default function MergeNFT(props)  {
             }
 
             if(qualifying_nfts.length > 0) setNFTs(qualifying_nfts);
+            setLoadingBase(false);
         })();
 
     }, [])
 
     function setMainSelection(nft) {
+        nft['url'] = `https://arweave.net/${nft.value}`;
         setSelectionOne(nft);
 
         const img = document.createElement('img');
         img.src = `https://arweave.net/${nft.value}`;
-        setLoadingBase(true);
+
         img.onload = function() {
-            setLoadingBase(false);
-            const c = document.getElementById('baseNFT');
+            const c = document.getElementById('Combined');
             c.width = img.width;
             c.height = img.height;
             const ctx = c.getContext("2d");
             ctx.drawImage(img, 0, 0);
         }
         
+    }
+
+    function addFurtherSelection() {
+        const index = further_selections.length;
+        const new_further_selections = [
+            {index: index, name: "Select NFT To Combine", value:""},
+            ...further_selections
+        ];
+
+        setFurtherSelections(new_further_selections);
     }
 
     function dropdownList() {
@@ -53,7 +65,6 @@ export default function MergeNFT(props)  {
 
     let selection_one_options = [];
     if(nfts) {
-        let further_selections = [...nfts];
 
         selection_one_options = nfts.map(nft => {
             return {value: nft.id, name: nft['Init-State'].name};
@@ -61,13 +72,21 @@ export default function MergeNFT(props)  {
 
     }
 
-    let base_nft_canvas = <canvas id="baseNFT" ></canvas>
+    let base_nft_canvas = <img id="BaseNFT" className="img-fluid" src={selection_one.url} />;
+    let base_first_selection_name = "Select Base NFT";
     if(loading_base) {
         base_nft_canvas = <img style={{ height: '200px' }} src="images/spinner-dark.svg" />;
+        base_first_selection_name = "Loading NFTs...";
     } 
 
-    const selection_one_dropdown = <DropdownMenu items={selection_one_options} onClickSelection={(nft) => setMainSelection(nft)} first_selection={{name: "Select Base NFT", value: ""}} />;
+    const selection_one_dropdown = <DropdownMenu items={selection_one_options} onClickSelection={(nft) => setMainSelection(nft)} first_selection={{name: base_first_selection_name, value: ""}} />;
 
+
+    let combine_options = further_selections.map(selection => {
+        return <NFTCombineControl selection={selection} items={selection_one_options} />;
+    });
+
+    
     return(
         <div className="row gutters-sm">
 
@@ -80,19 +99,27 @@ export default function MergeNFT(props)  {
 
                     <div className="portlet-body">
                         <div className="mt-3 mb-3">
+                            <div className="mb-3 col-6">  
                                 {selection_one_dropdown}
                             </div>
-                            <div className="mb-3">
+                            <div className="mb-3 col-6">
                                 {base_nft_canvas}
+                                <hr/>
                             </div>
+                            <div className="mb-3 col-6">
+                                <button className="btn btn-success" onClick={() => addFurtherSelection()}><i className="fa fa-plus"></i> Add NFT to combine</button>
+                            </div>
+                            {combine_options}
                             
-                            <div style={{backgroundColor: "#002955", display: 'inline-block', borderRadius: "20px"}}>
-                                <canvas style={{padding: "20px"}}>
-                                    <img /*src={this.state.nft_2}*//>
+                            <div className="col-6">
+                                <hr/>
+                                <p>Resulting NFT</p>
+                                <canvas className="img-fluid" id="Combined">
                                 </canvas>
                             </div>
                         </div>
                     </div>
+                </div>
             </div>
         </div>
 
