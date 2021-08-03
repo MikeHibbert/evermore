@@ -109,7 +109,7 @@ class App extends Component {
                 }`,
     };
 
-    if (this.state.isAuthenticated) {
+    if (isAuthenticated) {
       arweave.api.request().post('https://arweave.net/graphql', query).then(async response => {
         const { data } = response.data;
 
@@ -165,21 +165,11 @@ class App extends Component {
     const that = this;
 
     if (wallet_address) {
-      arweave.wallets.getBalance(wallet_address).then((balance) => {
-        let ar = arweave.ar.winstonToAr(balance);
-
-        interactRead(arweave, wallet, settings.CONTRACT_ADDRESS, { function: 'balance', target: wallet_address }).then(response => {
-          const state = { evermore_balance: response.balance, balance: ar };
-
-          that.setState(state);
-        });
-
-
-      });
+      
 
 
 
-      const files = await getDownloadableFilesGQLLazy(wallet_address, wallet);
+      // const files = await getDownloadableFilesGQLLazy(wallet_address, wallet);
 
 
       // if(files.children.length > this.state.files.length && this.state.files.length > 0) {
@@ -190,7 +180,7 @@ class App extends Component {
 
       // const pending_files = getPendingFiles();
 
-      that.setState({ files: files });
+      // that.setState({ files: files });
 
       const persistence_records = await getPersistenceRecords(wallet_address)
 
@@ -300,12 +290,14 @@ class App extends Component {
     sessionStorage.removeItem('exchange');
     sessionStorage.removeItem('coinpair');
 
+    console.log('disconnectWallet')
     this.setState({ isAuthenticated: false, wallet_address: null, jwk: null, balance: 0 });
 
     this.addSuccessAlert("Your wallet is now disconnected");
   }
 
   toggleAside() {
+    console.log('toggleAside')
     if (this.state.aside_open) {
       this.setState({
         aside_classes: "aside-start aside-primary font-weight-light aside-hide-xs d-flex flex-column h-auto",
@@ -435,8 +427,7 @@ class App extends Component {
       routes.push(<Redirect to='/files' />);
     }
 
-
-    // console.log('Render App')
+    console.log('Render App')
     return (<>
       <Helmet>
         <title>Evermore - Your data in the blockchain ... Forever</title>

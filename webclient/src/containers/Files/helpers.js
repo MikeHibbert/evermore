@@ -207,6 +207,8 @@ export const getDownloadableFilesGQL = async (address, wallet) => {
         {name: "NFTs", children: [], index: 0, type: "folder"}
     ], index: 0, type: "folder"};
 
+    console.log('getting smartcontracts')
+    
     while(hasNextPage) {
         const query = `{
             transactions(
@@ -339,6 +341,7 @@ export const getDownloadableFilesGQL = async (address, wallet) => {
     hasNextPage = true;
     cursor = '';
 
+    debugger;
     while(hasNextPage) {
         const query = `{
             transactions(

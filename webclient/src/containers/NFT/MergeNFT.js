@@ -34,25 +34,31 @@ const MergeNFT = memo(props =>  {
     function setMainSelection(nft) {
         nft['url'] = `https://arweave.net/${nft.value}`;
         setSelectionOne(nft);
-
-        const img = document.createElement('img');
-        img.src = `https://arweave.net/${nft.value}`;
-
+        const img = document.getElementById('BaseNFT');
+        img.src = nft.url;
         img.onload = function() {
             const c = document.getElementById('Combined');
             c.width = img.width;
             c.height = img.height;
             const ctx = c.getContext("2d");
             ctx.drawImage(img, 0, 0);
+            redrawCanvasLayers();
+            
         }
+        
+    }
+
+    function redrawCanvasLayers() {
+        const c = document.getElementById('Combined');
+        const ctx = c.getContext("2d");
         
     }
 
     function addFurtherSelection() {
         const index = further_selections.length;
         const new_further_selections = [
-            {index: index, name: "Select NFT To Combine", value:""},
-            ...further_selections
+            ...further_selections,
+            {index: index, name: "Select NFT To Combine", value:""}
         ];
 
         setFurtherSelections(new_further_selections);
@@ -112,11 +118,16 @@ const MergeNFT = memo(props =>  {
                             </div>
                             {combine_options}
                             
-                            <div className="col-6">
+                            <div className="col-6 mb-3">
                                 <hr/>
                                 <p>Resulting NFT</p>
                                 <canvas className="img-fluid" id="Combined">
                                 </canvas>
+                            </div>
+                            <div className="col-6">
+                                <hr/>
+                                <button className="btn btn-success mb-1">Combine and Mint to Rarible</button>
+                                <button className="btn btn btn-secondary mb-1">Store in my wallet</button>
                             </div>
                         </div>
                     </div>

@@ -3,7 +3,7 @@ import os from 'os';
 import FileTableRow from '../../components/Files/FileTableRow';
 import FolderTableRow from '../../components/Files/FolderTableRow';
 import settings from '../../app-config';
-import { SaveUploader, RemoveUploader, addFolderInfoToPathInfos } from './helpers';
+import { SaveUploader, RemoveUploader, addFolderInfoToPathInfos, getDownloadableFilesGQL } from './helpers';
 import { Link } from 'react-router-dom';
 import AddFolderDialog from './AddFolderDialog';
 import AddNFTDialog from './AddNFTDialog';
@@ -63,8 +63,8 @@ class FoldersView extends Component {
             uploadingFile: false,
             subfolder_dialog: false,
             nft_dialog: false,
-            files: props.files,
-            loading: props.files != null ? false : true
+            files: [],
+            loading: true
         };
 
         this.onSelectFolder.bind(this);
@@ -83,6 +83,9 @@ class FoldersView extends Component {
             }
 
         }
+
+        const files = await getDownloadableFilesGQL(this.props.wallet_address, this.props.jwk);
+        this.setState({ files: files, loading: false });
 
         this.upload_worker = new upload_worker();
         const that = this;

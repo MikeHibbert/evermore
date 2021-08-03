@@ -2,6 +2,9 @@ import React, { Component } from 'react';
 import { Link } from 'react-router-dom';
 import EmailBadge from './EmailBadge';
 import {getName} from '../Message/helpers';
+import settings from '../../app-config';
+import arweave from '../../arweave-config';
+import { readContract, interactRead } from 'smartweave';
 
 class UserMenu extends Component {
   state = {
@@ -9,7 +12,8 @@ class UserMenu extends Component {
     navClasses: ['prefix-link-icon', 'prefix-icon-dot', 'dropdown-menu', 'dropdown-menu-clean',
      'dropdown-menu-navbar-autopos', 'dropdown-menu-invert', 'dropdown-click-ignore', 'p-0', 'mt--18', 'fs--15', 'w--300'],
     wallet_address: null,
-    current_balance: 0
+    current_balance: 0,
+    evermore_balance: 0
   }
 
   componentDidMount() {
@@ -20,6 +24,19 @@ class UserMenu extends Component {
         this.setState({navClasses: ['prefix-link-icon', 'prefix-icon-dot', 'dropdown-menu', 'dropdown-menu-clean',
         'dropdown-menu-navbar-autopos', 'dropdown-menu-invert', 'dropdown-click-ignore', 'p-0', 'mt--18', 'fs--15', 'w--300', 'show'], opened: false});
       }
+    });
+
+    const that = this;
+    arweave.wallets.getBalance(this.props.wallet_address).then((balance) => {
+      let ar = arweave.ar.winstonToAr(balance);
+
+      interactRead(arweave, this.props.wallet, settings.CONTRACT_ADDRESS, { function: 'balance', target: this.props.wallet_address }).then(response => {
+        const state = { evermore_balance: response.balance, balance: ar };
+
+        that.setState(state);
+      });
+
+
     });
   }
 
@@ -64,8 +81,8 @@ class UserMenu extends Component {
               </a>
 
               <div  className={this.state.navClasses.join(' ')} >
-                <a className="prefix-icon-ignore dropdown-footer dropdown-custom-ignore font-weight-medium pt-3 pb-3">Balance: <small className="d-block text-muted">{this.props.current_balance} AR</small></a>
-                <a className="prefix-icon-ignore dropdown-footer dropdown-custom-ignore font-weight-medium pt-3 pb-3">Evermore Tokens: <small className="d-block text-muted">{this.props.evermore_balance} EDST</small></a>
+                <a className="prefix-icon-ignore dropdown-footer dropdown-custom-ignore font-weight-medium pt-3 pb-3">Balance: <small className="d-block text-muted">{this.state.current_balance} AR</small></a>
+                <a className="prefix-icon-ignore dropdown-footer dropdown-custom-ignore font-weight-medium pt-3 pb-3">Evermore Tokens: <small className="d-block text-muted">{this.state.evermore_balance} EDST</small></a>
                 <div className="dropdown-divider mb-0"></div>
                 <Link to='/logout' className="prefix-icon-ignore dropdown-footer dropdown-custom-ignore font-weight-medium pt-3 pb-3"><i className="fi fi-power float-start"></i> Log Out</Link>
     
