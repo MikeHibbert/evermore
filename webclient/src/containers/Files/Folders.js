@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import os from 'os';
+import Web3 from 'web3';
 import FileTableRow from '../../components/Files/FileTableRow';
 import FolderTableRow from '../../components/Files/FolderTableRow';
 import settings from '../../app-config';
@@ -16,6 +17,7 @@ import Arweave from 'arweave/web';
 import mime from 'mime-types';
 import { magicDownload } from '../Home/Download';
 import { getNFTFileInfos } from '../Files/helpers';
+import { listFilesFor } from '../../ipfs';
 
 const arweave = Arweave.init({
     host: 'arweave.net',// Hostname or IP address for a Arweave host
@@ -84,7 +86,19 @@ class FoldersView extends Component {
 
         }
 
-        const files = await getDownloadableFilesGQL(this.props.wallet_address, this.props.jwk);
+        let web3 = null;
+        if(window.ethereum) {
+            web3 = new Web3(window.ethereum);
+
+        } else if(window.web3) {
+            web3 = new Web3(window.web3.currentProvider);
+        }
+
+        this.setState({web3: new Web3(window.web3.currentProvider)});
+
+        const accounts = await window.ethereum.enable();
+        debugger;
+        const files = await listFilesFor(accounts[0], web3); // await getDownloadableFilesGQL(this.props.wallet_address, this.props.jwk);
         this.setState({ files: files, loading: false });
 
         this.upload_worker = new upload_worker();
