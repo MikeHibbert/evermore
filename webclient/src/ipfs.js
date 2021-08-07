@@ -7,8 +7,10 @@ export const listFilesFor = async (eth_address, web3) => {
     const filesContract = new web3.eth.Contract(filesContractDefinition.abi, FILES_CONTRACT_ADDRESS);
 
     try {
-        return await filesContract.methods.getFilesFor(eth_address);
+        const response = await filesContract.methods.getFilesFor(eth_address).call(); //.send({from: eth_address});
+         return response;
     } catch (e) {
+        debugger;
         console.log(e);
         return [];
     }    

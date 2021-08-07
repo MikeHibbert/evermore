@@ -97,7 +97,7 @@ class FoldersView extends Component {
         this.setState({web3: new Web3(window.web3.currentProvider)});
 
         const accounts = await window.ethereum.enable();
-        debugger;
+
         const files = await listFilesFor(accounts[0], web3); // await getDownloadableFilesGQL(this.props.wallet_address, this.props.jwk);
         this.setState({ files: files, loading: false });
 
