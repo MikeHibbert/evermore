@@ -3,8 +3,7 @@ import { Link } from 'react-router-dom';
 import EmailBadge from './EmailBadge';
 import {getName} from '../Message/helpers';
 import settings from '../../app-config';
-import arweave from '../../arweave-config';
-import { readContract, interactRead } from 'smartweave';
+import Web3 from 'web3';
 
 class UserMenu extends Component {
   state = {
@@ -16,7 +15,7 @@ class UserMenu extends Component {
     evermore_balance: 0
   }
 
-  componentDidMount() {
+  async componentDidMount() {
 
     // console.log(this.props);
     this.unlisten = this.props.history.listen((location, action) => {
@@ -26,18 +25,19 @@ class UserMenu extends Component {
       }
     });
 
-    const that = this;
-    arweave.wallets.getBalance(this.props.wallet_address).then((balance) => {
-      let ar = arweave.ar.winstonToAr(balance);
+    let web3 = null;
+    if(window.ethereum) {
+        web3 = new Web3(window.ethereum);
 
-      interactRead(arweave, this.props.wallet, settings.CONTRACT_ADDRESS, { function: 'balance', target: this.props.wallet_address }).then(response => {
-        const state = { evermore_balance: response.balance, balance: ar };
+    } else if(window.web3) {
+        web3 = new Web3(window.web3.currentProvider);
+    }
 
-        that.setState(state);
-      });
+    const accounts = await window.ethereum.enable();
 
+    const balance = await web3.eth.getBalance(accounts[0]);
 
-    });
+    this.setState({wallet_address: accounts[0], current_balance: web3.utils.fromWei(balance) });
   }
 
   componentDidUpdate(prevProps) {
@@ -77,12 +77,12 @@ class UserMenu extends Component {
                   <i className="fi w--15 fi-close"></i>
                 </span>
 
-                <span className="fs--14 d-none d-sm-inline-block font-weight-medium">{this.props.wallet_address}</span>
+                <span className="fs--14 d-none d-sm-inline-block font-weight-medium">{this.state.wallet_address}</span>
               </a>
 
               <div  className={this.state.navClasses.join(' ')} >
-                <a className="prefix-icon-ignore dropdown-footer dropdown-custom-ignore font-weight-medium pt-3 pb-3">Balance: <small className="d-block text-muted">{this.state.current_balance} AR</small></a>
-                <a className="prefix-icon-ignore dropdown-footer dropdown-custom-ignore font-weight-medium pt-3 pb-3">Evermore Tokens: <small className="d-block text-muted">{this.state.evermore_balance} EDST</small></a>
+                <a className="prefix-icon-ignore dropdown-footer dropdown-custom-ignore font-weight-medium pt-3 pb-3">Balance: <small className="d-block text-muted">{this.state.current_balance} ETH</small></a>
+                {/* <a className="prefix-icon-ignore dropdown-footer dropdown-custom-ignore font-weight-medium pt-3 pb-3">Evermore Tokens: <small className="d-block text-muted">{this.state.evermore_balance} EDST</small></a> */}
                 <div className="dropdown-divider mb-0"></div>
                 <Link to='/logout' className="prefix-icon-ignore dropdown-footer dropdown-custom-ignore font-weight-medium pt-3 pb-3"><i className="fi fi-power float-start"></i> Log Out</Link>
     

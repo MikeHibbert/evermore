@@ -15,14 +15,9 @@ import HomePage from './containers/Home/Hompage';
 import Downloads from './containers/Home/Downloads';
 import NFTs from './containers/NFT/NFTs';
 import NFTDetail from './containers/NFT/NFTDetail';
-import { getDownloadableFilesGQL, getDownloadableFilesGQLLazy } from './containers/Files/helpers';
-import { getName } from './components/Message/helpers';
-import arweave from './arweave-config';
-import { readContract, interactRead } from 'smartweave';
 import settings from './app-config';
 import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
-import { getPersistenceRecords } from './containers/Files/helpers';
 import ReactGA from 'react-ga';
 import MergeNFT from './containers/NFT/MergeNFT';
 
@@ -30,7 +25,7 @@ import MergeNFT from './containers/NFT/MergeNFT';
 const trackingId = "G-YSH82SBB2L"; // Replace with your Google Analytics tracking ID
 ReactGA.initialize(trackingId, { debug: true });
 ReactGA.set({
-  userId: sessionStorage.getItem('AR_Wallet', null),
+  userId: sessionStorage.getItem('ETH_Wallet', null),
   // any data that is relevant to the user session
   // that you would like to track with google analytics
 });
@@ -65,77 +60,18 @@ class App extends Component {
     this.clearNewEmailCount.bind(this);
     this.addToTransactionsToBeMined.bind(this);
     this.removeFromTransactionsToBeMined.bind(this);
-    this.checkMiningStatus.bind(this);
   }
 
   componentDidMount() {
-    const wallet_address = sessionStorage.getItem('AR_Wallet', null);
-    const jwk = JSON.parse(sessionStorage.getItem('AR_jwk', null));
-
-    if (jwk !== null) {
-      this.setState({ isAuthenticated: true, wallet_address: wallet_address, jwk: jwk });
-      this.loadWallet(wallet_address, jwk);
-    }
+    const wallet_address = sessionStorage.getItem('ETH_Wallet', null);
 
     const isAuthenticated = sessionStorage.getItem('isAuthenticated');
 
-    this.setState({ isAuthenticated: isAuthenticated === 'true' ? true : false });
-
-    const that = this;
-    this.interval = setInterval(() => {
-      // console.log('checkMiningStatus')
-      that.checkMiningStatus();
-    }, 2 * 60 * 1000);
-
-    // if(this.props.isAuthenticated == undefined) {
-    //   return;
-    // }
-
-    const query = {
-      query: `query {
-                    transactions(
-                      owners:["${wallet_address}"]
-                      tags: {
-                        name: "App-Name",
-                        values: ["Evermore-User-Registration"]
-                      }
-                    ) {
-                        edges {
-                            node {
-                                id
-                            }
-                        }
-                    }
-                }`,
-    };
+    this.setState({ isAuthenticated: isAuthenticated === 'true' ? true : false, wallet_address: wallet_address});
 
     if (isAuthenticated) {
-      arweave.api.request().post('https://arweave.net/graphql', query).then(async response => {
-        const { data } = response.data;
-
-
-
-        if (data.transactions.edges.length == 0) {
-          const transaction = await arweave.createTransaction({
-            data: "REGISTERED NEW USER"
-          }, jwk);
-
-          debugger;
-
-          transaction.addTag("App-Name", "Evermore-User-Registration");
-
-          await arweave.transactions.sign(transaction, jwk);
-
-          console.log(transaction.id)
-
-          await arweave.transactions.post(transaction);
-        }
-      })
+      
     }
-
-
-
-
 
     this.props.history.listen(location => {
       ReactGA.set({ page: location.pathname }); // Update the user's current page
@@ -161,39 +97,6 @@ class App extends Component {
     }
   }
 
-  async loadWallet(wallet_address, wallet) {
-    const that = this;
-
-    if (wallet_address) {
-      
-
-
-
-      // const files = await getDownloadableFilesGQLLazy(wallet_address, wallet);
-
-
-      // if(files.children.length > this.state.files.length && this.state.files.length > 0) {
-      //   const new_count = files.length - this.state.files.length;
-      //   this.setState({new_files_count: new_count});
-      //   this.addSuccessAlert("You have " + new_count + " new files");
-      // } 
-
-      // const pending_files = getPendingFiles();
-
-      // that.setState({ files: files });
-
-      const persistence_records = await getPersistenceRecords(wallet_address)
-
-      that.setState({ persistence_records: persistence_records });
-
-      getName(wallet_address).then((username) => {
-        that.setState({ username: username });
-      });
-    }
-  }
-
-
-
   newMessages(messages) {
     const new_messages = [];
 
@@ -210,30 +113,10 @@ class App extends Component {
     return new_messages;
   }
 
-  setWalletAddress(wallet_address_files) {
-    const that = this;
-
-    const reader = new FileReader();
-    reader.onload = function () {
-      const text = reader.result;
-      const jwk = JSON.parse(text);
-
-      arweave.wallets.jwkToAddress(jwk).then((wallet_address) => {
-        that.setState({ wallet_address: wallet_address, jwk: jwk });
-        sessionStorage.setItem('AR_Wallet', wallet_address);
-        sessionStorage.setItem('AR_jwk', JSON.stringify(jwk));
-
-        that.loadWallet(wallet_address, jwk);
-
-        that.setState({ isAuthenticated: true });
-        sessionStorage.setItem('isAuthenticated', true);
-        that.resetContentArea();
-        that.addSuccessAlert("You have successfully connected.");
-      });
-
-    }
-    reader.readAsText(wallet_address_files[0]);
-
+  setWalletAddress(wallet_address) {
+    this.resetContentArea();
+    sessionStorage.setItem('ETH_Wallet', wallet_address);
+    sessionStorage.setItem('isAuthenticated', true);
   }
 
   addSuccessAlert(message) {
@@ -262,33 +145,9 @@ class App extends Component {
     this.setState({ transactions_to_be_mined: transactions_to_be_mined });
   }
 
-  checkMiningStatus() {
-    const that = this;
-
-    for (let i in this.state.transactions_to_be_mined) {
-      const submitted_file = this.state.transactions_to_be_mined[i];
-
-      try {
-        arweave.transactions.getStatus(submitted_file.id).then(response => {
-          if (response.hasOwnProperty('confirmed') && response.status === 200) {
-            if (response.confirmed.number_of_confirmations > 4) {
-              that.addSuccessAlert(`${submitted_file.name} has been successfully mined`);
-              that.removeFromTransactionsToBeMined(submitted_file.id);
-            }
-          }
-        });
-      } catch (e) {
-        console.log(e);
-      }
-    }
-  }
-
   disconnectWallet() {
-    sessionStorage.removeItem('AR_Wallet');
-    sessionStorage.removeItem('AR_jwk');
+    sessionStorage.removeItem('ETH_Wallet');
     sessionStorage.removeItem('isAuthenticated');
-    sessionStorage.removeItem('exchange');
-    sessionStorage.removeItem('coinpair');
 
     console.log('disconnectWallet')
     this.setState({ isAuthenticated: false, wallet_address: null, jwk: null, balance: 0 });
