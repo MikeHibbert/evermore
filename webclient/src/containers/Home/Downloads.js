@@ -4,7 +4,7 @@ import Moment from 'react-moment';
 import DownloadFile from './Download';
 import settings from '../../app-config';
 import arweave from '../../arweave-config';
-const LimestoneApi = require('@limestonefi/api');
+// const LimestoneApi = require('@limestonefi/api');
 
 
 class Downloads extends Component {

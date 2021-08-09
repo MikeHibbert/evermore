@@ -24,20 +24,6 @@ class UserMenu extends Component {
         'dropdown-menu-navbar-autopos', 'dropdown-menu-invert', 'dropdown-click-ignore', 'p-0', 'mt--18', 'fs--15', 'w--300', 'show'], opened: false});
       }
     });
-
-    let web3 = null;
-    if(window.ethereum) {
-        web3 = new Web3(window.ethereum);
-
-    } else if(window.web3) {
-        web3 = new Web3(window.web3.currentProvider);
-    }
-
-    const accounts = await window.ethereum.enable();
-
-    const balance = await web3.eth.getBalance(accounts[0]);
-
-    this.setState({wallet_address: accounts[0], current_balance: web3.utils.fromWei(balance) });
   }
 
   componentDidUpdate(prevProps) {
@@ -77,11 +63,11 @@ class UserMenu extends Component {
                   <i className="fi w--15 fi-close"></i>
                 </span>
 
-                <span className="fs--14 d-none d-sm-inline-block font-weight-medium">{this.state.wallet_address}</span>
+                <span className="fs--14 d-none d-sm-inline-block font-weight-medium">{this.props.wallet_address}</span>
               </a>
 
               <div  className={this.state.navClasses.join(' ')} >
-                <a className="prefix-icon-ignore dropdown-footer dropdown-custom-ignore font-weight-medium pt-3 pb-3">Balance: <small className="d-block text-muted">{this.state.current_balance} ETH</small></a>
+                <a className="prefix-icon-ignore dropdown-footer dropdown-custom-ignore font-weight-medium pt-3 pb-3">Balance: <small className="d-block text-muted">{this.props.current_balance} ETH</small></a>
                 {/* <a className="prefix-icon-ignore dropdown-footer dropdown-custom-ignore font-weight-medium pt-3 pb-3">Evermore Tokens: <small className="d-block text-muted">{this.state.evermore_balance} EDST</small></a> */}
                 <div className="dropdown-divider mb-0"></div>
                 <Link to='/logout' className="prefix-icon-ignore dropdown-footer dropdown-custom-ignore font-weight-medium pt-3 pb-3"><i className="fi fi-power float-start"></i> Log Out</Link>

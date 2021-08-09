@@ -17,6 +17,7 @@
     "history": "^5.0.0",
     "limestone-api": "^2.0.0",
     "moment": "^2.29.1",
+    "nft.storage": "^3.0.1",
     "node-rsa": "git+https://github.com/MikeHibbert/node-rsa.git",
     "react": "^16.14.0",
     "react-app-rewired": "^2.1.8",

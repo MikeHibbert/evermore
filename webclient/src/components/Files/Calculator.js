@@ -2,7 +2,7 @@ import React, {Component} from 'react';
 import axios from 'axios';
 import arweave from '../../arweave-config';
 import { format } from "d3-format";
-const LimestoneApi = require('@limestonefi/api');
+// const LimestoneApi = require('@limestonefi/api');
 
 const valueToBytesUsingScale = (value, scale) => {
     let ret_val = 0;
@@ -58,15 +58,15 @@ class CostCalculator extends Component {
         const size = valueToBytesUsingScale(data_size, this.state.scale);
 
         const that = this;
-        arweave.transactions.getPrice(size).then(price => {
-            const ar = parseFloat(arweave.ar.winstonToAr(price));
-            LimestoneApi.getPrice("AR").then(current_price => {
-                const cost = ar * current_price.price;
+        // arweave.transactions.getPrice(size).then(price => {
+        //     const ar = parseFloat(arweave.ar.winstonToAr(price));
+        //     LimestoneApi.getPrice("AR").then(current_price => {
+        //         const cost = ar * current_price.price;
 
-                that.setState({cost: cost + (cost * 0.2), ar_cost:ar + (ar * 0.2)});
-            });
+        //         that.setState({cost: cost + (cost * 0.2), ar_cost:ar + (ar * 0.2)});
+        //     });
             
-        })
+        // })
 
     }
 

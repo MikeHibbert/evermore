@@ -1,5 +1,5 @@
 import arweave from '../../arweave-config';
-import limestone from 'limestone-api';
+// import limestone from 'limestone-api';
 import { readContract, selectWeightedPstHolder, interactWrite  } from 'smartweave';
 import settings from '../../app-config';
 import { toast } from 'react-toastify';
@@ -117,25 +117,25 @@ export const publishToETH = async (eth_address, transaction, wallet, web3) => {
 }
 
 const sendNFTMintCommunityPayment = async (wallet) => {
-  const price = await limestone.getPrice("AR");
+  // const price = await limestone.getPrice("AR");
 
-  const payment_in_AR = settings.NFT_PUBLISH_COST_IN_USD / price.value; // community payment
+  // const payment_in_AR = settings.NFT_PUBLISH_COST_IN_USD / price.value; // community payment
 
-  const contractState = await readContract(arweave, settings.CONTRACT_ADDRESS);
+  // const contractState = await readContract(arweave, settings.CONTRACT_ADDRESS);
 
-  const holder = selectWeightedPstHolder(contractState.balances);
+  // const holder = selectWeightedPstHolder(contractState.balances);
   
-  const tx = await arweave.createTransaction({ 
-          target: holder, 
-          quantity: arweave.ar.arToWinston(payment_in_AR)}
-          , wallet);
+  // const tx = await arweave.createTransaction({ 
+  //         target: holder, 
+  //         quantity: arweave.ar.arToWinston(payment_in_AR)}
+  //         , wallet);
 
-  tx.addTag('EVERMORE_TOKEN', 'COMMUNITY REWARD PAYMENT (NFT PUBLISH)');
+  // tx.addTag('EVERMORE_TOKEN', 'COMMUNITY REWARD PAYMENT (NFT PUBLISH)');
           
-  await arweave.transactions.sign(tx, wallet);
-  await arweave.transactions.post(tx);
+  // await arweave.transactions.sign(tx, wallet);
+  // await arweave.transactions.post(tx);
   
-  return tx;
+  // return tx;
 }
 
 const mintNFT = async (tokenURI, eth_address, web3) => {

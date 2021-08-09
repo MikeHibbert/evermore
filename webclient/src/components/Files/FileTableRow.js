@@ -10,7 +10,7 @@ import { createPersistenceRecord } from '../../containers/Files/helpers';
 import { magicDownload } from '../../containers/Home/Download';
 import { decryptFileData } from '../../crypto/files';
 import { publishToETH, wasPublished } from '../../containers/NFT/helpers';
-import worker from 'workerize-loader!./download_worker'; // eslint-disable-line import/no-webpack-loader-syntax
+const worker = new Worker('./download_worker'); // eslint-disable-line import/no-webpack-loader-syntax
 const dJSON = require('dirty-json');
 
 const DownloaderProgressBar = (props) => {
