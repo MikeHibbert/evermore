@@ -15,7 +15,7 @@ import { toast } from 'react-toastify';
 import mime from 'mime-types';
 import { magicDownload } from '../Home/Download';
 import { getNFTFileInfos } from '../Files/helpers';
-import { listFilesFor, uploadFile } from '../../ipfs';
+import listFilesFor, { uploadFile } from '../../ipfs';
 
 const UploaderProgressBar = (props) => {
     const classNames = props.encrypting ? "progress-bar progress-bar-striped progress-bar-animated bg-success" : "progress-bar progress-bar-animated progress-bar-striped";
@@ -66,16 +66,6 @@ class FoldersView extends Component {
     }
 
     async componentDidMount() {
-
-        if (typeof window.ethereum !== 'undefined') {
-            const ethereum = window.ethereum;
-
-            if (ethereum.isMetaMask) {
-                console.log('MetaMask is installed!');
-            }
-
-        }
-
         let web3 = null;
         if(window.ethereum) {
             web3 = new Web3(window.ethereum);
@@ -84,8 +74,9 @@ class FoldersView extends Component {
             web3 = new Web3(window.web3.currentProvider);
         }
         
-        this.setState({web3: new Web3(window.web3.currentProvider)});
+        this.setState({web3: web3});
 
+        console.log(`Folders: ${this.props.wallet_address}`)
         const files = await listFilesFor(this.props.wallet_address, web3); // await getDownloadableFilesGQL(this.props.wallet_address, this.props.jwk);
         this.setState({ files: files, loading: false });
 
@@ -121,6 +112,13 @@ class FoldersView extends Component {
 
                 // TODO: add new uploadFile call with eth address and web3 instance
 
+                await uploadFile(
+                    file_info, 
+                    this.props.wallet_address, 
+                    web3, 
+                    (msg) => { that.props.addSuccessAlert(msg); },
+                    (msg) => { that.props.addErrorAlert(msg) }
+                );
                 // await uploadFile(
                 //     this.props.jwk,
                 //     parseFloat(this.props.wallet_balance),
@@ -181,20 +179,6 @@ class FoldersView extends Component {
         previous_folders.push(this.state.folder_name);
         this.setState({ folder_name: folder_name, previous_folders: previous_folders });
         const that = this;
-
-        if (folder_name == 'NFTs') {
-            this.setState({ loading: true });
-
-            getNFTFileInfos(this.props.wallet_address, this.props.jwk).then(file_infos => {
-                const files = { ...this.state.files };
-                const nft_folder_index = files[''].children.findIndex(file_info => file_info.name == 'NFTs' && file_info.type == 'folder');
-                files[''].children[nft_folder_index] = { ...file_infos[''].children[0] };
-                that.setState({ files: files, loading: false });
-            });
-
-        }
-
-
     }
 
     async onUploadFileHandler(e) {
@@ -226,8 +210,8 @@ class FoldersView extends Component {
         let path_parts = file_info.path.split('/');
 
         if (path_parts.length > 1) {
-            if (this.props.files.hasOwnProperty(path_parts[0])) {
-                addToFolderChildrenOrUpdate(path_parts, 0, file_info, this.props.files[path_parts[0]], 0);
+            if (this.state.files.hasOwnProperty(path_parts[0])) {
+                addToFolderChildrenOrUpdate(path_parts, 0, file_info, this.state.files[path_parts[0]], 0);
             }
         }
 
@@ -243,67 +227,76 @@ class FoldersView extends Component {
 
         const wallet_balance = parseFloat(this.props.wallet_balance);
 
-        if (!is_public && !is_nft) {
-            // jwk = await arweave.wallets.generate(); // needed to be generated here so we can use 'arweave/web' version instead of 'arweave/node'
+        // if (!is_public && !is_nft) {
+        //     // jwk = await arweave.wallets.generate(); // needed to be generated here so we can use 'arweave/web' version instead of 'arweave/node'
 
-            this.upload_worker.encryptFileHandler([
-                file_info,
-                this.props.jwk,
-                jwk,
-                wallet_balance
-            ])
-        } else {
-            this.setState({ uploadingFile: true });
-            const that = this;
-            const reader = new FileReader();
-            reader.onload = async function () {
-                let file_data = reader.result;
-                file_info['file_data'] = Buffer.from(file_data, 'binary');
+        //     this.upload_worker.encryptFileHandler([
+        //         file_info,
+        //         this.props.jwk,
+        //         jwk,
+        //         wallet_balance
+        //     ])
+        // } else {
 
-                const data_cost = 0; //await arweave.transactions.getPrice(parseInt(file_info.file_size));
+        this.setState({ uploadingFile: true });
+        const that = this;
+        const reader = new FileReader();
+        reader.onload = async function () {
+            let file_data = reader.result;
+            file_info['file_data'] = Buffer.from(file_data, 'binary');
 
-                let nftName = null;
-                let nftDescription = null;
+            const data_cost = 0; //await arweave.transactions.getPrice(parseInt(file_info.file_size));
 
-                if (is_nft) {
-                    nftName = e.nftName;
-                    nftDescription = e.nftDescription;
-                }
+            let nftName = null;
+            let nftDescription = null;
 
-                // await uploadFile(
-                //     that.props.jwk,
-                //     parseFloat(that.props.wallet_balance),
-                //     file_info,
-                //     data_cost,
-                //     true,
-                //     -1,
-                //     arweave,
-                //     function (msg) {
-                //         if (msg.action == 'uploading') {
-                //             that.setState({ uploadingFile: msg.uploading });
-                //         }
-
-                //         if (msg.action == 'progress') {
-                //             that.setState({ uploadPercentComplete: msg.progress });
-                //         }
-                //         if (msg.action == 'upload-complete' && !that.state.uploadingFile) {
-                //             debugger;
-                //             file_info['id'] = msg.tx_id;
-                //             file_info['tx_id'] = msg.tx_id;
-                //             that.addFileInfoToFolders(file_info);
-                //         }
-                //     },
-                //     (msg) => { that.props.addSuccessAlert(msg) },
-                //     (msg) => { that.props.addErrorAlert(msg) },
-                //     is_nft,
-                //     nftName,
-                //     nftDescription
-                // );
+            if (is_nft) {
+                nftName = e.nftName;
+                nftDescription = e.nftDescription;
             }
-            reader.readAsBinaryString(file_info.file_handle);
 
+            await uploadFile(
+                file_info, 
+                that.props.wallet_address, 
+                that.state.web3, 
+                (msg) => { that.props.addSuccessAlert(msg); },
+                (msg) => { that.props.addErrorAlert(msg) }
+            );
 
+            // await uploadFile(
+            //     that.props.jwk,
+            //     parseFloat(that.props.wallet_balance),
+            //     file_info,
+            //     data_cost,
+            //     true,
+            //     -1,
+            //     arweave,
+            //     function (msg) {
+            //         if (msg.action == 'uploading') {
+            //             that.setState({ uploadingFile: msg.uploading });
+            //         }
+
+            //         if (msg.action == 'progress') {
+            //             that.setState({ uploadPercentComplete: msg.progress });
+            //         }
+            //         if (msg.action == 'upload-complete' && !that.state.uploadingFile) {
+            //             debugger;
+            //             file_info['id'] = msg.tx_id;
+            //             file_info['tx_id'] = msg.tx_id;
+            //             that.addFileInfoToFolders(file_info);
+            //         }
+            //     },
+            //     (msg) => { that.props.addSuccessAlert(msg) },
+            //     (msg) => { that.props.addErrorAlert(msg) },
+            //     is_nft,
+            //     nftName,
+            //     nftDescription
+            // );
         }
+        reader.readAsBinaryString(file_info.file_handle);
+
+
+        // }
     }
 
     addFileInfoToFolders(file_info) {
