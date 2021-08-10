@@ -263,6 +263,8 @@ class FoldersView extends Component {
                 (msg) => { that.props.addErrorAlert(msg) }
             );
 
+            this.props.updateBalance();
+
             // await uploadFile(
             //     that.props.jwk,
             //     parseFloat(that.props.wallet_balance),

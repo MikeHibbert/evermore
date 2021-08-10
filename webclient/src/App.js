@@ -61,6 +61,7 @@ class App extends Component {
     this.clearNewEmailCount.bind(this);
     this.addToTransactionsToBeMined.bind(this);
     this.removeFromTransactionsToBeMined.bind(this);
+    this.updateBalance.bind(this);
   }
 
   componentDidMount() {
@@ -158,6 +159,28 @@ class App extends Component {
   }
 
   async connectWallet() {
+    
+
+    sessionStorage.setItem('ETH_Wallet', accounts[0]);
+    sessionStorage.setItelet web3 = null;
+    if(window.ethereum) {
+        web3 = new Web3(window.ethereum);
+
+    } else if(window.web3) {
+        web3 = new Web3(window.web3.currentProvider);
+    }
+
+    const accounts = await window.ethereum.enable();
+
+    const balance = await web3.eth.getBalance(accounts[0]);
+
+    this.setState({wallet_address: accounts[0], balance: web3.utils.fromWei(balance), isAuthenticated: true });m('ETH_Wallet_balance', web3.utils.fromWei(balance));
+    sessionStorage.setItem('isAuthenticated', true);
+  }
+
+  async updateBalance() {
+    
+
     let web3 = null;
     if(window.ethereum) {
         web3 = new Web3(window.ethereum);
@@ -170,11 +193,8 @@ class App extends Component {
 
     const balance = await web3.eth.getBalance(accounts[0]);
 
-    this.setState({wallet_address: accounts[0], balance: web3.utils.fromWei(balance), isAuthenticated: true });
-
-    sessionStorage.setItem('ETH_Wallet', accounts[0]);
+    this.setState({balance: web3.utils.fromWei(balance)});
     sessionStorage.setItem('ETH_Wallet_balance', web3.utils.fromWei(balance));
-    sessionStorage.setItem('isAuthenticated', true);
   }
 
   toggleAside() {
@@ -244,6 +264,7 @@ class App extends Component {
         wallet_address={this.state.wallet_address}
         wallet_balance={this.state.balance}
         jwk={this.state.jwk}
+        updateBalance={() => { this.updateBalance() }}
         addToTransactionsToBeMined={(transaction_record) => { this.addToTransactionsToBeMined(transaction_record) }}
         removeFromTransactionsToBeMined={(tx_id) => { this.removeFromTransactionsToBeMined(tx_id) }}
         transactions_to_be_mined={this.state.transactions_to_be_mined}
