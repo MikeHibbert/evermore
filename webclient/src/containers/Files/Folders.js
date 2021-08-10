@@ -83,14 +83,10 @@ class FoldersView extends Component {
         } else if(window.web3) {
             web3 = new Web3(window.web3.currentProvider);
         }
-
-        await window.ethereum.enable();
         
         this.setState({web3: new Web3(window.web3.currentProvider)});
 
-        const accounts = await window.ethereum.enable();
-
-        const files = await listFilesFor(accounts[0], web3); // await getDownloadableFilesGQL(this.props.wallet_address, this.props.jwk);
+        const files = await listFilesFor(this.props.wallet_address, web3); // await getDownloadableFilesGQL(this.props.wallet_address, this.props.jwk);
         this.setState({ files: files, loading: false });
 
         this.upload_worker = new upload_worker();

@@ -63,30 +63,17 @@ class App extends Component {
     this.removeFromTransactionsToBeMined.bind(this);
   }
 
-  async componentDidMount() {
+  componentDidMount() {
     const wallet_address = sessionStorage.getItem('ETH_Wallet', null);
+    const balance = sessionStorage.getItem('ETH_Wallet_balance', null);
 
     const isAuthenticated = sessionStorage.getItem('isAuthenticated');
 
-    this.setState({ isAuthenticated: isAuthenticated === 'true' ? true : false});
+    this.setState({ isAuthenticated: isAuthenticated === 'true' ? true : false, wallet_address: wallet_address, balance: balance});
 
     if (isAuthenticated) {
       
     }
-
-    let web3 = null;
-    if(window.ethereum) {
-        web3 = new Web3(window.ethereum);
-
-    } else if(window.web3) {
-        web3 = new Web3(window.web3.currentProvider);
-    }
-
-    const accounts = await window.ethereum.enable();
-
-    const balance = await web3.eth.getBalance(accounts[0]);
-
-    this.setState({wallet_address: accounts[0], balance: web3.utils.fromWei(balance) });
 
     this.props.history.listen(location => {
       ReactGA.set({ page: location.pathname }); // Update the user's current page
@@ -128,10 +115,9 @@ class App extends Component {
     return new_messages;
   }
 
-  setWalletAddress(wallet_address) {
+  setWalletAddress() {
     this.resetContentArea();
-    sessionStorage.setItem('ETH_Wallet', wallet_address);
-    sessionStorage.setItem('isAuthenticated', true);
+    this.connectWallet();
   }
 
   addSuccessAlert(message) {
@@ -162,12 +148,33 @@ class App extends Component {
 
   disconnectWallet() {
     sessionStorage.removeItem('ETH_Wallet');
+    sessionStorage.removeItem('ETH_Wallet_balance');
     sessionStorage.removeItem('isAuthenticated');
 
     console.log('disconnectWallet')
     this.setState({ isAuthenticated: false, wallet_address: null, jwk: null, balance: 0 });
 
     this.addSuccessAlert("Your wallet is now disconnected");
+  }
+
+  async connectWallet() {
+    let web3 = null;
+    if(window.ethereum) {
+        web3 = new Web3(window.ethereum);
+
+    } else if(window.web3) {
+        web3 = new Web3(window.web3.currentProvider);
+    }
+
+    const accounts = await window.ethereum.enable();
+
+    const balance = await web3.eth.getBalance(accounts[0]);
+
+    this.setState({wallet_address: accounts[0], balance: web3.utils.fromWei(balance), isAuthenticated: true });
+
+    sessionStorage.setItem('ETH_Wallet', accounts[0]);
+    sessionStorage.setItem('ETH_Wallet_balance', web3.utils.fromWei(balance));
+    sessionStorage.setItem('isAuthenticated', true);
   }
 
   toggleAside() {

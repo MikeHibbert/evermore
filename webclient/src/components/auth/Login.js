@@ -1,6 +1,9 @@
 import React, { Component } from 'react';
 
 class Auth extends Component {
+  state = {
+    loading: false
+  }
   componentWillMount() {
     this.props.expandContentArea();
   }
@@ -22,22 +25,20 @@ class Auth extends Component {
   LoginHandler(event) {
     event.preventDefault();
 
-    this.props.onAuth(this.state.LoginForm.email.value, this.state.LoginForm.password.value);
+    this.setState({loading: true});
+    try {
+      this.props.setWalletAddress();
+    } catch (e) {
+      this.setState({loading: false});
+    }
   }
-
-  onChange(event) {
-    const wallet_address_files = event.target.files;
-    // this.setState({wallet_address: wallet_address});
-    
-    this.props.setWalletAddress(wallet_address_files);
-  }   
 
   render() {
 
-    let form = <input type="file" name="keyfile" className="btn btn-default " onChange={(e) => this.onChange(e)} />;
+    let form = <input type="submit" name="keyfile" className="btn btn-success mt-3" value="Connect MetaMask" />;
 
-    if(this.props.loading) {
-      form = <span>Loading your wallet ...</span>
+    if(this.state.loading) {
+      form = <img style={{ height: '320px' }} src="images/spinner-dark.svg" />;
     }
 
     return (<div className="wrapper">
@@ -63,39 +64,14 @@ class Auth extends Component {
 
       <div className="col-12 col-lg-7 d-lg-flex">
         <div className="w-100 align-self-center text-center-md text-center-xs py-2">
-
-
           <form noValidate="" onSubmit={(event) => this.LoginHandler(event)} className="bs-validate p-5 py-6 rounded d-inline-block bg-white text-dark w-100 max-w-600">
-
-
-
             <div className="form-label-group mb-3">
-            <h3>Login with your AR wallet</h3>
-            <section>Select your <strong>AR wallet</strong> file to access your data through our web client.</section>
+              <h3>Connect to login</h3> 
               {form}
             </div>
-
-            <div className="row">
-
-              {/* <div className="col-12 col-md-6 mt-4">
-                <button type="submit" className="btn btn-primary btn-block transition-hover-top">
-                  Sign In
-                </button>
-              </div> */}
-
-              <div className="col-12 col-md-6 mt-4 text-align-end text-center-xs">
-              <a href="https://tokens.arweave.org/" className="btn btn-primary btn-block transition-hover-top" target="_blank">Get your FREE AR wallet from Arweave.org</a>
-              </div>
-
-            </div>
-
           </form>
-
         </div>
       </div>
-
-
-
     </div>
   </div>
     );
