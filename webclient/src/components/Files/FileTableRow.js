@@ -11,6 +11,7 @@ import { magicDownload } from '../../containers/Home/Download';
 import { decryptFileData } from '../../crypto/files';
 import { publishToETH, wasPublished } from '../../containers/NFT/helpers';
 import worker from 'workerize-loader!./download_worker'; // eslint-disable-line import/no-webpack-loader-syntax
+import { publishToRaribile } from '../../ipfs';
 const dJSON = require('dirty-json');
 
 const DownloaderProgressBar = (props) => {
@@ -49,20 +50,20 @@ class FileTableRow extends Component  {
     }
 
     componentDidMount() {
-        if(this.props.is_nft) {
-            try {
-                wasPublished(this.props.file_info.id).then(transactions => {
-                    if(transactions.edges.length > 0) {
-                        // this.setState({is_published_to_eth: true});
-                        const published_metadata_tx_id = transactions.edges[0].node.id;
-                        this.props.file_info['published_metadata_tx_id'] = published_metadata_tx_id;
-                    }
-                })
-            } catch(e) {
+        // if(this.props.is_nft) {
+        //     try {
+        //         wasPublished(this.props.file_info.id).then(transactions => {
+        //             if(transactions.edges.length > 0) {
+        //                 // this.setState({is_published_to_eth: true});
+        //                 const published_metadata_tx_id = transactions.edges[0].node.id;
+        //                 this.props.file_info['published_metadata_tx_id'] = published_metadata_tx_id;
+        //             }
+        //         })
+        //     } catch(e) {
                 
-            }
+        //     }
             
-        }
+        // }
         
         if(window.ethereum) {
             this.setState({web3: new Web3(window.ethereum)});
@@ -177,9 +178,11 @@ class FileTableRow extends Component  {
         
         debugger;
         const file_info = {...this.props.file_info};
-        file_info['Init-State'] = dJSON.parse(file_info['Init-State'])
+
+
         
-        await publishToETH(accounts[0], file_info, this.props.wallet, this.state.web3);
+        await publishToRaribile(file_info.tx_id, file_info.nft.name, file_info.nft.description);
+        // await publishToETH(accounts[0], file_info, this.props.wallet, this.state.web3);
     }
 
 
@@ -195,8 +198,8 @@ class FileTableRow extends Component  {
         const filename = parts[parts.length - 1];
         const file_size = this.bytesToSize(parseInt(this.props.file_info.file_size));
         const viewblock_url = `https://viewblock.io/arweave/tx/${this.props.file_info.id}`;
-        const nft_url = `https://evermoredata.store/#/nft-detail/${this.props.file_info.id}`;
-        const nft_transfer_url = `https://evermoredata.store/#/file/${this.props.file_info.id}`;
+        const nft_url = `https://evermoredata.store/#/nft-detail/${this.props.file_info.tx_id}`;
+        const nft_transfer_url = `https://evermoredata.store/#/file/${this.props.file_info.tx_id}`;
 
         const last_modified = <Moment format={"DD/MM/YYYY HH:mm"}>{this.props.file_info.modified}</Moment>;
 
@@ -228,8 +231,8 @@ class FileTableRow extends Component  {
         let filename_url = filename;
         let nft_options = null;
         if(this.props.is_nft) {
-            const url = `/file/${this.props.file_info.id}`;
-            filename_url = <Link to={url}>{filename}</Link>
+            const url = `/file/${this.props.file_info.tx_id}`;
+            // filename_url = <Link to={url}>{filename}</Link>
 
             let publish_to_eth_link = null;
             if(!this.state.is_published_to_eth && this.isPublishableMediumType(this.props.file_info)) {
@@ -237,7 +240,7 @@ class FileTableRow extends Component  {
 
                                         <a className="dropdown-item text-truncate" onClick={() => {this.handlePublishToETH()}}>
                                             <i className="fa fa-arrows-h"></i>
-                                            Publish to ETH
+                                            Publish to Rarible
                                         </a>
                                     </div>;
             } else if(this.isPublishableMediumType(this.props.file_info)) {

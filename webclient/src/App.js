@@ -155,14 +155,20 @@ class App extends Component {
     console.log('disconnectWallet')
     this.setState({ isAuthenticated: false, wallet_address: null, jwk: null, balance: 0 });
 
+
+    let web3 = null;
+    if(window.ethereum) {
+        web3 = new Web3(window.ethereum);
+
+    } else if(window.web3) {
+        web3 = new Web3(window.web3.currentProvider);
+    }
+
     this.addSuccessAlert("Your wallet is now disconnected");
   }
 
-  async connectWallet() {
-    
-
-    sessionStorage.setItem('ETH_Wallet', accounts[0]);
-    sessionStorage.setItelet web3 = null;
+  async connectWallet() {    
+    let web3 = null;
     if(window.ethereum) {
         web3 = new Web3(window.ethereum);
 
@@ -174,7 +180,10 @@ class App extends Component {
 
     const balance = await web3.eth.getBalance(accounts[0]);
 
-    this.setState({wallet_address: accounts[0], balance: web3.utils.fromWei(balance), isAuthenticated: true });m('ETH_Wallet_balance', web3.utils.fromWei(balance));
+    this.setState({wallet_address: accounts[0], balance: web3.utils.fromWei(balance), isAuthenticated: true });
+
+    sessionStorage.setItem('ETH_Wallet', accounts[0]);
+    sessionStorage.setItem('ETH_Wallet_balance', web3.utils.fromWei(balance));
     sessionStorage.setItem('isAuthenticated', true);
   }
 
@@ -260,9 +269,6 @@ class App extends Component {
       <Route key='nfts' path="/nfts/:id" exact component={() => <NFTs wallet_address={this.state.wallet_address} location={this.props.location} jwk={this.state.jwk} />} />,
       <Route key='files' path="/files" exact component={() => <FoldersView
         location={this.props.location}
-        files={this.state.files}
-        wallet_address={this.state.wallet_address}
-        wallet_balance={this.state.balance}
         jwk={this.state.jwk}
         updateBalance={() => { this.updateBalance() }}
         addToTransactionsToBeMined={(transaction_record) => { this.addToTransactionsToBeMined(transaction_record) }}
@@ -270,17 +276,17 @@ class App extends Component {
         transactions_to_be_mined={this.state.transactions_to_be_mined}
         addSuccessAlert={this.addSuccessAlert}
         addErrorAlert={this.addErrorAlert} />} />,
-      <Route key='file' path='/file/:id' component={() => <FileDetail
-        match={this.props.match}
-        location={this.props.location}
-        history={this.props.history}
-        files={this.state.files}
-        wallet_address={this.state.wallet_address}
-        wallet_balance={this.state.balance}
-        jwk={this.state.jwk}
-        addSuccessAlert={this.addSuccessAlert}
-        addErrorAlert={this.addErrorAlert}
-      />} />,
+      // <Route key='file' path='/file/:id' component={() => <FileDetail
+      //   match={this.props.match}
+      //   location={this.props.location}
+      //   history={this.props.history}
+      //   files={this.state.files}
+      //   wallet_address={this.state.wallet_address}
+      //   wallet_balance={this.state.balance}
+      //   jwk={this.state.jwk}
+      //   addSuccessAlert={this.addSuccessAlert}
+      //   addErrorAlert={this.addErrorAlert}
+      // />} />,
       <Route key='merge' path='/merge' exact component={() => <MergeNFT wallet_address={this.state.wallet_address} jwk={this.state.jwk} files={this.state.files} />} />,
       <Route key='archived' path="/archived" exact component={() => <DeletedView persistence_records={this.state.persistence_records} wallet_address={this.state.wallet_address} jwk={this.state.jwk} />} />,
       <Route key='search' path="/search" exact component={() => <SearchPage wallet_address={this.state.wallet_address} jwk={this.state.jwk} />} />,
@@ -323,6 +329,7 @@ class App extends Component {
 
     } else {
       this.resetContentArea();
+      // this.connectWallet();
     }
 
     if (this.state.isAuthenticated && this.props.location.pathname === '/login') {
