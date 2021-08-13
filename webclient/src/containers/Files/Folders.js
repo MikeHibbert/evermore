@@ -79,7 +79,7 @@ class FoldersView extends Component {
         this.setState({web3: web3});
 
         console.log(`Folders: ${this.props.wallet_address}`)
-        const files = await listFilesFor(this.props.wallet_address, web3); // await getDownloadableFilesGQL(this.props.wallet_address, this.props.jwk);
+        const files = await listFilesFor(accounts[0], web3); // await getDownloadableFilesGQL(this.props.wallet_address, this.props.jwk);
         this.setState({ files: files, loading: false });
 
         this.upload_worker = new upload_worker();

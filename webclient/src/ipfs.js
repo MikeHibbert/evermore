@@ -3,7 +3,7 @@ import { NFTStorage, File } from 'nft.storage';
 import mime from 'mime-types';
 import rarepressMint from './rarepress'
 const filesContractDefinition = require("./containers/NFT/artifacts/contracts/EvermoreFile.sol/EvermoreFile.json"); 
-const FILES_CONTRACT_ADDRESS = '0x01118C89782267168B79e99110F62561C6aBbdF1';
+const FILES_CONTRACT_ADDRESS = '0xAB53312382dA5c14669AEb5b05B32db64240412a';
 
 const listFilesFor = (cache) => async (eth_address, web3) => {
     

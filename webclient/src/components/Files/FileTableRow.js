@@ -49,22 +49,7 @@ class FileTableRow extends Component  {
         this.ref = React.createRef();
     }
 
-    componentDidMount() {
-        // if(this.props.is_nft) {
-        //     try {
-        //         wasPublished(this.props.file_info.id).then(transactions => {
-        //             if(transactions.edges.length > 0) {
-        //                 // this.setState({is_published_to_eth: true});
-        //                 const published_metadata_tx_id = transactions.edges[0].node.id;
-        //                 this.props.file_info['published_metadata_tx_id'] = published_metadata_tx_id;
-        //             }
-        //         })
-        //     } catch(e) {
-                
-        //     }
-            
-        // }
-        
+    componentDidMount() {       
         if(window.ethereum) {
             this.setState({web3: new Web3(window.ethereum)});
 
@@ -234,26 +219,6 @@ class FileTableRow extends Component  {
             const url = `/file/${this.props.file_info.tx_id}`;
             // filename_url = <Link to={url}>{filename}</Link>
 
-            let publish_to_eth_link = null;
-            if(!this.state.is_published_to_eth && this.isPublishableMediumType(this.props.file_info)) {
-                publish_to_eth_link = <div className="scrollable-vertical max-h-50vh" >
-
-                                        <a className="dropdown-item text-truncate" onClick={() => {this.handlePublishToETH()}}>
-                                            <i className="fa fa-arrows-h"></i>
-                                            Publish to Rarible
-                                        </a>
-                                    </div>;
-            } else if(this.isPublishableMediumType(this.props.file_info)) {
-                const published_metadata_url = `https://arweave.net/${this.props.file_info.published_metadata_tx_id}`;
-                publish_to_eth_link = <div className="scrollable-vertical max-h-50vh" >
-
-                                        <a className="dropdown-item text-truncate" href={published_metadata_url} target='_blank'>
-                                            <i className="fa fa-info"></i>
-                                            View ETH Metadata
-                                        </a>
-                                    </div>;
-            }
-
             nft_options = <>
                 <div className="scrollable-vertical max-h-50vh" >
 
@@ -269,15 +234,14 @@ class FileTableRow extends Component  {
                         Transfer options
                     </Link>
                 </div>
-                {publish_to_eth_link}
             </>
         }
 
         return (
             <tr>
                 <td>
-                        {filename_url} 
-                        {downloader}
+                    {filename_url} 
+                    {downloader}
                     <span className="d-block text-muted fs--13">FROM: {this.props.file_info.hostname}</span>
                     {/* <span className="d-block text-muted fs--13">VERSION: {this.props.file_info.version}</span> */}
 

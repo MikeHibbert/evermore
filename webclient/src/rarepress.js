@@ -1,7 +1,7 @@
 import ipfs from './ipfs';
 
 const Rarepress = require('rarepress.js');
-const RAREPRESS_HOST = 'https://rinkeby.rarepress.org/v0'
+const RAREPRESS_HOST = 'https://ropsten.rarepress.org/v0'
 
 export default async function rarepressMint(file_data, name, description) {
     const rarepress = new Rarepress()
