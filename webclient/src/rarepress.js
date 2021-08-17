@@ -1,5 +1,3 @@
-import ipfs from './ipfs';
-
 const Rarepress = require('rarepress.js');
 const RAREPRESS_HOST = 'https://ropsten.rarepress.org/v0'
 
@@ -19,8 +17,6 @@ export default async function rarepressMint(file_data, name, description) {
             image: `/ipfs/${ipfsHash}`
         }
     });
-
-    debugger;
 
     return ipfsHash;
 }

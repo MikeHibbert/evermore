@@ -205,6 +205,8 @@ class FoldersView extends Component {
             if (is_nft) {
                 file_info['nft'] = { name: e.nftName, description: e.nftDescription};
 
+                debugger;
+                
                 await uploadFileNFT(
                     file_info, 
                     that.props.wallet_address, 

@@ -216,8 +216,8 @@ class FileTableRow extends Component  {
         let filename_url = filename;
         let nft_options = null;
         if(this.props.is_nft) {
-            const url = `/file/${this.props.file_info.tx_id}`;
-            // filename_url = <Link to={url}>{filename}</Link>
+            const url = `https://rarepress.org/ipfs/${this.props.file_info.tx_id}/metadata.json`;
+            filename_url = <a href={url} target="_blank">{filename}</a>
 
             nft_options = <>
                 <div className="scrollable-vertical max-h-50vh" >

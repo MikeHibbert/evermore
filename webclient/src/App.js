@@ -269,7 +269,7 @@ class App extends Component {
       <Route key='nfts' path="/nfts/:id" exact component={() => <NFTs wallet_address={this.state.wallet_address} location={this.props.location} jwk={this.state.jwk} />} />,
       <Route key='files' path="/files" exact component={() => <FoldersView
         location={this.props.location}
-        jwk={this.state.jwk}
+        wallet_address={this.state.wallet_address}
         updateBalance={() => { this.updateBalance() }}
         addToTransactionsToBeMined={(transaction_record) => { this.addToTransactionsToBeMined(transaction_record) }}
         removeFromTransactionsToBeMined={(tx_id) => { this.removeFromTransactionsToBeMined(tx_id) }}
