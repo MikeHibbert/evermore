@@ -213,10 +213,11 @@ class FileTableRow extends Component  {
             </a>
         </div>;
         
-        let filename_url = filename;
+        let url = `https://gateway.pinata.cloud/ipfs/${this.props.file_info.tx_id}`;
+        let filename_url = <a href={url} target="_blank">{filename}</a>;
         let nft_options = null;
         if(this.props.is_nft) {
-            const url = `https://rarepress.org/ipfs/${this.props.file_info.tx_id}/metadata.json`;
+            url = `https://ropsten.rarepress.org/ipfs/${this.props.file_info.tx_id}/${this.props.file_info.name}`;
             filename_url = <a href={url} target="_blank">{filename}</a>
 
             nft_options = <>

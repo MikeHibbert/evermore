@@ -197,72 +197,53 @@ class FoldersView extends Component {
 
         this.setState({ uploadingFile: true });
         const that = this;
-        const reader = new FileReader();
-        reader.onload = async function () {
-            let file_data = reader.result;
-            file_info['file_data'] = Buffer.from(file_data, 'binary');
+        
+        file_info['file_data'] = file_info.file_handle;
 
-            if (is_nft) {
-                file_info['nft'] = { name: e.nftName, description: e.nftDescription};
-
-                debugger;
-                
-                await uploadFileNFT(
-                    file_info, 
-                    that.props.wallet_address, 
-                    that.state.web3, 
-                    function (msg) {
-                        if (msg.action == 'uploading') {
-                            that.setState({ uploadingFile: msg.uploading });
-                        }
-
-                        if (msg.action == 'progress') {
-                            that.setState({ uploadPercentComplete: msg.progress });
-                        }
-                        if (msg.action == 'upload-complete' && !that.state.uploadingFile) {
-                            file_info['id'] = msg.tx_id;
-                            file_info['tx_id'] = msg.tx_id;
-                            let path_parts = file_info.path.split('/');
-                            if (that.state.files.hasOwnProperty(path_parts[0])) {
-                                addToFolderChildrenOrUpdate(path_parts, 0, file_info, that.state.files[path_parts[0]], 0);
-                            }
-                        }
-                    },
-                    (msg) => { that.props.addSuccessAlert(msg); },
-                    (msg) => { that.props.addErrorAlert(msg) }
-                );
-            } else {
-
-                await uploadFile(
-                    file_info, 
-                    that.props.wallet_address, 
-                    that.state.web3, 
-                    function (msg) {
-                        if (msg.action == 'uploading') {
-                            that.setState({ uploadingFile: msg.uploading });
-                        }
-
-                        if (msg.action == 'progress') {
-                            that.setState({ uploadPercentComplete: msg.progress });
-                        }
-                        if (msg.action == 'upload-complete' && !that.state.uploadingFile) {
-                            debugger;
-                            file_info['id'] = msg.tx_id;
-                            file_info['tx_id'] = msg.tx_id;
-                            let path_parts = file_info.path.split('/');
-                            if (that.state.files.hasOwnProperty(path_parts[0])) {
-                                addToFolderChildrenOrUpdate(path_parts, 0, file_info, that.state.files[path_parts[0]], 0);
-                            }
-                        }
-                    },
-                    (msg) => { that.props.addSuccessAlert(msg); },
-                    (msg) => { that.props.addErrorAlert(msg) }
-                );
+        function uploadMessageHandler(msg) {
+            debugger;
+            if (msg.action == 'uploading') {
+                that.setState({ uploadingFile: msg.uploading });
             }
 
-            that.props.updateBalance();
+            if (msg.action == 'progress') {
+                that.setState({ uploadPercentComplete: msg.progress });
+            }
+            if (msg.action == 'upload-complete' && !that.state.uploadingFile) {
+
+                file_info['id'] = msg.tx_id;
+                file_info['tx_id'] = msg.tx_id;
+                let path_parts = file_info.path.split('/');
+                if (that.state.files.hasOwnProperty(path_parts[0])) {
+                    addToFolderChildrenOrUpdate(path_parts, 0, file_info, that.state.files[path_parts[0]], 0);
+                }
+            }
         }
-        reader.readAsBinaryString(file_info.file_handle);
+
+        if (is_nft) {
+            file_info['nft'] = { name: e.nftName, description: e.nftDescription};
+            
+            await uploadFileNFT(
+                file_info, 
+                that.props.wallet_address, 
+                that.state.web3, 
+                (msg) => { uploadMessageHandler(msg); },
+                (msg) => { that.props.addSuccessAlert(msg); },
+                (msg) => { that.props.addErrorAlert(msg) }
+            );
+        } else {
+            await uploadFile(
+                file_info, 
+                that.props.wallet_address, 
+                that.state.web3, 
+                (msg) => { uploadMessageHandler(msg); },
+                (msg) => { that.props.addSuccessAlert(msg); },
+                (msg) => { that.props.addErrorAlert(msg) }
+            );
+        }
+
+        that.props.updateBalance();
+        
     }
 
     addFileInfoToFolders(file_info) {

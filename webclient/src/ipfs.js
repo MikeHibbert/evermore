@@ -1,9 +1,54 @@
+import axios from 'axios';
+import fs from 'fs';
 import settings from './app-config';
 import { NFTStorage, File } from 'nft.storage';
 import mime from 'mime-types';
 import rarepressMint from './rarepress'
 const filesContractDefinition = require("./containers/NFT/artifacts/contracts/EvermoreFile.sol/EvermoreFile.json"); 
 const FILES_CONTRACT_ADDRESS = '0xAB53312382dA5c14669AEb5b05B32db64240412a';
+
+export const testAuthentication = (errorMsg) => {
+    const url = `https://api.pinata.cloud/data/testAuthentication`;
+    return axios
+        .get(url, {
+            headers: {
+                'pinata_api_key': settings.PINATA_STORAGE_API_KEY,
+                'pinata_secret_api_key': settings.PINATA_SECRET_API_KEY
+            }
+        })
+        .then(function (response) {
+            console.log(response);
+        })
+        .catch(function (error) {
+            errorMsg(error);
+        });
+};
+
+const pinFileToIPFS = async (file_info, errorMsg) => {
+    testAuthentication(errorMsg);
+
+    const url = `https://api.pinata.cloud/pinning/pinFileToIPFS`;
+    //we gather a local file from the API for this example, but you can gather the file from anywhere
+    let data = new FormData();
+    data.append('file', file_info.file_handle);
+    return axios.post(url,
+        data,
+        {
+            maxContentLength: -1,
+            headers: {
+                'Content-Type': `multipart/form-data; boundary= ${data._boundary}`,
+                'pinata_api_key': settings.PINATA_STORAGE_API_KEY,
+                'pinata_secret_api_key': settings.PINATA_SECRET_API_KEY
+            }
+        }
+    ).then(function (response) {
+        return response;
+        //handle response here
+    }).catch(function (error) {
+        //handle error here
+        errorMsg(error);
+    });
+};
 
 const listFilesFor = (cache) => async (eth_address, web3) => {
     
@@ -44,7 +89,6 @@ const listFilesFor = (cache) => async (eth_address, web3) => {
 
         return folders;
     } catch (e) {
-        debugger;
         console.log(e);
         return folders;
     }    
@@ -105,29 +149,37 @@ export function addToFolderChildrenOrUpdate(path_parts, index, file_info, path_o
 
 export const uploadFile = async (file_info, eth_address, web3, messageCallback, showSuccessNotification, showErrorNotification) => {
     const filesContract = new web3.eth.Contract(filesContractDefinition.abi, FILES_CONTRACT_ADDRESS);
-    const ipfsClient = new NFTStorage({token: settings.NFT_STORAGE_API_KEY});
+    // const ipfsClient = new NFTStorage({token: settings.NFT_STORAGE_API_KEY});
     
     try {
         messageCallback({action: 'uploading', uploading: true});
         messageCallback({action: 'progress', progress: 10});
 
-        const metadata = await ipfsClient.store({
-            name: file_info.name,
-            description: file_info.path,
-            image: new File(file_info.file_data, file_info.name, { type: mime.lookup(file_info.file) })
-        });
+        // const metadata = await ipfsClient.storeBlob({
+        //     name: file_info.name,
+        //     description: file_info.path,
+        //     image: file_info.file_handle
+        // });
+
+        const metadata = await pinFileToIPFS(file_info, showErrorNotification);
+
+        console.log('IPFS URL for the metadata:', metadata.data)
+        console.log('metadata.json contents:\n', metadata.data.IpfsHash)
 
         file_info['Content-Type'] = mime.lookup(file_info.file);
 
         messageCallback({action: 'progress', progress: 75});
 
-        await filesContract.methods.set(file_info.path, metadata.ipnft, file_info.modified, file_info.file_size, file_info.hostname, mime.lookup(file_info.file)).send({from: eth_address});
+        filesContract.methods.set(file_info.path, metadata.data.IpfsHash, file_info.modified, file_info.file_size, file_info.hostname, mime.lookup(file_info.file)).send({from: eth_address})
+            .then(() => {
+                debugger;
+                messageCallback({action: 'progress', progress: 100});
+                messageCallback({action: 'uploading', uploading: false});
+                messageCallback({action: 'upload-complete', tx_id: metadata.data.IpfsHash});
 
-        messageCallback({action: 'progress', progress: 100});
-        messageCallback({action: 'uploading', uploading: false});
-        messageCallback({action: 'upload-complete', tx_id: metadata.ipnft});
-
-        showSuccessNotification(`${file_info.name} was successfully uploaded to IPFS`);
+                showSuccessNotification(`${file_info.name} was successfully mined on the blockchain`);
+            });        
+        
     } catch (e) {
         console.log(e);
         showErrorNotification(`Unable to upload ${file_info.name} at this time. Try again later`);
@@ -142,19 +194,22 @@ export const uploadFileNFT = async (file_info, eth_address, web3, messageCallbac
         messageCallback({action: 'uploading', uploading: true});
         messageCallback({action: 'progress', progress: 25});
 
-        const ipfsHash = await publishToRaribile(new File(file_info.file_data, file_info.path), file_info.nft.name, file_info.nft.description, showSuccessNotification, showErrorNotification);
+        const ipfsHash = await publishToRaribile(file_info.file_data, file_info.nft.name, file_info.nft.description, showSuccessNotification, showErrorNotification);
 
         file_info['Content-Type'] = mime.lookup(file_info.file);
 
         messageCallback({action: 'progress', progress: 50});
 
-        await filesContract.methods.set(file_info.path, ipfsHash, file_info.modified, file_info.file_size, file_info.hostname, mime.lookup(file_info.file)).send({from: eth_address});
-        
-        messageCallback({action: 'progress', progress: 100});
-        messageCallback({action: 'uploading', uploading: false});
-        messageCallback({action: 'upload-complete', tx_id: ipfsHash});
+        filesContract.methods.set(file_info.path, ipfsHash, file_info.modified, file_info.file_size, file_info.hostname, mime.lookup(file_info.file)).send({from: eth_address})
+            .then(() => {
+            debugger;
+            messageCallback({action: 'progress', progress: 100});
+            messageCallback({action: 'uploading', uploading: false});
+            messageCallback({action: 'upload-complete', tx_id: ipfsHash});
 
-        showSuccessNotification(`${file_info.name} was successfully uploaded to IPFS`);
+            showSuccessNotification(`${file_info.name} was successfully mined on the blockchain`);
+        }); 
+        
     } catch (e) {
         console.log(e);
         showErrorNotification(`Unable to upload ${file_info.name} at this time. Try again later`);
@@ -168,7 +223,6 @@ export const publishToRaribile = async (file_data, name, description, showSucces
         
         return ipfsHash;
     } catch (e) {
-        debugger;
         console.log(`publishToRaribile : ${e}`);
         showErrorNotification(`Unable to publish ${name} to Rarible.`)
     }
