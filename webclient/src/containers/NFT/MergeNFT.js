@@ -1,8 +1,10 @@
 import React, { useEffect, useState, memo } from 'react';
+import Web3 from 'web3';
 import DropdownMenu from '../../components/forms/DropdownMenu';
 import { combinableNFT } from './helpers';
 import { getNFTFileInfos } from '../Files/helpers';
 import NFTCombineControl from './NFTCombineControl';
+import listFilesFor from '../../ipfs';
 const dJSON = require('dirty-json');
 
 const MergeNFT = memo(props =>  {
@@ -13,14 +15,23 @@ const MergeNFT = memo(props =>  {
 
     useEffect(() => {(
         async () => {
-            const nft_infos = await getNFTFileInfos(props.wallet_address);
-            const nfts = nft_infos[''].children[0].children;
+            let web3 = null;
+            if(window.ethereum) {
+                web3 = new Web3(window.ethereum);
+
+            } else if(window.web3) {
+                web3 = new Web3(window.web3.currentProvider);
+            }
+
+            
+            const nft_infos = await listFilesFor(props.wallet_address, web3);
+            const nfts = nft_infos[''].children[2].children;
 
             const qualifying_nfts = [];
+            
             for(let i in nfts) {
                 if(combinableNFT(nfts[i])) {
                     const nft = {...nfts[i]};
-                    nft['Init-State'] = dJSON.parse(nft['Init-State']);
                     qualifying_nfts.push(nft);
                 }
             }
@@ -32,7 +43,7 @@ const MergeNFT = memo(props =>  {
     }, [])
 
     function setMainSelection(nft) {
-        nft['url'] = `https://arweave.net/${nft.value}`;
+        nft['url'] = `https://gateway.pinata.cloud/ipfs/${nft.value}`;
         setSelectionOne(nft);
         const img = document.getElementById('BaseNFT');
         img.src = nft.url;
@@ -73,7 +84,7 @@ const MergeNFT = memo(props =>  {
     if(nfts) {
 
         selection_one_options = nfts.map(nft => {
-            return {value: nft.id, name: nft['Init-State'].name};
+            return {value: nft.tx_id, name: nft.name};
         })
 
     }

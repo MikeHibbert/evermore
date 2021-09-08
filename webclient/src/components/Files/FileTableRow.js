@@ -217,9 +217,6 @@ class FileTableRow extends Component  {
         let filename_url = <a href={url} target="_blank">{filename}</a>;
         let nft_options = null;
         if(this.props.is_nft) {
-            url = `https://ropsten.rarepress.org/ipfs/${this.props.file_info.tx_id}/${this.props.file_info.name}`;
-            filename_url = <a href={url} target="_blank">{filename}</a>
-
             nft_options = <>
                 <div className="scrollable-vertical max-h-50vh" >
 

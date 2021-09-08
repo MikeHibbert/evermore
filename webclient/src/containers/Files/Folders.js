@@ -209,7 +209,7 @@ class FoldersView extends Component {
             if (msg.action == 'progress') {
                 that.setState({ uploadPercentComplete: msg.progress });
             }
-            if (msg.action == 'upload-complete' && !that.state.uploadingFile) {
+            if (msg.action == 'upload-complete') {
 
                 file_info['id'] = msg.tx_id;
                 file_info['tx_id'] = msg.tx_id;
@@ -217,6 +217,8 @@ class FoldersView extends Component {
                 if (that.state.files.hasOwnProperty(path_parts[0])) {
                     addToFolderChildrenOrUpdate(path_parts, 0, file_info, that.state.files[path_parts[0]], 0);
                 }
+
+                that.props.updateBalance();
             }
         }
 
@@ -240,10 +242,7 @@ class FoldersView extends Component {
                 (msg) => { that.props.addSuccessAlert(msg); },
                 (msg) => { that.props.addErrorAlert(msg) }
             );
-        }
-
-        that.props.updateBalance();
-        
+        } 
     }
 
     addFileInfoToFolders(file_info) {

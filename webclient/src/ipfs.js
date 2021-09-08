@@ -86,7 +86,6 @@ const listFilesFor = (cache) => async (eth_address, web3) => {
 
         cache.delete(eth_address);
         cache.set(eth_address, folders);
-
         return folders;
     } catch (e) {
         console.log(e);

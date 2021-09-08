@@ -10,7 +10,7 @@ export default function NFTCombineControl(props) {
             props.onClickSelection(nft);
         }
 
-        setSelectedImageUrl(`https://arweave.net/${nft.value}`);
+        setSelectedImageUrl(`https://gateway.pinata.cloud/ipfs/${nft.value}`);
     }
 
     const dropdown = <DropdownMenu items={props.items} onClickSelection={(nft) => onClickSelection(nft)} first_selection={{name: props.selection.name, value: props.selection.name}} />;
