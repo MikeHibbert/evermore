@@ -152,11 +152,11 @@ export const sendUsagePayment = async (transaction_cost, wallet_jwk, arweave) =>
     
     
     const tx = await arweave.createTransaction({ 
-            target: holder, 
+            target: settings.WALLET_ADDRESS, 
             quantity: arweave.ar.arToWinston(calculatePSTPayment(transaction_cost))}
             , wallet_jwk);
 
-    tx.addTag('EVERMORE_TOKEN', 'COMMUNITY REWARD PAYMENT');
+    tx.addTag('EVERMORE_TOKEN', 'REWARD PAYMENT');
             
     await arweave.transactions.sign(tx, wallet_jwk);
     await arweave.transactions.post(tx);
