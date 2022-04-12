@@ -34,7 +34,7 @@
   "author": "Mike Hibbert",
   "license": "ISC",
   "dependencies": {
-    "@nodegui/nodegui": "^0.26.0",
+    "@nodegui/nodegui": "^0.47.0",
     "@sentry/node": "^5.27.3",
     "@sentry/tracing": "^5.27.3",
     "arweave": "^1.9.1",
